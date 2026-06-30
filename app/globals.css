@@ -1,0 +1,49 @@
+:root {
+  --paper: #FFFDF5;
+  --paper2: #F5F0E0;
+  --ink: #1A1205;
+  --ink2: #3D3220;
+  --ink3: #6B5B3E;
+  --brick: #D94F00;
+  --brick-mid: #F07030;
+  --forest: #2D7A4F;
+  --amber: #C8960C;
+  --font-display: 'Caveat', cursive;
+  --font-body: 'Patrick Hand', cursive;
+  --font-mono: 'Space Mono', monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--paper);
+  color: var(--ink2);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; }
+
+/* shared bits */
+.mono { font-family: var(--font-mono); }
+.btn {
+  font-family: var(--font-display); font-weight: 700; font-size: 20px;
+  background: var(--brick); color: var(--paper); cursor: pointer;
+  padding: 11px 24px; border: 2.5px solid var(--brick); border-radius: 8px;
+  box-shadow: 4px 4px 0 var(--brick-mid); transition: transform .12s, box-shadow .12s;
+  text-decoration: none; display: inline-block;
+}
+.btn:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--brick-mid); }
+.card {
+  background: var(--paper); border: 2.5px solid var(--ink); border-radius: 12px;
+  box-shadow: 4px 4px 0 var(--ink); padding: 20px;
+}
+.tag {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--brick);
+}
+input, textarea, select {
+  font-family: var(--font-body); font-size: 16px; width: 100%;
+  padding: 11px 14px; border: 2px solid var(--ink); border-radius: 8px;
+  background: var(--paper); color: var(--ink);
+}
