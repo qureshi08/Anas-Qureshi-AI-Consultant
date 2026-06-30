@@ -10,12 +10,12 @@ export default function LoginPage() {
   const [err, setErr] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
 
   async function onSubmit(e) {
     e.preventDefault();
     setErr('');
     setLoading(true);
+    const supabase = createClient();
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
