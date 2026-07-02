@@ -22,20 +22,16 @@ Business data can enter the app only three ways, there is no fourth:
 2. A paid or free-credit data API serves it. Runs on Vercel. Included where it pays off.
 3. Paste or CSV import. Free, runs on Vercel. Included, already built.
 
-Given that, the sourcing strategy is layered and multi-source, cloud-native only. Not just Google Maps.
+**The hard truth about lead quality.** There is no free, automated, cloud source of high-quality B2B decision-maker leads. If there were, Apollo, ZoomInfo, and Clay would not be businesses. Google Places returns local storefront businesses by category, which is the wrong audience for this ICP (B2B agencies, sales and marketing teams, founders), so Places is dropped here. Good B2B leads come from exactly two places:
 
-**Tier 1 (build first, free or free-credit):**
-- **Paste / CSV import (built).** Universal intake for any list from anywhere. This is also the safe LinkedIn path: Anas gathers names by hand on LinkedIn or Sales Navigator (just browsing, ToS-safe), then pastes the list in and the engine takes over. Also covers purchased lists, event lists, referrals.
-- **Google Places API.** Automated sourcing by industry + location. Returns company, website, phone, address, category, rating. Runs on Vercel. Free within Google's monthly credit. This replaces Google Maps scraping. Needs a Places API key from Anas.
-- **Website enrichment.** For each prospect with a website, a server-side fetch pulls emails and social links and confirms the niche. Free on Vercel, done in small chunks to respect timeouts.
+- **Curated import (free, best quality, the primary source now, already built).** The right prospects are picked by hand from the best B2B sources (LinkedIn and Sales Navigator browsing, Apollo's free UI, agency and SaaS directories like Clutch and G2, funding and hiring signals), then pasted or uploaded. It is ToS-safe (just browsing), free, and the highest quality because a human chooses each one. Claude builds the target lists (like the 20-agency list already produced), so it is research-assisted, not blind grinding. For landing the first client this is the right and sufficient source: 30 to 50 great prospects beat 500 mediocre ones.
+- **Apollo API (paid, the automation upgrade for later).** When volume matters, wire Apollo's API for one-click B2B sourcing by title, industry, and company size, straight into the pipeline. This is the honest cost of automated good data. It needs a paid Apollo plan, so it is a Phase 4 upgrade, added only once a paying client justifies it.
 
-**Tier 2 (add when justified):**
-- **Email-finder API** (Hunter.io or Snov.io). Decision-maker emails from a domain. Free tier first, then paid. Needs a key.
-- **Public registries and directories.** OpenCorporates and similar JSON APIs for firmographics; niche directory endpoints via fetch.
+**Website enrichment (free, on Vercel).** Once companies are in, a server-side fetch of each site pulls emails and social links. Applies to any source.
 
-**Explicitly excluded:** LinkedIn scraping and Instagram scraping (ToS, account-ban risk), and Google Maps browser scraping (needs a machine).
+**Explicitly excluded:** Google Places for this B2B ICP (wrong audience; it stays available only if Anas ever targets local businesses), and all LinkedIn and Instagram scraping (ToS, account-ban risk).
 
-Sourcing principle: automated intake (Places) plus manual intake (import) feed one prospects table, then enrichment fills gaps, then dedupe, then it enters the pipeline.
+Sourcing principle: curated import is the engine now; Apollo is the paid accelerator later. The engine ingests good leads the moment you paste them.
 
 ## 5. Data model (Supabase tables)
 - `inbound_leads`: id, email, task, status, created_at. Anon insert, admin read.
@@ -58,9 +54,9 @@ The landing page with the free-build offer; the form writes to `inbound_leads`. 
 List inbound submissions, mark status, and convert a submission into a prospect with one click. Acceptance: an inbound lead can be pushed into the Outbound pipeline.
 
 ### F4. Outbound sourcing
-- F4a. Paste / CSV import (done). Acceptance: pasted rows become prospects with source = import.
-- F4b. Google Places sourcing. A Source box: market + industry + max results. On submit, a server action calls the Places API, dedupes against existing prospects by website or name, and inserts the new ones with source = places. Acceptance: entering "marketing agencies, Austin" fills the pipeline with real Austin businesses, no duplicates.
-- F4c. Website enrichment. A button on a prospect (and a bulk action) fetches the site and fills email and socials where found. Acceptance: a prospect with a website gains an email when the site exposes one.
+- F4a. Curated import (done, primary). Paste or CSV of hand-picked prospects becomes rows with source = import, deduped by website or name. A "build a target list" helper (Claude research) produces the list to paste. Acceptance: a curated list becomes prospects with no duplicates.
+- F4b. Apollo API sourcing (Phase 4, paid). A Source box: title + industry + company size + geo. Calls Apollo, dedupes, inserts with source = apollo. Acceptance: a search fills the pipeline with real B2B decision-makers. Gated behind a paid Apollo key.
+- F4c. Website enrichment (free). A button on a prospect (and a bulk action) fetches the site and fills email and socials where found. Acceptance: a prospect with a website gains an email when the site exposes one.
 
 ### F5. Enrichment (Tier 2)
 Optional email-finder API to get a decision-maker email from a domain when the site does not expose one. Acceptance: with a key set, a prospect can be enriched with a found email.
@@ -93,17 +89,17 @@ Screen showing which integrations are configured (Places, email provider, email-
 
 ## 8. Build phases (each deployed to Vercel to test live)
 - **Phase 1 (done):** F1, F2, F4a, F7, F10 (basic), Inbound/Outbound split. Cleanup: remove dead worker and `sourcing_jobs`, retire the unused seed.
-- **Phase 2:** F4b Google Places sourcing, F4c website enrichment, F3 inbound-to-prospect. Needs the Places key.
+- **Phase 2:** F4a import polish + dedupe + a list-building helper, F4c website enrichment, F3 inbound-to-prospect. No key needed.
 - **Phase 3:** F8 outreach (draft + email send + manual DM copy), F Activities history, F9 follow-ups. Needs an email provider key + a sending domain.
-- **Phase 4:** F5 email-finder, F6 segmentation, deeper F10 analytics, public registries.
+- **Phase 4:** F4b Apollo API sourcing (paid), F5 email-finder, F6 segmentation, deeper F10 analytics.
 
 ## 9. Testing and acceptance
 Anas tests each phase on the live Vercel URL. A phase is accepted when its acceptance criteria pass in the deployed app.
 
 ## 10. Decisions and inputs needed from Anas
-1. Google Places API key (for Phase 2 automated sourcing). Free within Google's monthly credit.
+1. Nothing blocks Phase 2. The source is curated import (built) plus free website enrichment, and Claude builds the target lists with you.
 2. Email sending provider for Phase 3. Recommendation: Resend (works on Vercel, free tier), plus a dedicated sending domain to protect deliverability.
-3. Later: an email-finder key (Hunter.io or Snov.io) for Phase 4, only if website enrichment is not enough.
+3. Phase 4 only, and only if you want automated sourcing at volume: a paid Apollo plan + API key. Skip until a client is paying.
 
 ## 11. Approval
 On approval of this PRD and the BRD, the build proceeds Phase 2 onward. Phase 1 cleanup happens first so the base is clean.

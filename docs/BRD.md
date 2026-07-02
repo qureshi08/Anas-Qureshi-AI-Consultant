@@ -36,7 +36,7 @@ Right now the motion is scattered: prospects live in a markdown file, outreach c
 ## 7. Out of scope (honest, on purpose)
 - Automated LinkedIn scraping or automated LinkedIn DMs. ToS-banned, gets the account banned. LinkedIn stays a manual step (gather by hand, import, DM by hand).
 - Automated Instagram scraping. Fragile, low B2B value, ToS. Skipped.
-- Free Google Maps browser scraping. Needs a real browser, cannot run on Vercel. Replaced by the Google Places API.
+- Free automated B2B lead sourcing. It does not exist. Good B2B data is either paid (Apollo) or gathered by hand. The engine's source is curated import now, with a paid Apollo API as a later upgrade. Google Places is dropped for this ICP because it returns local businesses, not B2B buyers.
 - A general-purpose data platform rivaling Apollo or Clay. That is a separate multi-year product, not a path to the first client.
 
 ## 8. Constraints (hard)
@@ -64,9 +64,9 @@ Right now the motion is scattered: prospects live in a markdown file, outreach c
 
 ## 12. High-level roadmap
 - Phase 1 (largely done): auth, landing, inbound capture, prospects pipeline, dashboard, paste/CSV import.
-- Phase 2: automated sourcing (Google Places) + website enrichment.
+- Phase 2: curated import + list-building helper + website enrichment.
 - Phase 3: outreach (draft + email send + manual LinkedIn) + follow-up reminders.
-- Phase 4: email-finder API, public registries, segmentation, deeper analytics.
+- Phase 4: Apollo API sourcing (paid) + email-finder + registries + analytics.
 
 ## 13. Approval
 Approve this BRD and the PRD, and Anas supplies the Phase 2 keys (Google Places). Then the build proceeds phase by phase, each deployed to Vercel for Anas to test live.
