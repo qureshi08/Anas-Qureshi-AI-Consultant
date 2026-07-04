@@ -65,8 +65,11 @@ export async function POST(req) {
     const data = await res.json();
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
     if (text) reply = text;
-    else console.error('Gemini no-candidate response:', JSON.stringify(data).slice(0, 600));
-  } catch (e) { console.error('Gemini call failed:', e?.message); }
+    else {
+      console.error('Gemini no-candidate response:', JSON.stringify(data).slice(0, 600));
+      reply = 'DEBUG: HTTP ' + res.status + ' — ' + (data?.error?.message || data?.promptFeedback?.blockReason || JSON.stringify(data).slice(0, 300));
+    }
+  } catch (e) { reply = 'DEBUG (network): ' + (e?.message || 'unknown'); }
 
   if (admin && conversationId) {
     try { await admin.from('chat_messages').insert({ conversation_id: conversationId, role: 'assistant', content: reply }); } catch (e) {}
