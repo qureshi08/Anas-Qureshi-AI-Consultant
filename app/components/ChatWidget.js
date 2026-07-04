@@ -20,7 +20,7 @@ export default function ChatWidget() {
     (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2)
   );
   const [messages, setMessages] = useState([
-    { role: 'assistant', content: "Hey, I'm Anas's AI assistant, and yes, he built me. Tell me one repetitive task your team does by hand and I'll show you how he'd automate it with AI. What are you working on?" },
+    { role: 'assistant', content: "Hey, I'm Anas's AI assistant. He built me, and I'm the kind of system he builds for businesses. What brings you here today?" },
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
