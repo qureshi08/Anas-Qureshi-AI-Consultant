@@ -2,6 +2,10 @@
 
 import { useState, useRef, useEffect } from 'react';
 
+const STORAGE_KEY = 'anas_chat_v1';
+const GREETING = { role: 'assistant', content: "Hey, I'm Anas's AI assistant. He built me, and I'm the kind of system he builds for businesses. What brings you here today?" };
+const STARTERS = ['What do you build?', 'What does it cost?', 'I have a task to automate'];
+
 function Linkified({ text }) {
   const parts = String(text).split(/(https?:\/\/[^\s]+)/g);
   return parts.map((p, i) =>
@@ -15,24 +19,41 @@ function Linkified({ text }) {
   );
 }
 
+function freshId() {
+  return (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2);
+}
+
 export default function ChatWidget() {
-  const [convId] = useState(() =>
-    (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2)
-  );
-  const [messages, setMessages] = useState([
-    { role: 'assistant', content: "Hey, I'm Anas's AI assistant. He built me, and I'm the kind of system he builds for businesses. What brings you here today?" },
-  ]);
+  const [convId, setConvId] = useState(freshId);
+  const [messages, setMessages] = useState([GREETING]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
   const endRef = useRef(null);
+
+  // Restore a previous conversation after a refresh (standard persistence).
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+      if (saved && saved.convId && Array.isArray(saved.messages) && saved.messages.length > 1) {
+        setConvId(saved.convId);
+        setMessages(saved.messages);
+      }
+    } catch (e) { /* corrupted storage, start fresh */ }
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ convId, messages: messages.slice(-50) })); } catch (e) {}
+  }, [messages, convId, hydrated]);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
-  async function send(e) {
-    e.preventDefault();
-    const text = input.trim();
-    if (!text || loading) return;
-    const next = [...messages, { role: 'user', content: text }];
+  async function sendText(text) {
+    const clean = (text || '').trim().slice(0, 1000);
+    if (!clean || loading) return;
+    const next = [...messages, { role: 'user', content: clean }];
     setMessages(next);
     setInput('');
     setLoading(true);
@@ -77,13 +98,31 @@ export default function ChatWidget() {
             <Linkified text={m.content} />
           </div>
         ))}
+        {messages.length === 1 && !loading && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 2 }}>
+            {STARTERS.map((s) => (
+              <button key={s} onClick={() => sendText(s)} style={{
+                fontFamily: 'var(--font-body)', fontSize: 13, cursor: 'pointer',
+                background: 'var(--paper)', color: 'var(--brick)', border: '2px solid var(--brick)',
+                borderRadius: 20, padding: '6px 13px',
+              }}>
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
         {loading && <div style={{ alignSelf: 'flex-start', fontSize: 13, color: 'var(--ink3)' }}>typing…</div>}
         <div ref={endRef} />
       </div>
 
-      <form onSubmit={send} style={{ display: 'flex', gap: 8, padding: 12, borderTop: '2px solid var(--ink)' }}>
-        <input value={input} onChange={e => setInput(e.target.value)} placeholder="Ask anything, or tell me a task…" style={{ flex: 1, fontSize: 14, padding: '9px 11px' }} />
-        <button type="submit" disabled={loading} style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16, background: 'var(--brick)', color: 'var(--paper)', border: '2.5px solid var(--brick)', borderRadius: 8, padding: '8px 14px', cursor: 'pointer' }}>Send</button>
+      <form onSubmit={(e) => { e.preventDefault(); sendText(input); }} style={{ padding: '12px 12px 8px', borderTop: '2px solid var(--ink)' }}>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input value={input} onChange={e => setInput(e.target.value)} maxLength={1000} placeholder="Ask anything, or tell me a task…" style={{ flex: 1, fontSize: 14, padding: '9px 11px' }} />
+          <button type="submit" disabled={loading} style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16, background: 'var(--brick)', color: 'var(--paper)', border: '2.5px solid var(--brick)', borderRadius: 8, padding: '8px 14px', cursor: 'pointer' }}>Send</button>
+        </div>
+        <div className="mono" style={{ fontSize: 8.5, letterSpacing: '.06em', color: 'var(--ink3)', marginTop: 6, textTransform: 'uppercase' }}>
+          Chats are saved so Anas can follow up · don&apos;t share card numbers or passwords
+        </div>
       </form>
     </div>
   );
