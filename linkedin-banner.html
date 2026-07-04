@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { background: #2a2118; }
+    .banner {
+      width: 1584px; height: 396px; position: relative; overflow: hidden;
+      background: #1A1205;
+      background-image: repeating-linear-gradient(0deg, transparent, transparent 31px, rgba(255,253,245,0.045) 31px, rgba(255,253,245,0.045) 32px);
+      font-family: 'Patrick Hand', sans-serif;
+    }
+    /* brick top stripe */
+    .banner::after { content:''; position:absolute; top:0; left:0; right:0; height:6px; background:#D94F00; }
+    /* automation-flow motif filling the left (where the avatar sits) */
+    .motif { position:absolute; left:120px; top:50%; transform:translateY(-50%); }
+    .content { position:absolute; left:560px; right:70px; top:50%; transform:translateY(-50%); }
+    .eyebrow {
+      font-family:'Space Mono', monospace; font-size:18px; letter-spacing:0.22em;
+      text-transform:uppercase; color:#F07030; margin-bottom:14px;
+    }
+    .headline {
+      font-family:'Caveat', cursive; font-weight:700; font-size:56px; line-height:0.98;
+      color:#FFFDF5; max-width:960px; margin-bottom:14px;
+    }
+    .headline .accent { color:#F07030; }
+    .sub {
+      font-family:'Patrick Hand', cursive; font-size:30px; color:rgba(255,253,245,0.82); margin-bottom:20px;
+    }
+    .cta {
+      display:inline-block; font-family:'Patrick Hand', cursive; font-size:23px; color:#1A1205;
+      background:#D94F00; padding:9px 22px; border-radius:8px; box-shadow:5px 5px 0 #F07030; color:#FFFDF5;
+    }
+  </style>
+</head>
+<body>
+  <div class="banner">
+    <svg class="motif" width="360" height="190" viewBox="0 0 360 190" fill="none">
+      <rect x="6" y="68" width="86" height="56" rx="11" stroke="rgba(255,253,245,0.16)" stroke-width="2.5"/>
+      <rect x="150" y="14" width="86" height="56" rx="11" stroke="rgba(240,112,48,0.55)" stroke-width="2.5"/>
+      <rect x="150" y="122" width="86" height="56" rx="11" stroke="rgba(255,253,245,0.16)" stroke-width="2.5"/>
+      <rect x="268" y="68" width="86" height="56" rx="11" stroke="rgba(255,253,245,0.16)" stroke-width="2.5"/>
+      <path d="M92 96 L150 44" stroke="rgba(240,112,48,0.4)" stroke-width="2.5"/>
+      <path d="M92 96 L150 148" stroke="rgba(255,253,245,0.13)" stroke-width="2.5"/>
+      <path d="M236 44 L268 92" stroke="rgba(255,253,245,0.13)" stroke-width="2.5"/>
+      <path d="M236 148 L268 100" stroke="rgba(255,253,245,0.13)" stroke-width="2.5"/>
+    </svg>
+    <div class="content">
+      <div class="eyebrow">// AI Consultant</div>
+      <div class="headline">I build AI systems that do your <span class="accent">manual work.</span></div>
+      <div class="sub">Support agents. Automations. Internal tools.</div>
+      <div class="cta">DM me one task. I'll build the AI to do it. Free.</div>
+    </div>
+  </div>
+</body>
+</html>

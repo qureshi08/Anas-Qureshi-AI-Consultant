@@ -14,7 +14,7 @@ export default function Home() {
           Anas<span style={{ color: 'var(--brick)', fontFamily: 'var(--font-mono)', fontSize: 20 }}>.</span>Qureshi
         </span>
         <span className="mono" style={{ fontSize: 10, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--ink3)', textAlign: 'right' }}>
-          I build the automations behind<br />sales &amp; marketing teams
+          AI Consultant &middot; I build AI systems<br />that automate manual work
         </span>
       </nav>
 
@@ -27,13 +27,13 @@ export default function Home() {
         <div style={{ maxWidth: 1140, margin: '0 auto', width: '100%', display: 'flex', gap: 64, alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 440px' }}>
             <div className="mono" style={{ fontSize: 12, letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--brick-mid)', marginBottom: 20 }}>
-              // One free automation, no catch
+              // One free AI build, no catch
             </div>
             <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 46, color: 'var(--paper)', lineHeight: 1.12, maxWidth: 700, marginBottom: 20 }}>
-              Tell me one task you still do by hand. I&apos;ll automate it, <span style={{ color: 'var(--brick-mid)' }}>free.</span>
+              Tell me one task your team does by hand. I&apos;ll build the AI that does it, <span style={{ color: 'var(--brick-mid)' }}>free.</span>
             </h1>
             <p style={{ fontSize: 22, color: 'rgba(255,253,245,0.82)', maxWidth: 560, lineHeight: 1.5 }}>
-              Pick one small, repetitive task you&apos;re sick of doing by hand. If it&apos;s a fit, I build a working version and hand it over.
+              Pick one repetitive task you&apos;re sick of doing by hand. If it&apos;s a fit, I build a working AI system for it and hand it over.
             </p>
             <ul style={{ listStyle: 'none', marginTop: 26, display: 'flex', flexDirection: 'column', gap: 11 }}>
               {['No call needed to start.', 'You keep it, running, either way.', 'You see exactly how I work before you pay a dollar.'].map((t, i) => (

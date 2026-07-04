@@ -35,7 +35,7 @@ export default function LeadForm() {
       <div style={{ height: 12 }} />
       <input type="email" placeholder="Your best email" value={email} onChange={e => setEmail(e.target.value)} required />
       <div style={{ height: 12 }} />
-      <textarea placeholder="What does your sales or marketing team do by hand, over and over?" value={task} onChange={e => setTask(e.target.value)} required style={{ minHeight: 110, resize: 'vertical' }} />
+      <textarea placeholder="What does your team do by hand, over and over? (the same questions answered, data copied between tools, the same docs drafted...)" value={task} onChange={e => setTask(e.target.value)} required style={{ minHeight: 110, resize: 'vertical' }} />
       <button className="btn" type="submit" style={{ width: '100%', marginTop: 14 }}>Send it to me →</button>
       {err && <p style={{ color: 'var(--brick)', fontSize: 13, marginTop: 10 }}>{err}</p>}
     </form>
