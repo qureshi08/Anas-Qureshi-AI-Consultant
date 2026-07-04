@@ -48,6 +48,38 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* RECEIPTS */}
+      <section style={{ background: 'var(--paper)', padding: '56px 40px' }}>
+        <div style={{ maxWidth: 1140, margin: '0 auto' }}>
+          <div className="tag">Real systems, not decks</div>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 34, color: 'var(--ink)', margin: '6px 0 24px' }}>
+            Things I&apos;ve actually built.
+          </h2>
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+            {[
+              ['80 min → 40 sec', 'A manual reporting job, automated end to end with AI analysis. Same output, seconds instead of most of a morning.'],
+              ['20+ models, zero hands', 'Financial risk models that ran by hand in spreadsheets, rebuilt in Python into one traceable system.'],
+              ['The assistant on this page', 'Trained on my own work, answering questions and capturing leads around the clock. I build these for businesses.'],
+            ].map(([big, small], i) => (
+              <div key={i} className="card" style={{ flex: '1 1 280px' }}>
+                <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 26, color: 'var(--brick)', lineHeight: 1.1 }}>{big}</div>
+                <p style={{ fontSize: 15, color: 'var(--ink2)', marginTop: 8, lineHeight: 1.45 }}>{small}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer style={{ background: 'var(--ink)', padding: '28px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+        <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 22, color: 'var(--paper)' }}>
+          Anas<span style={{ color: 'var(--brick-mid)', fontFamily: 'var(--font-mono)' }}>.</span>Qureshi
+        </span>
+        <span className="mono" style={{ fontSize: 9, letterSpacing: '.08em', color: 'rgba(255,253,245,0.35)', textTransform: 'uppercase' }}>
+          © 2026 Anas Qureshi · AI Consultant · muhammadanasq@gmail.com
+        </span>
+      </footer>
     </main>
   );
 }

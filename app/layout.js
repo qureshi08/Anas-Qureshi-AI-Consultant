@@ -1,8 +1,8 @@
 import './globals.css';
 
 export const metadata = {
-  title: 'Anas Qureshi — GTM Engineer',
-  description: 'I build the automations behind sales & marketing teams.',
+  title: 'Anas Qureshi · AI Consultant',
+  description: 'I build AI systems that do the repetitive work businesses do by hand: AI assistants, automations, internal tools. The first small build is free.',
 };
 
 export default function RootLayout({ children }) {
