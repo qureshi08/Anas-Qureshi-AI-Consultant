@@ -1,4 +1,3 @@
-import LeadForm from './components/LeadForm';
 import ChatWidget from './components/ChatWidget';
 
 export default function Home() {
@@ -45,11 +44,10 @@ export default function Home() {
             </ul>
           </div>
           <div style={{ flex: '1 1 420px', maxWidth: 540, width: '100%' }}>
-            <LeadForm />
+            <ChatWidget />
           </div>
         </div>
       </section>
-      <ChatWidget />
     </main>
   );
 }

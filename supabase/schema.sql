@@ -88,6 +88,26 @@ create table if not exists sourcing_jobs (
 alter table sourcing_jobs enable row level security;
 -- service-role only (the app + the worker), anon locked out.
 
+-- ── AI ASSISTANT CHATS ──────────────────────────────────────────────
+create table if not exists conversations (
+  id uuid primary key default gen_random_uuid(),
+  name text,
+  email text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+alter table conversations enable row level security;
+-- written server-side by the chat API using the service-role key; anon locked out.
+
+create table if not exists chat_messages (
+  id uuid primary key default gen_random_uuid(),
+  conversation_id uuid references conversations(id) on delete cascade,
+  role text,
+  content text,
+  created_at timestamptz default now()
+);
+alter table chat_messages enable row level security;
+
 -- ── ADMIN USER ──────────────────────────────────────────────────────
 -- Create your login: Authentication -> Users -> Add user (email + password,
 -- tick "Auto Confirm User"). That account is the only thing that can reach /admin.

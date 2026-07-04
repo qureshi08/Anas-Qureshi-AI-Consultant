@@ -15,6 +15,11 @@ export default async function AdminPage() {
   const admin = createAdminClient();
   const { data: prospects } = await admin.from('prospects').select('*').order('created_at', { ascending: false });
   const { data: inbound } = await admin.from('inbound_leads').select('*').order('created_at', { ascending: false }).limit(50);
+  const { data: conversations } = await admin.from('conversations').select('*').order('updated_at', { ascending: false }).limit(50);
+  const convIds = (conversations || []).map(c => c.id);
+  const { data: chatMsgs } = convIds.length
+    ? await admin.from('chat_messages').select('*').in('conversation_id', convIds).order('created_at', { ascending: true })
+    : { data: [] };
   const { data: campaigns } = await admin.from('campaigns').select('*').order('created_at', { ascending: false });
   const { data: leads } = await admin.from('leads').select('campaign_id, status, sent_at');
 
@@ -118,6 +123,36 @@ export default async function AdminPage() {
               <div style={{ fontSize: 14, color: 'var(--ink2)' }}>{i.task}</div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* AI ASSISTANT CHATS */}
+      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 30, color: 'var(--ink)', margin: '10px 0 14px' }}>AI assistant chats</h2>
+      <section className="card" style={{ marginBottom: 28 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+          <div className="tag">Conversations from your landing page</div>
+          <span className="mono" style={{ fontSize: 11, color: 'var(--ink3)' }}>{(conversations || []).length}</span>
+        </div>
+        {(!conversations || conversations.length === 0) && <p style={{ color: 'var(--ink3)', marginTop: 10 }}>No chats yet. When someone talks to your AI assistant, the full transcript shows up here.</p>}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}>
+          {(conversations || []).map(c => {
+            const msgs = (chatMsgs || []).filter(m => m.conversation_id === c.id);
+            return (
+              <details key={c.id} style={{ borderBottom: '1px dashed rgba(26,18,5,0.15)', paddingBottom: 8 }}>
+                <summary style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+                  <span style={{ fontWeight: 'bold', color: c.email ? 'var(--ink)' : 'var(--ink3)' }}>{c.email || 'no email yet'}</span>
+                  <span className="mono" style={{ fontSize: 11, color: 'var(--ink3)' }}>{msgs.length} msgs</span>
+                </summary>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
+                  {msgs.map(m => (
+                    <div key={m.id} style={{ fontSize: 13, color: m.role === 'user' ? 'var(--ink)' : 'var(--ink3)' }}>
+                      <strong>{m.role === 'user' ? 'Them' : 'AI'}:</strong> {m.content}
+                    </div>
+                  ))}
+                </div>
+              </details>
+            );
+          })}
         </div>
       </section>
 
