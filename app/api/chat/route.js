@@ -45,6 +45,8 @@ export async function POST(req) {
   const contents = messages
     .filter(m => m && typeof m.content === 'string')
     .map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
+  // Gemini requires the first turn to be a user turn, so drop the opening greeting.
+  while (contents.length && contents[0].role === 'model') contents.shift();
 
   let reply = "Sorry, I glitched for a second. Try again, or email Anas at muhammadanasq@gmail.com.";
   try {
@@ -61,8 +63,10 @@ export async function POST(req) {
       }
     );
     const data = await res.json();
-    reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || reply;
-  } catch (e) { /* keep fallback reply */ }
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (text) reply = text;
+    else console.error('Gemini no-candidate response:', JSON.stringify(data).slice(0, 600));
+  } catch (e) { console.error('Gemini call failed:', e?.message); }
 
   if (admin && conversationId) {
     try { await admin.from('chat_messages').insert({ conversation_id: conversationId, role: 'assistant', content: reply }); } catch (e) {}
