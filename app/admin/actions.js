@@ -81,6 +81,16 @@ export async function updateProspect(formData) {
   revalidatePath('/admin');
 }
 
+export async function updateBooking(formData) {
+  await requireUser();
+  const id = formData.get('id');
+  const status = formData.get('status');
+  if (!id || !status) return;
+  const admin = createAdminClient();
+  await admin.from('bookings').update({ status }).eq('id', id);
+  revalidatePath('/admin');
+}
+
 // Paste/CSV import — runs entirely on Vercel, no worker, no browser.
 export async function importProspects(formData) {
   await requireUser();

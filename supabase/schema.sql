@@ -108,6 +108,23 @@ create table if not exists chat_messages (
 );
 alter table chat_messages enable row level security;
 
+-- ── CALL BOOKING REQUESTS (from the assistant's request_booking tool) ──
+create table if not exists bookings (
+  id uuid primary key default gen_random_uuid(),
+  conversation_id uuid,
+  name text,
+  email text,
+  preferred_time text,
+  topic text,
+  status text default 'requested',   -- requested | confirmed | done | no_show
+  created_at timestamptz default now()
+);
+alter table bookings enable row level security;
+-- written server-side by the chat API (service role); anon locked out.
+
+-- conversations may also carry the visitor's name once the assistant learns it
+alter table conversations add column if not exists name text;
+
 -- ── ADMIN USER ──────────────────────────────────────────────────────
 -- Create your login: Authentication -> Users -> Add user (email + password,
 -- tick "Auto Confirm User"). That account is the only thing that can reach /admin.

@@ -34,8 +34,13 @@ One insight per turn, maximum. An insight is a gift, not a lecture.
 
 == ADVANCING (when and how to move forward) ==
 - Watch for buying signals: they ask "what next", "how do we start", ask about timelines, give specifics eagerly, or ask how payment works. When you see one, STOP discovering and advance. Over-questioning past the buying signal kills deals as surely as pitching too early.
-- The advance is ONE of: book a free 15 minute call with Anas at https://calendly.com/muhammadanasq/free-15-min-audit (best for owners and warm prospects; share the plain URL so it is clickable), or leave their name and email for a personal follow-up within a couple of days (for the not-ready), or for researchers: offer a two-line summary they can forward to their boss, plus the link.
+- The advance is ONE of: booking a call (see BOOKING below), leaving their name and email for a personal follow-up within a couple of days (for the not-ready), or for researchers: a two-line summary they can forward to their boss, plus the link.
 - Low-pressure phrasing beats eager phrasing. "Would it be a bad idea to put 15 minutes with Anas on the calendar?" or "want me to have Anas look at this personally?" Ask for contact details at most once per conversation. If they decline, keep helping graciously; a good experience is the marketing.
+
+== BOOKING A CALL (two real paths, be honest about which is which) ==
+1. Instant self-booking: https://calendly.com/muhammadanasq/free-15-min-audit. The visitor picks a live slot themselves and it is locked immediately. Share the plain URL so it is clickable. This is the fastest path and the only one that locks a time on the spot.
+2. You take the request: if they would rather book through you, collect their name, their email, and their preferred day and time window (ask for their city or timezone if unclear). Once you have ALL THREE and they confirm they want the call, use the request_booking tool. After the tool succeeds, tell them exactly this truth: the request went to Anas and he will confirm the time by email within a day. It is a request, not a locked slot, until he confirms.
+ABSOLUTE HONESTY RULES: you have no calendar access and cannot see Anas's availability, so NEVER suggest or invent time slots on his behalf, NEVER say a time is scheduled or locked unless the visitor booked via Calendly themselves, and NEVER mention confirmation emails you cannot send. If the tool fails, say so plainly and give the Calendly link instead. Lying about a booking is the one unforgivable failure.
 
 == PRESCRIBING (only after discovery, or when they push for it) ==
 - Describe the exact system Anas would build for THEIR case, plainly: what it watches, what it does, where humans stay in the loop.
@@ -112,21 +117,82 @@ export async function POST(req) {
       .map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content })),
   ];
 
-  let reply = "Sorry, I glitched for a second. Try again, or email Anas at muhammadanasq@gmail.com.";
-  try {
+  const TOOLS = [{
+    type: 'function',
+    function: {
+      name: 'request_booking',
+      description: "Send Anas a call booking request. Use ONLY when you already know the visitor's name, email, AND preferred day/time window, and they have confirmed they want the call. Never call this with missing or guessed details.",
+      parameters: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', description: "the visitor's name" },
+          email: { type: 'string', description: "the visitor's email address" },
+          preferred_time: { type: 'string', description: 'their preferred day and time window in their own words, including timezone or city if given' },
+          topic: { type: 'string', description: 'one line on what the call is about' },
+        },
+        required: ['name', 'email', 'preferred_time'],
+      },
+    },
+  }];
+
+  async function callGroq(msgs, withTools) {
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
-        messages: chatMessages,
+        messages: msgs,
         temperature: 0.7,
         max_tokens: 450,
+        ...(withTools ? { tools: TOOLS, tool_choice: 'auto' } : {}),
       }),
     });
-    const data = await res.json();
-    const text = data?.choices?.[0]?.message?.content;
-    if (text) reply = text;
+    return res.json();
+  }
+
+  let reply = "Sorry, I glitched for a second. Try again, or email Anas at muhammadanasq@gmail.com.";
+  try {
+    let data = await callGroq(chatMessages, true);
+    let msg = data?.choices?.[0]?.message;
+
+    if (msg?.tool_calls?.length) {
+      const call = msg.tool_calls[0];
+      let result = { ok: false, note: 'Could not record the request. Offer the Calendly link instead.' };
+      try {
+        const args = JSON.parse(call.function?.arguments || '{}');
+        if (admin && args.email && args.preferred_time) {
+          const { error } = await admin.from('bookings').insert({
+            conversation_id: conversationId || null,
+            name: args.name || null,
+            email: args.email,
+            preferred_time: args.preferred_time,
+            topic: args.topic || null,
+          });
+          if (!error) {
+            result = { ok: true, note: 'Request recorded. Anas will confirm the time by email within a day. Tell the visitor exactly that; it is not a locked slot yet.' };
+            if (conversationId) {
+              await admin.from('conversations').upsert(
+                { id: conversationId, email: args.email, name: args.name || null, updated_at: new Date().toISOString() },
+                { onConflict: 'id' }
+              );
+            }
+          } else {
+            console.error('Booking insert failed:', error.message);
+          }
+        }
+      } catch (e) {
+        console.error('Tool args parse failed:', e?.message);
+      }
+      const followUp = [
+        ...chatMessages,
+        { role: 'assistant', content: msg.content || null, tool_calls: msg.tool_calls },
+        { role: 'tool', tool_call_id: call.id, name: 'request_booking', content: JSON.stringify(result) },
+      ];
+      data = await callGroq(followUp, false);
+      msg = data?.choices?.[0]?.message;
+    }
+
+    if (msg?.content) reply = msg.content;
     else console.error('Groq no-choice response:', JSON.stringify(data).slice(0, 600));
   } catch (e) {
     console.error('Groq call failed:', e?.message);
