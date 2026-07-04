@@ -72,7 +72,9 @@ export default async function AdminPage() {
                   </span>
                 </div>
                 <div style={{ fontSize: 15, color: 'var(--ink2)', marginTop: 6 }}>
-                  <strong>Wants:</strong> {b.preferred_time}{b.topic ? ` · ${b.topic}` : ''}
+                  <strong>Wants:</strong> {b.preferred_time}
+                  {b.timezone ? <span className="mono" style={{ fontSize: 11, color: 'var(--brick)' }}> ({b.timezone})</span> : <span className="mono" style={{ fontSize: 11, color: 'var(--ink3)' }}> (timezone unknown, confirm by email)</span>}
+                  {b.topic ? ` · ${b.topic}` : ''}
                 </div>
                 <form action={updateBooking} style={{ display: 'flex', gap: 8, marginTop: 10, alignItems: 'center' }}>
                   <input type="hidden" name="id" value={b.id} />

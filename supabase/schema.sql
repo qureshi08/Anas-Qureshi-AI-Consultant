@@ -115,10 +115,12 @@ create table if not exists bookings (
   name text,
   email text,
   preferred_time text,
+  timezone text,
   topic text,
   status text default 'requested',   -- requested | confirmed | done | no_show
   created_at timestamptz default now()
 );
+alter table bookings add column if not exists timezone text;
 alter table bookings enable row level security;
 -- written server-side by the chat API (service role); anon locked out.
 

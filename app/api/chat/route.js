@@ -87,6 +87,20 @@ export async function POST(req) {
   try { body = await req.json(); } catch { body = {}; }
   const messages = Array.isArray(body.messages) ? body.messages : [];
   const conversationId = body.conversationId;
+  const visitorTz = typeof body.visitorTimezone === 'string' && body.visitorTimezone ? body.visitorTimezone.slice(0, 64) : null;
+
+  // Time context so the assistant reasons about timezones with real anchors, not guesses.
+  let timeContext = '';
+  try {
+    const now = new Date();
+    const fmt = (tz) => now.toLocaleString('en-GB', { timeZone: tz, weekday: 'short', hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' });
+    const anasTime = fmt('Asia/Karachi');
+    const visitorTime = visitorTz ? fmt(visitorTz) : null;
+    timeContext = `\n\nLIVE CONTEXT: Anas is in Pakistan (Asia/Karachi), where it is currently ${anasTime}.` +
+      (visitorTime
+        ? ` The visitor's device timezone is ${visitorTz}, where it is currently ${visitorTime}. When they mention a time, assume it is in their timezone and confirm it back to them with the timezone named ("10 am your time, ${visitorTz}"). Always include the timezone in any booking request.`
+        : ` The visitor's timezone is unknown, so before submitting any booking request you MUST ask for their city or timezone.`);
+  } catch (e) { /* bad tz string, skip context */ }
 
   let admin = null;
   try { admin = createAdminClient(); } catch { admin = null; }
@@ -111,7 +125,7 @@ export async function POST(req) {
   }
 
   const chatMessages = [
-    { role: 'system', content: SYSTEM },
+    { role: 'system', content: SYSTEM + timeContext },
     ...messages
       .filter(m => m && typeof m.content === 'string')
       .map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content })),
@@ -127,10 +141,11 @@ export async function POST(req) {
         properties: {
           name: { type: 'string', description: "the visitor's name" },
           email: { type: 'string', description: "the visitor's email address" },
-          preferred_time: { type: 'string', description: 'their preferred day and time window in their own words, including timezone or city if given' },
+          preferred_time: { type: 'string', description: 'their preferred day and time window in their own words' },
+          timezone: { type: 'string', description: "the visitor's timezone (IANA name like America/New_York, or their city). Use the device timezone from LIVE CONTEXT unless they said otherwise." },
           topic: { type: 'string', description: 'one line on what the call is about' },
         },
-        required: ['name', 'email', 'preferred_time'],
+        required: ['name', 'email', 'preferred_time', 'timezone'],
       },
     },
   }];
@@ -166,6 +181,7 @@ export async function POST(req) {
             name: args.name || null,
             email: args.email,
             preferred_time: args.preferred_time,
+            timezone: args.timezone || visitorTz || null,
             topic: args.topic || null,
           });
           if (!error) {

@@ -40,7 +40,11 @@ export default function ChatWidget() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversationId: convId, messages: next }),
+        body: JSON.stringify({
+          conversationId: convId,
+          messages: next,
+          visitorTimezone: (Intl.DateTimeFormat().resolvedOptions().timeZone || ''),
+        }),
       });
       const data = await res.json();
       setMessages(m => [...m, { role: 'assistant', content: data.reply || "Sorry, I glitched. Email Anas at muhammadanasq@gmail.com." }]);
