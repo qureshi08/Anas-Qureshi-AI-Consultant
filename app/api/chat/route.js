@@ -90,6 +90,25 @@ You: "Easiest path: a free 15 minute call where Anas scopes your free first buil
 Visitor: "I'm just checking this for my boss."
 You: "Happy to make that easy. Here is the short version to forward: Anas builds custom AI assistants and automations, first small build free, typical assistant runs 500 to 1,500 dollars. Want me to add anything specific your boss will ask about?"`;
 
+// Speed-to-lead: a lead contacted within 5 minutes converts ~21x better than one
+// contacted after 30. This pings Anas's inbox the moment a lead or booking lands.
+async function notify(subject, text) {
+  const k = process.env.RESEND_API_KEY;
+  if (!k) return;
+  try {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${k}` },
+      body: JSON.stringify({
+        from: 'GTM Engine <onboarding@resend.dev>',
+        to: [process.env.NOTIFY_EMAIL || 'muhammadanasq@gmail.com'],
+        subject,
+        text,
+      }),
+    });
+  } catch (e) { console.error('notify failed:', e?.message); }
+}
+
 export async function POST(req) {
   let body = {};
   try { body = await req.json(); } catch { body = {}; }
@@ -119,10 +138,21 @@ export async function POST(req) {
     try {
       const update = { id: conversationId, updated_at: new Date().toISOString() };
       const emailMatch = lastUser?.content?.match(/[\w.+-]+@[\w-]+\.[\w.-]+/);
-      if (emailMatch) update.email = emailMatch[0];
+      let isNewEmail = false;
+      if (emailMatch) {
+        update.email = emailMatch[0];
+        const { data: existing } = await admin.from('conversations').select('email').eq('id', conversationId).maybeSingle();
+        isNewEmail = !existing?.email;
+      }
       await admin.from('conversations').upsert(update, { onConflict: 'id' });
       if (lastUser?.content) {
         await admin.from('chat_messages').insert({ conversation_id: conversationId, role: 'user', content: lastUser.content });
+      }
+      if (isNewEmail) {
+        await notify(
+          'New lead from your AI assistant',
+          `Email: ${emailMatch[0]}\nTheir message: ${lastUser?.content?.slice(0, 400) || ''}\n\nReply fast: within 5 minutes converts ~21x better. Full transcript in /admin.`
+        );
       }
     } catch (e) { /* non-fatal */ }
   }
@@ -211,6 +241,10 @@ export async function POST(req) {
                 { onConflict: 'id' }
               );
             }
+            await notify(
+              `Call request: ${args.name || args.email}`,
+              `Name: ${args.name || 'not given'}\nEmail: ${args.email}\nWants: ${args.preferred_time} (${args.timezone || visitorTz || 'timezone unknown'})\nTopic: ${args.topic || 'not given'}\n\nConfirm the time with them by email, then mark Confirmed in /admin.`
+            );
           } else {
             console.error('Booking insert failed:', error.message);
           }

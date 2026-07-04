@@ -85,6 +85,25 @@ export default function ChatWidget() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '12px 16px', background: 'var(--ink)' }}>
         <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 0 3px rgba(74,222,128,0.25)' }} />
         <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 20, color: 'var(--paper)' }}>Anas&apos;s AI assistant</span>
+        {messages.length > 1 && (
+          <button
+            onClick={() => {
+              try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+              setConvId(freshId());
+              setMessages([GREETING]);
+              setInput('');
+            }}
+            className="mono"
+            title="Start a new conversation"
+            style={{
+              marginLeft: 'auto', background: 'transparent', border: '1.5px solid rgba(255,253,245,0.35)',
+              borderRadius: 6, color: 'rgba(255,253,245,0.75)', fontSize: 9, letterSpacing: '.1em',
+              textTransform: 'uppercase', padding: '4px 9px', cursor: 'pointer',
+            }}
+          >
+            ↺ New chat
+          </button>
+        )}
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>

@@ -19,7 +19,25 @@ Research-grounded spec for the assistant on the landing page (2026-07-05). This 
 
 ## UX standards, status
 
-Live: persistent conversations across refresh (localStorage), starter quick-reply chips, clickable links, typing indicator, mobile-friendly widget, privacy disclosure line, AI self-identification, replies in the visitor's language.
+Live: persistent conversations across refresh (localStorage), starter quick-reply chips, clickable links, typing indicator, mobile-friendly widget, privacy disclosure line, AI self-identification, replies in the visitor's language, "new chat" reset.
+
+## Conversion features (the offense side), status
+
+The one stat that governs this section: a lead contacted within 5 minutes converts ~21x better than one contacted after 30 minutes, and 82% of consumers expect a response within 10 minutes. The assistant answers in under a second; the bottleneck is how fast ANAS learns a lead exists.
+
+Live:
+- **Instant lead notifications:** the moment a visitor leaves an email or requests a call, an email lands in Anas's inbox (Resend free tier) with the details and the transcript pointer. Target: personal reply the same hour, not the next day.
+- **In-chat appointment requests** (request_booking tool) + Calendly instant self-booking.
+- **Lead qualification through conversation** (SPIN discovery captures business, task, volume, urgency organically; it all lands in the transcript).
+- **Context memory for returning visitors** (persisted conversation doubles as personalization).
+- **Native CRM:** captured leads and chats land in the same admin as the outbound pipeline. No integration needed because the CRM is ours.
+- **Starter chips** for cold visitors (engagement standard).
+
+Deliberately later:
+- Analytics dashboard (capture rate, booking rate, containment) once traffic exists to measure.
+- A/B testing greetings and CTAs, same reason.
+- WhatsApp channel (a sellable add-on; build it the first time a client pays for it).
+- Automated email follow-up sequences for captured leads (manual personal replies are stronger at this volume).
 
 ## Deferred roadmap (build when a client pays for it, or when traffic justifies it)
 
