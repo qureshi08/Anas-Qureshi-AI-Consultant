@@ -47,7 +47,6 @@ export default function ChatWidget() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '12px 16px', background: 'var(--ink)' }}>
         <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 0 3px rgba(74,222,128,0.25)' }} />
         <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 20, color: 'var(--paper)' }}>Anas&apos;s AI assistant</span>
-        <span className="mono" style={{ marginLeft: 'auto', fontSize: 9, letterSpacing: '.12em', color: 'rgba(255,253,245,0.5)', textTransform: 'uppercase' }}>live demo</span>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
