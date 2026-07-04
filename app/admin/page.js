@@ -128,33 +128,65 @@ export default async function AdminPage() {
 
       {/* AI ASSISTANT CHATS */}
       <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 30, color: 'var(--ink)', margin: '10px 0 14px' }}>AI assistant chats</h2>
-      <section className="card" style={{ marginBottom: 28 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-          <div className="tag">Conversations from your landing page</div>
-          <span className="mono" style={{ fontSize: 11, color: 'var(--ink3)' }}>{(conversations || []).length}</span>
-        </div>
-        {(!conversations || conversations.length === 0) && <p style={{ color: 'var(--ink3)', marginTop: 10 }}>No chats yet. When someone talks to your AI assistant, the full transcript shows up here.</p>}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}>
-          {(conversations || []).map(c => {
-            const msgs = (chatMsgs || []).filter(m => m.conversation_id === c.id);
-            return (
-              <details key={c.id} style={{ borderBottom: '1px dashed rgba(26,18,5,0.15)', paddingBottom: 8 }}>
-                <summary style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
-                  <span style={{ fontWeight: 'bold', color: c.email ? 'var(--ink)' : 'var(--ink3)' }}>{c.email || 'no email yet'}</span>
-                  <span className="mono" style={{ fontSize: 11, color: 'var(--ink3)' }}>{msgs.length} msgs</span>
-                </summary>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
-                  {msgs.map(m => (
-                    <div key={m.id} style={{ fontSize: 13, color: m.role === 'user' ? 'var(--ink)' : 'var(--ink3)' }}>
-                      <strong>{m.role === 'user' ? 'Them' : 'AI'}:</strong> {m.content}
-                    </div>
-                  ))}
+      {(() => {
+        const convs = conversations || [];
+        const fmt = (d) => new Date(d).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+        const leads = convs.filter(c => c.email);
+        const anon = convs.filter(c => !c.email);
+        const Chat = ({ c, hot }) => {
+          const msgs = (chatMsgs || []).filter(m => m.conversation_id === c.id);
+          const lastVisitor = [...msgs].reverse().find(m => m.role === 'user');
+          return (
+            <details className="card" style={{ padding: 14, borderColor: hot ? 'var(--brick)' : 'var(--ink)', boxShadow: hot ? '4px 4px 0 var(--brick)' : '4px 4px 0 var(--ink)' }}>
+              <summary style={{ cursor: 'pointer', listStyle: 'none' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', alignItems: 'baseline' }}>
+                  <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 19, color: hot ? 'var(--brick)' : 'var(--ink3)' }}>
+                    {c.email || 'Anonymous visitor'}
+                  </span>
+                  <span className="mono" style={{ fontSize: 10, color: 'var(--ink3)' }}>{fmt(c.updated_at || c.created_at)} · {msgs.length} msgs</span>
                 </div>
-              </details>
-            );
-          })}
-        </div>
-      </section>
+                {lastVisitor && (
+                  <div style={{ fontSize: 13, color: 'var(--ink2)', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    &ldquo;{lastVisitor.content.slice(0, 120)}&rdquo;
+                  </div>
+                )}
+              </summary>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12, borderTop: '1.5px dashed rgba(26,18,5,0.15)', paddingTop: 12 }}>
+                {msgs.map(m => (
+                  <div key={m.id} style={{
+                    alignSelf: m.role === 'user' ? 'flex-start' : 'flex-end', maxWidth: '85%',
+                    background: m.role === 'user' ? 'var(--brick-light)' : 'var(--paper2)',
+                    border: '1.5px solid rgba(26,18,5,0.25)', borderRadius: 8, padding: '6px 10px',
+                    fontSize: 13, color: 'var(--ink2)', lineHeight: 1.4,
+                  }}>
+                    <span className="mono" style={{ fontSize: 8, letterSpacing: '.1em', textTransform: 'uppercase', color: m.role === 'user' ? 'var(--brick)' : 'var(--ink3)', display: 'block', marginBottom: 2 }}>
+                      {m.role === 'user' ? 'Visitor' : 'AI'}
+                    </span>
+                    {m.content}
+                  </div>
+                ))}
+              </div>
+            </details>
+          );
+        };
+        return (
+          <>
+            <div className="tag" style={{ marginBottom: 8 }}>Leads (left an email) · {leads.length}</div>
+            {leads.length === 0 && <p style={{ color: 'var(--ink3)', marginBottom: 16 }}>No email-verified leads from the assistant yet.</p>}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+              {leads.map(c => <Chat key={c.id} c={c} hot />)}
+            </div>
+            <details style={{ marginBottom: 28 }}>
+              <summary className="mono" style={{ cursor: 'pointer', fontSize: 12, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: '.1em' }}>
+                Anonymous visitors · {anon.length}
+              </summary>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12 }}>
+                {anon.map(c => <Chat key={c.id} c={c} />)}
+              </div>
+            </details>
+          </>
+        );
+      })()}
 
       {/* email campaigns (bulk) — secondary, tucked away */}
       <details>

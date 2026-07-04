@@ -2,6 +2,19 @@
 
 import { useState, useRef, useEffect } from 'react';
 
+function Linkified({ text }) {
+  const parts = String(text).split(/(https?:\/\/[^\s]+)/g);
+  return parts.map((p, i) =>
+    /^https?:\/\//.test(p) ? (
+      <a key={i} href={p} target="_blank" rel="noreferrer" style={{ color: 'var(--brick)', fontWeight: 'bold', wordBreak: 'break-all' }}>
+        {p.replace(/^https?:\/\//, '')}
+      </a>
+    ) : (
+      p
+    )
+  );
+}
+
 export default function ChatWidget() {
   const [convId] = useState(() =>
     (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2)
@@ -57,7 +70,7 @@ export default function ChatWidget() {
             border: '2px solid var(--ink)', borderRadius: 10, padding: '8px 11px',
             fontSize: 14, color: 'var(--ink2)', lineHeight: 1.4, whiteSpace: 'pre-wrap',
           }}>
-            {m.content}
+            <Linkified text={m.content} />
           </div>
         ))}
         {loading && <div style={{ alignSelf: 'flex-start', fontSize: 13, color: 'var(--ink3)' }}>typing…</div>}
