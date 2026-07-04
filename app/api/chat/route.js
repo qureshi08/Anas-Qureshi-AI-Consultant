@@ -37,39 +37,40 @@ export async function POST(req) {
     } catch (e) { /* non-fatal */ }
   }
 
-  const key = process.env.GEMINI_API_KEY;
+  const key = process.env.GROQ_API_KEY;
   if (!key) {
     return Response.json({ reply: "The assistant isn't switched on yet. You can email Anas directly at muhammadanasq@gmail.com." });
   }
 
-  const contents = messages
-    .filter(m => m && typeof m.content === 'string')
-    .map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
-  // Gemini requires the first turn to be a user turn, so drop the opening greeting.
-  while (contents.length && contents[0].role === 'model') contents.shift();
+  const chatMessages = [
+    { role: 'system', content: SYSTEM },
+    ...messages
+      .filter(m => m && typeof m.content === 'string')
+      .map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content })),
+  ];
 
   let reply = "Sorry, I glitched for a second. Try again, or email Anas at muhammadanasq@gmail.com.";
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: SYSTEM }] },
-          contents,
-          generationConfig: { temperature: 0.6, maxOutputTokens: 400 },
-        }),
-      }
-    );
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: chatMessages,
+        temperature: 0.6,
+        max_tokens: 400,
+      }),
+    });
     const data = await res.json();
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    const text = data?.choices?.[0]?.message?.content;
     if (text) reply = text;
     else {
-      console.error('Gemini no-candidate response:', JSON.stringify(data).slice(0, 600));
-      reply = 'DEBUG: HTTP ' + res.status + ' — ' + (data?.error?.message || data?.promptFeedback?.blockReason || JSON.stringify(data).slice(0, 300));
+      console.error('Groq no-choice response:', JSON.stringify(data).slice(0, 600));
+      reply = 'DEBUG: HTTP ' + res.status + ' — ' + (data?.error?.message || JSON.stringify(data).slice(0, 300));
     }
-  } catch (e) { reply = 'DEBUG (network): ' + (e?.message || 'unknown'); }
+  } catch (e) {
+    reply = 'DEBUG (network): ' + (e?.message || 'unknown');
+  }
 
   if (admin && conversationId) {
     try { await admin.from('chat_messages').insert({ conversation_id: conversationId, role: 'assistant', content: reply }); } catch (e) {}
