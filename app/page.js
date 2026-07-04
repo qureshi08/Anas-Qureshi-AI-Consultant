@@ -1,4 +1,5 @@
 import LeadForm from './components/LeadForm';
+import ChatWidget from './components/ChatWidget';
 
 export default function Home() {
   return (
@@ -48,6 +49,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      <ChatWidget />
     </main>
   );
 }
