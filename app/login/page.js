@@ -33,7 +33,7 @@ export default function LoginPage() {
       backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(255,253,245,0.04) 27px, rgba(255,253,245,0.04) 28px)',
     }}>
       <form onSubmit={onSubmit} className="card" style={{ width: 360, maxWidth: '90vw', boxShadow: '6px 6px 0 var(--brick)' }}>
-        <div className="tag">// GTM Engine</div>
+        <div className="tag">// AI Consultant · HQ</div>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2.4rem', color: 'var(--ink)', lineHeight: 1, margin: '4px 0 18px' }}>
           Admin login.
         </h1>

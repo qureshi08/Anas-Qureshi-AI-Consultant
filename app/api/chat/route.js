@@ -100,7 +100,7 @@ async function notify(subject, text) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${k}` },
       body: JSON.stringify({
-        from: 'GTM Engine <onboarding@resend.dev>',
+        from: "Anas's AI Assistant <onboarding@resend.dev>",
         to: [process.env.NOTIFY_EMAIL || 'muhammadanasq@gmail.com'],
         subject,
         text,

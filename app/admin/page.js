@@ -36,7 +36,7 @@ export default async function AdminPage() {
       {/* header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid var(--ink)', paddingBottom: 16, marginBottom: 24 }}>
         <div>
-          <div className="tag">GTM Engine</div>
+          <div className="tag">AI Consultant · HQ</div>
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 38, color: 'var(--ink)', lineHeight: 1 }}>Your pipeline.</h1>
         </div>
         <div style={{ textAlign: 'right' }}>

@@ -1,9 +1,11 @@
-# GTM Engine — Business Requirements Document (BRD)
+# AI Consultant Web App — Business Requirements Document (BRD)
+
+> Naming note (2026-07-05): "GTM Engine" below was the working title during planning. The business is now **AI Consultant** (see `BusinessOS/protocols/ai-consultant-offer.md`); the app is the AI Consultant web app: public landing + live AI assistant + admin pipeline.
 
 Owner: Anas Qureshi. Draft for approval. Date: 2026-06-30.
 
 ## 1. Vision
-A self-operated GTM Engine that runs Anas's entire client-acquisition motion, inbound and outbound, from one web app. It sources prospects, enriches them, helps write and track outreach, and moves each one through a pipeline to a paying client. It doubles as living proof of what Anas sells (he builds GTM automation, and this is him running his own).
+A self-operated web app that runs Anas's entire client-acquisition motion, inbound and outbound, from one place. It sources prospects, enriches them, helps write and track outreach, and moves each one through a pipeline to a paying client. It doubles as living proof of what Anas sells: he builds AI systems, and the live assistant on the landing page is one of them, running his own business.
 
 ## 2. Problem
 Right now the motion is scattered: prospects live in a markdown file, outreach copy in a skill, the daily system in another doc, inbound in a form. Nothing connects. There is no single place to source, work, and measure the funnel. That makes the outreach inconsistent and unmeasurable, which is the exact thing that produced a year of no clients.

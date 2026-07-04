@@ -1,4 +1,6 @@
-# GTM Engine — Product Requirements Document (PRD)
+# AI Consultant Web App — Product Requirements Document (PRD)
+
+> Naming note (2026-07-05): "GTM Engine" was the planning-phase working title. Current branding is **AI Consultant** throughout (landing, assistant, admin "HQ"). Offer and ICP per `BusinessOS/protocols/ai-consultant-offer.md`; assistant spec per `docs/assistant-standards.md`.
 
 Owner: Anas Qureshi. Draft for approval. Date: 2026-06-30. Pairs with BRD.md.
 
