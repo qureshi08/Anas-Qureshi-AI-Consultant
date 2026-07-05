@@ -29,7 +29,8 @@ export default function ChatWidget() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [hydrated, setHydrated] = useState(false);
-  const endRef = useRef(null);
+  const scrollBoxRef = useRef(null);
+  const inputRef = useRef(null);
 
   // Restore a previous conversation after a refresh (standard persistence).
   useEffect(() => {
@@ -48,7 +49,11 @@ export default function ChatWidget() {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ convId, messages: messages.slice(-50) })); } catch (e) {}
   }, [messages, convId, hydrated]);
 
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+  // Scroll only the chat box, never the page (scrollIntoView was dragging the page scrollbar).
+  useEffect(() => {
+    const el = scrollBoxRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+  }, [messages, loading]);
 
   async function sendText(text) {
     const clean = (text || '').trim().slice(0, 1000);
@@ -56,6 +61,7 @@ export default function ChatWidget() {
     const next = [...messages, { role: 'user', content: clean }];
     setMessages(next);
     setInput('');
+    if (inputRef.current) inputRef.current.style.height = 'auto';
     setLoading(true);
     try {
       const res = await fetch('/api/chat', {
@@ -106,7 +112,7 @@ export default function ChatWidget() {
         )}
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div ref={scrollBoxRef} style={{ flex: 1, overflowY: 'auto', padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
         {messages.map((m, i) => (
           <div key={i} style={{
             alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '86%',
@@ -131,16 +137,43 @@ export default function ChatWidget() {
           </div>
         )}
         {loading && <div style={{ alignSelf: 'flex-start', fontSize: 13, color: 'var(--ink3)' }}>typing…</div>}
-        <div ref={endRef} />
       </div>
 
       <form onSubmit={(e) => { e.preventDefault(); sendText(input); }} style={{ padding: '12px 12px 8px', borderTop: '2px solid var(--ink)' }}>
         <div style={{ display: 'flex', gap: 8 }}>
-          <input value={input} onChange={e => setInput(e.target.value)} maxLength={1000} placeholder="Ask anything, or tell me a task…" style={{ flex: 1, fontSize: 14, padding: '9px 11px' }} />
+          <textarea
+            ref={inputRef}
+            value={input}
+            rows={1}
+            maxLength={1000}
+            placeholder="Ask anything, or tell me a task…"
+            onChange={e => {
+              setInput(e.target.value);
+              e.target.style.height = 'auto';
+              e.target.style.height = Math.min(e.target.scrollHeight, 110) + 'px';
+            }}
+            onKeyDown={e => {
+              if (e.key !== 'Enter') return;
+              e.preventDefault();
+              const el = e.target;
+              if (e.ctrlKey || e.shiftKey) {
+                const start = el.selectionStart, end = el.selectionEnd;
+                setInput(el.value.slice(0, start) + '\n' + el.value.slice(end));
+                requestAnimationFrame(() => {
+                  el.selectionStart = el.selectionEnd = start + 1;
+                  el.style.height = 'auto';
+                  el.style.height = Math.min(el.scrollHeight, 110) + 'px';
+                });
+              } else {
+                sendText(el.value);
+              }
+            }}
+            style={{ flex: 1, fontSize: 14, padding: '9px 11px', resize: 'none', lineHeight: 1.4, maxHeight: 110, overflowY: 'auto' }}
+          />
           <button type="submit" disabled={loading} style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16, background: 'var(--brick)', color: 'var(--paper)', border: '2.5px solid var(--brick)', borderRadius: 8, padding: '8px 14px', cursor: 'pointer' }}>Send</button>
         </div>
         <div className="mono" style={{ fontSize: 8.5, letterSpacing: '.06em', color: 'var(--ink3)', marginTop: 6, textTransform: 'uppercase' }}>
-          Chats are saved so Anas can follow up · don&apos;t share card numbers or passwords
+          Enter sends · Ctrl+Enter new line · chats are saved so Anas can follow up · no card numbers or passwords
         </div>
       </form>
     </div>
