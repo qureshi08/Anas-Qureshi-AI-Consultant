@@ -12,6 +12,7 @@ const TABS = [
   { href: '/admin/calls', label: 'Call requests' },
   { href: '/admin/outbound', label: 'Cold DM' },
   { href: '/admin/campaigns', label: 'Cold email' },
+  { href: '/admin/inboxes', label: 'Inboxes' },
   { href: '/admin/inbound', label: 'Inbound' },
   { href: '/admin/chats', label: 'AI chats' },
 ];
