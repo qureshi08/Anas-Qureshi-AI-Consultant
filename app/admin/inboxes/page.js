@@ -1,7 +1,26 @@
 import { createAdminClient } from '../../../lib/supabase/admin';
 import { saveInbox, deleteInbox, toggleInbox, saveOutboundSettings } from '../outbound-actions';
+import ColdEmailNav from '../../components/ColdEmailNav';
 
 export const dynamic = 'force-dynamic';
+
+// Your rules, kept visible where sending is configured.
+const PWOC_RULES = {
+  never: [
+    'Never use tracking pixels or link shorteners',
+    'Never include links in cold emails',
+    'Never use tracking footers',
+    'Never write "we", always "I"',
+    'Never say "hope this finds you well"',
+    'Never write "would you be interested?"',
+  ],
+  always: [
+    'Always give something first',
+    'Always include specific times in the CTA',
+    'Always put risk on you, not the prospect',
+    'Always score 5+/7 on the PWOC checklist before sending',
+  ],
+};
 
 export default async function InboxesPage() {
   const admin = createAdminClient();
@@ -23,6 +42,8 @@ export default async function InboxesPage() {
 
   return (
     <>
+      <ColdEmailNav />
+
       <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 30, color: 'var(--ink)', marginBottom: 4 }}>Inboxes</h2>
       <p className="mono" style={{ fontSize: 11, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 20 }}>
         Who cold email sends as &middot; rotated automatically
@@ -153,6 +174,29 @@ export default async function InboxesPage() {
           <button className="btn" type="submit" style={{ marginTop: 14 }}>Save settings</button>
         </form>
       </details>
+
+      {/* ── PWOC RULES ── */}
+      <div className="card" style={{ marginTop: 20 }}>
+        <div className="tag">The rules, always</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20, marginTop: 12 }}>
+          <div>
+            {PWOC_RULES.never.map(r => (
+              <div key={r} style={{ display: 'flex', gap: 8, padding: '3px 0', fontSize: 14, color: 'var(--ink2)' }}>
+                <span style={{ color: 'var(--brick)', fontWeight: 'bold' }}>✗</span>
+                <span>{r.replace(/^Never /, '')}</span>
+              </div>
+            ))}
+          </div>
+          <div>
+            {PWOC_RULES.always.map(r => (
+              <div key={r} style={{ display: 'flex', gap: 8, padding: '3px 0', fontSize: 14, color: 'var(--ink2)' }}>
+                <span style={{ color: 'var(--forest)', fontWeight: 'bold' }}>✓</span>
+                <span>{r.replace(/^Always /, '')}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </>
   );
 }

@@ -52,6 +52,57 @@ export async function saveSequence(formData) {
   revalidatePath(`/admin/campaigns/${campaignId}`);
 }
 
+/**
+ * Save a sequence written in the PWOC builder. Keeps each move (P/W/O/C/sign-off)
+ * as its own column so the builder can reload them section by section, while
+ * body_template holds the assembled email that actually gets sent.
+ */
+export async function saveComposedSequence(formData) {
+  await requireUser();
+  const campaignId = formData.get('campaign_id');
+  if (!campaignId) return;
+
+  const subjects = formData.getAll('subject');
+  const bodies = formData.getAll('body');
+  const delays = formData.getAll('delay');
+  const ps = formData.getAll('part_p');
+  const ws = formData.getAll('part_w');
+  const os = formData.getAll('part_o');
+  const cs = formData.getAll('part_c');
+  const signoffs = formData.getAll('part_signoff');
+
+  const rows = [];
+  for (let i = 0; i < subjects.length; i++) {
+    const body = (bodies[i] || '').trim();
+    const subject = (subjects[i] || '').trim();
+    if (!body && !subject) continue;
+    rows.push({
+      campaign_id: Number(campaignId),
+      step_number: rows.length + 1,
+      subject_template: subject,
+      body_template: body,
+      delay_days: Number(delays[i]) || 3,
+      part_p: ps[i] || null,
+      part_w: ws[i] || null,
+      part_o: os[i] || null,
+      part_c: cs[i] || null,
+      part_signoff: signoffs[i] || null,
+    });
+  }
+
+  const admin = createAdminClient();
+  await admin.from('campaign_steps').delete().eq('campaign_id', campaignId);
+  if (rows.length) {
+    await admin.from('campaign_steps').insert(rows);
+    await admin.from('campaigns').update({
+      subject_template: rows[0].subject_template,
+      body_template: rows[0].body_template,
+    }).eq('id', campaignId);
+  }
+  revalidatePath('/admin/compose');
+  revalidatePath(`/admin/campaigns/${campaignId}`);
+}
+
 // ── LEADS ───────────────────────────────────────────────────
 
 export async function importCampaignLeads(formData) {
@@ -79,6 +130,34 @@ export async function importCampaignLeads(formData) {
   const admin = createAdminClient();
   await admin.from('leads').insert(rows);
   revalidatePath(`/admin/campaigns/${campaignId}`);
+}
+
+export async function addSingleLead(formData) {
+  await requireUser();
+  const campaignId = formData.get('campaign_id');
+  const email = formData.get('email');
+  if (!campaignId || !email) return;
+  const admin = createAdminClient();
+  await admin.from('leads').insert({
+    campaign_id: Number(campaignId),
+    first_name: formData.get('first_name') || 'there',
+    email,
+    company: formData.get('company') || '',
+    title: formData.get('title') || '',
+    status: 'pending',
+    validation_status: 'unknown',
+  });
+  revalidatePath('/admin/leads');
+}
+
+export async function deleteAllCampaignLeads(formData) {
+  await requireUser();
+  const campaignId = formData.get('campaign_id');
+  if (!campaignId) return;
+  const admin = createAdminClient();
+  await admin.from('email_logs').delete().eq('campaign_id', campaignId);
+  await admin.from('leads').delete().eq('campaign_id', campaignId);
+  revalidatePath('/admin/leads');
 }
 
 export async function deleteCampaignLead(formData) {
