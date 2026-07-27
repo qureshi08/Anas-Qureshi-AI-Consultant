@@ -19,7 +19,7 @@ export async function createCampaign(formData) {
   if (!name || !goal) return;
   const admin = createAdminClient();
   await admin.from('campaigns').insert({ name, goal, icp, platform: 'email', status: 'draft' });
-  revalidatePath('/admin');
+  revalidatePath('/admin/campaigns');
 }
 
 export async function addLead(formData) {
@@ -31,7 +31,7 @@ export async function addLead(formData) {
   if (!campaign_id || !first_name || !email) return;
   const admin = createAdminClient();
   await admin.from('leads').insert({ campaign_id, first_name, email, company });
-  revalidatePath('/admin');
+  revalidatePath('/admin/campaigns');
 }
 
 // ── SOURCING (queue a job for the worker) ───────────────────
@@ -48,7 +48,7 @@ export async function createSourcingJob(formData) {
     max_results: Number(formData.get('max_results')) || 40,
     status: 'pending',
   });
-  revalidatePath('/admin');
+  revalidatePath('/admin/outbound');
 }
 
 // ── PROSPECTS (the pipeline) ────────────────────────────────
@@ -64,7 +64,7 @@ export async function addProspect(formData) {
     niche: formData.get('niche') || null,
     status: 'new',
   });
-  revalidatePath('/admin');
+  revalidatePath('/admin/outbound');
 }
 
 export async function updateProspect(formData) {
@@ -78,7 +78,7 @@ export async function updateProspect(formData) {
     status: formData.get('status') || 'new',
     notes: formData.get('notes') || null,
   }).eq('id', id);
-  revalidatePath('/admin');
+  revalidatePath('/admin/outbound');
 }
 
 export async function updateBooking(formData) {
@@ -88,7 +88,7 @@ export async function updateBooking(formData) {
   if (!id || !status) return;
   const admin = createAdminClient();
   await admin.from('bookings').update({ status }).eq('id', id);
-  revalidatePath('/admin');
+  revalidatePath('/admin/calls');
 }
 
 // Paste/CSV import — runs entirely on Vercel, no worker, no browser.
@@ -104,7 +104,7 @@ export async function importProspects(formData) {
   if (!rows.length) return;
   const admin = createAdminClient();
   await admin.from('prospects').insert(rows);
-  revalidatePath('/admin');
+  revalidatePath('/admin/outbound');
 }
 
 const FIRST_BATCH = [
@@ -134,8 +134,8 @@ export async function seedFirstBatch() {
   await requireUser();
   const admin = createAdminClient();
   const { count } = await admin.from('prospects').select('id', { count: 'exact', head: true }).eq('source', 'first-batch-agencies');
-  if (count && count > 0) { revalidatePath('/admin'); return; }
+  if (count && count > 0) { revalidatePath('/admin/outbound'); return; }
   const rows = FIRST_BATCH.map(p => ({ ...p, source: 'first-batch-agencies', status: 'new' }));
   await admin.from('prospects').insert(rows);
-  revalidatePath('/admin');
+  revalidatePath('/admin/outbound');
 }
