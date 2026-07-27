@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { createAdminClient } from '../../../../lib/supabase/admin';
 import { saveSequence, importCampaignLeads, validateCampaign, deleteCampaignLead, resetCampaignLead } from '../../outbound-actions';
 import SendRunner from '../../../components/SendRunner';
+import ColdEmailNav from '../../../components/ColdEmailNav';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,7 +41,8 @@ export default async function CampaignDetailPage({ params }) {
 
   return (
     <>
-      <Link href="/admin/campaigns" className="mono" style={{ fontSize: 12, color: 'var(--brick)', textDecoration: 'none' }}>&larr; Cold email</Link>
+      <ColdEmailNav />
+      <Link href="/admin/campaigns" className="mono" style={{ fontSize: 12, color: 'var(--brick)', textDecoration: 'none' }}>&larr; All campaigns</Link>
 
       <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 32, color: 'var(--ink)', margin: '8px 0 2px' }}>{campaign.name}</h2>
       <p className="mono" style={{ fontSize: 11, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 20 }}>

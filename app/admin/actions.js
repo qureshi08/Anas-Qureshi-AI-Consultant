@@ -18,8 +18,13 @@ export async function createCampaign(formData) {
   const icp = formData.get('icp') || '';
   if (!name || !goal) return;
   const admin = createAdminClient();
-  await admin.from('campaigns').insert({ name, goal, icp, platform: 'email', status: 'draft' });
+  await admin.from('campaigns').insert({
+    name, goal, icp,
+    platform: formData.get('platform') || 'email',
+    status: 'draft',
+  });
   revalidatePath('/admin/campaigns');
+  revalidatePath('/admin/cold-email');
 }
 
 export async function addLead(formData) {

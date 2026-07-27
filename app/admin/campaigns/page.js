@@ -1,8 +1,26 @@
 import Link from 'next/link';
 import { createAdminClient } from '../../../lib/supabase/admin';
 import { createCampaign } from '../actions';
+import { deleteCampaign } from '../outbound-actions';
+import ColdEmailNav from '../../components/ColdEmailNav';
 
 export const dynamic = 'force-dynamic';
+
+const GOALS = [
+  ['Book a 15-min call', 'book_call'],
+  ['Get a reply', 'get_reply'],
+  ['Watch a video or visit a page', 'watch_video'],
+  ['Direct purchase', 'buy'],
+];
+
+const PLATFORMS = [
+  ['Cold email', 'email'],
+  ['LinkedIn DM', 'linkedin'],
+  ['Instagram DM', 'instagram'],
+  ['SMS', 'sms'],
+];
+
+const GOAL_LABEL = Object.fromEntries(GOALS.map(([label, value]) => [value, label]));
 
 export default async function AdminCampaignsPage() {
   const admin = createAdminClient();
@@ -23,7 +41,9 @@ export default async function AdminCampaignsPage() {
 
   return (
     <>
-      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 30, color: 'var(--ink)', marginBottom: 4 }}>Cold email</h2>
+      <ColdEmailNav />
+
+      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 30, color: 'var(--ink)', marginBottom: 4 }}>Campaigns</h2>
       <p className="mono" style={{ fontSize: 11, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 20 }}>
         Scraped lists &middot; sequences &middot; sent from your own inboxes
       </p>
@@ -40,11 +60,18 @@ export default async function AdminCampaignsPage() {
 
       <section className="card" style={{ marginBottom: 24 }}>
         <div className="tag">New campaign</div>
-        <form action={createCampaign} style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 12, alignItems: 'flex-end' }}>
-          <input name="name" placeholder="Name (e.g. UK roofers, March)" required style={{ flex: '1 1 200px' }} />
-          <input name="goal" placeholder="Goal (e.g. book a call)" required style={{ flex: '1 1 180px' }} />
-          <input name="icp" placeholder="Who they are" style={{ flex: '1 1 180px' }} />
-          <button className="btn" type="submit">Create</button>
+        <form action={createCampaign} style={{ marginTop: 12 }}>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+            <input name="name" placeholder="Name, e.g. UK roofers, March" required style={{ flex: '2 1 220px' }} />
+            <select name="goal" required style={{ flex: '1 1 190px' }}>
+              {GOALS.map(([label, value]) => <option key={value} value={value}>{label}</option>)}
+            </select>
+            <select name="platform" style={{ flex: '1 1 150px' }}>
+              {PLATFORMS.map(([label, value]) => <option key={value} value={value}>{label}</option>)}
+            </select>
+          </div>
+          <textarea name="icp" placeholder="Who they are, e.g. roofing company owners in mid-size UK cities, no website, 2-10 staff" style={{ minHeight: 56, resize: 'vertical' }} />
+          <button className="btn" type="submit" style={{ marginTop: 10 }}>Create campaign &rarr;</button>
         </form>
       </section>
 
@@ -57,24 +84,52 @@ export default async function AdminCampaignsPage() {
           const k = countsFor(c.id);
           const ready = c.subject_template && c.body_template;
           return (
-            <Link key={c.id} href={`/admin/campaigns/${c.id}`} style={{ textDecoration: 'none' }}>
-              <div className="card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 8 }}>
-                  <div>
+            <div key={c.id} className="card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 8 }}>
+                <div>
+                  <Link href={`/admin/campaigns/${c.id}`} style={{ textDecoration: 'none' }}>
                     <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 22, color: 'var(--ink)' }}>{c.name}</div>
-                    <div style={{ color: 'var(--ink3)', fontSize: 14 }}>{c.goal}{c.icp ? ` · ${c.icp}` : ''}</div>
+                  </Link>
+                  <div style={{ color: 'var(--ink3)', fontSize: 14 }}>
+                    {GOAL_LABEL[c.goal] || c.goal}{c.platform && c.platform !== 'email' ? ` · ${c.platform}` : ''}{c.icp ? ` · ${c.icp}` : ''}
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div className="mono" style={{ fontSize: 12, color: 'var(--ink2)' }}>
-                      {k.total} leads &middot; {k.sent} sent &middot; {k.replied} replied
-                    </div>
-                    <div className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.08em', marginTop: 4, color: ready ? 'var(--forest)' : 'var(--amber)' }}>
-                      {ready ? c.status : 'No email written yet'}
-                    </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div className="mono" style={{ fontSize: 12, color: 'var(--ink2)' }}>
+                    {k.total} leads &middot; {k.sent} sent &middot; {k.replied} replied
+                  </div>
+                  <div className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.08em', marginTop: 4, color: ready ? 'var(--forest)' : 'var(--amber)' }}>
+                    {ready ? c.status : 'No email written yet'}
                   </div>
                 </div>
               </div>
-            </Link>
+
+              <div style={{ display: 'flex', gap: 14, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+                {[['Open', `/admin/campaigns/${c.id}`], ['Write', `/admin/compose?campaign=${c.id}`], ['Leads', `/admin/leads?campaign=${c.id}`], ['Send', `/admin/send?campaign=${c.id}`]].map(([label, href]) => (
+                  <Link key={label} href={href} className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--brick)', textDecoration: 'none' }}>
+                    {label}
+                  </Link>
+                ))}
+                <details style={{ marginLeft: 'auto' }}>
+                  <summary className="mono" style={{ cursor: 'pointer', fontSize: 10, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink3)', listStyle: 'none' }}>
+                    Delete
+                  </summary>
+                  <form action={deleteCampaign} style={{ marginTop: 8 }}>
+                    <input type="hidden" name="id" value={c.id} />
+                    <button
+                      type="submit"
+                      className="mono"
+                      style={{
+                        background: 'var(--brick)', color: 'var(--paper)', border: 'none', borderRadius: 6,
+                        padding: '7px 12px', cursor: 'pointer', fontSize: 10, textTransform: 'uppercase', letterSpacing: '.06em',
+                      }}
+                    >
+                      Delete campaign and its {k.total} leads
+                    </button>
+                  </form>
+                </details>
+              </div>
+            </div>
           );
         })}
       </div>

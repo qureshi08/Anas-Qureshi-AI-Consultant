@@ -1,6 +1,7 @@
 import { createAdminClient } from '../../../lib/supabase/admin';
 import { saveInbox, deleteInbox, toggleInbox, saveOutboundSettings } from '../outbound-actions';
 import ColdEmailNav from '../../components/ColdEmailNav';
+import OutboundActionButton from '../../components/OutboundActionButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -95,7 +96,13 @@ export default async function InboxesPage() {
                 <button className="btn" type="submit" style={{ fontSize: 14, padding: '8px 16px' }}>Save</button>
               </form>
 
-              <div style={{ display: 'flex', gap: 14, marginTop: 10 }}>
+              <div style={{ display: 'flex', gap: 14, marginTop: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                <OutboundActionButton
+                  endpoint="/api/outbound/test-inbox"
+                  payload={{ id: a.id }}
+                  label="Test connection"
+                  busyLabel="Testing…"
+                />
                 <form action={toggleInbox}>
                   <input type="hidden" name="id" value={a.id} />
                   <input type="hidden" name="active" value={a.active ? '1' : '0'} />

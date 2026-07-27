@@ -11,14 +11,14 @@ import { useRouter } from 'next/navigation';
  *
  * Trade-off worth knowing: this tab has to stay open while it runs.
  */
-export default function SendRunner({ campaignId, pendingCount, defaultDelay = 30 }) {
+export default function SendRunner({ campaignId, pendingCount, defaultDelay = 30, safetyFilter = 'SAFE_RISKY' }) {
   const router = useRouter();
   const [running, setRunning] = useState(false);
   const [sent, setSent] = useState(0);
   const [failed, setFailed] = useState(0);
   const [log, setLog] = useState([]);
   const [delay, setDelay] = useState(defaultDelay);
-  const [filter, setFilter] = useState('SAFE_RISKY');
+  const [filter, setFilter] = useState(safetyFilter);
   const [finished, setFinished] = useState(null);
   const stopRef = useRef(false);
 

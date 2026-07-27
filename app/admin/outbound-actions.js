@@ -141,13 +141,134 @@ export async function addSingleLead(formData) {
   await admin.from('leads').insert({
     campaign_id: Number(campaignId),
     first_name: formData.get('first_name') || 'there',
+    last_name: formData.get('last_name') || '',
     email,
     company: formData.get('company') || '',
+    industry: formData.get('industry') || '',
     title: formData.get('title') || '',
+    city: formData.get('city') || '',
+    state: formData.get('state') || '',
+    custom_note: formData.get('custom_note') || '',
     status: 'pending',
     validation_status: 'unknown',
   });
   revalidatePath('/admin/leads');
+}
+
+/**
+ * CSV import. Header row required; only `email` is mandatory, everything else
+ * is matched loosely so exports from different tools mostly just work.
+ */
+function parseCsv(text) {
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else inQuotes = false;
+      } else field += ch;
+    } else if (ch === '"') inQuotes = true;
+    else if (ch === ',' || ch === '\t' || ch === ';') { row.push(field); field = ''; }
+    else if (ch === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+    else if (ch !== '\r') field += ch;
+  }
+  if (field || row.length) { row.push(field); rows.push(row); }
+  return rows.filter(r => r.some(c => c.trim()));
+}
+
+export async function importCsvLeads(formData) {
+  await requireUser();
+  const campaignId = formData.get('campaign_id');
+  const file = formData.get('csv');
+  if (!campaignId || !file || typeof file === 'string' || file.size === 0) return;
+
+  const text = await file.text();
+  const rows = parseCsv(text);
+  if (rows.length < 2) return;
+
+  const headers = rows[0].map(h => h.trim().toLowerCase().replace(/[\s-]+/g, '_'));
+  const pick = (cells, ...names) => {
+    for (const n of names) {
+      const idx = headers.indexOf(n);
+      if (idx !== -1 && cells[idx] && cells[idx].trim()) return cells[idx].trim();
+    }
+    return '';
+  };
+
+  const out = [];
+  for (const cells of rows.slice(1)) {
+    const email = pick(cells, 'email', 'email_address', 'work_email');
+    if (!email || !email.includes('@')) continue;
+    const full = pick(cells, 'full_name', 'name');
+    out.push({
+      campaign_id: Number(campaignId),
+      first_name: pick(cells, 'first_name', 'firstname') || (full ? full.split(' ')[0] : '') || 'there',
+      last_name: pick(cells, 'last_name', 'lastname') || (full ? full.split(' ').slice(1).join(' ') : ''),
+      email,
+      company: pick(cells, 'company', 'company_name', 'organization'),
+      industry: pick(cells, 'industry', 'niche'),
+      title: pick(cells, 'title', 'job_title', 'headline'),
+      city: pick(cells, 'city'),
+      state: pick(cells, 'state', 'region'),
+      custom_note: pick(cells, 'custom_note', 'note', 'notes'),
+      status: 'pending',
+      validation_status: 'unknown',
+    });
+  }
+
+  if (!out.length) return;
+  const admin = createAdminClient();
+  // Chunked so a big file doesn't blow the request size.
+  for (let i = 0; i < out.length; i += 200) {
+    await admin.from('leads').insert(out.slice(i, i + 200));
+  }
+  revalidatePath('/admin/leads');
+}
+
+export async function updateLeadStatus(formData) {
+  await requireUser();
+  const id = formData.get('id');
+  if (!id) return;
+  const patch = { status: formData.get('status') || 'pending' };
+  const notes = formData.get('notes');
+  if (notes !== null) patch.notes = notes;
+  const admin = createAdminClient();
+  await admin.from('leads').update(patch).eq('id', id);
+  revalidatePath('/admin/leads');
+}
+
+export async function validateOneLead(formData) {
+  await requireUser();
+  const id = formData.get('id');
+  const email = formData.get('email');
+  if (!id || !email) return;
+  const admin = createAdminClient();
+  try {
+    const v = await validateEmail(email);
+    await admin.from('leads').update({
+      validation_status: v.status, validation_reason: v.reason, validation_score: v.score,
+    }).eq('id', id);
+  } catch (err) {
+    await admin.from('leads').update({
+      validation_status: 'UNKNOWN', validation_reason: `Check failed: ${err.message}`,
+    }).eq('id', id);
+  }
+  revalidatePath('/admin/leads');
+}
+
+export async function deleteCampaign(formData) {
+  await requireUser();
+  const id = formData.get('id');
+  if (!id) return;
+  const admin = createAdminClient();
+  await admin.from('email_logs').delete().eq('campaign_id', id);
+  await admin.from('campaign_steps').delete().eq('campaign_id', id);
+  await admin.from('leads').delete().eq('campaign_id', id);
+  await admin.from('campaigns').delete().eq('id', id);
+  revalidatePath('/admin/campaigns');
+  revalidatePath('/admin/cold-email');
 }
 
 export async function deleteAllCampaignLeads(formData) {
