@@ -15,8 +15,18 @@ export default async function AdminCampaignsPage() {
 
   return (
     <>
-      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 30, color: 'var(--ink)', marginBottom: 4 }}>Email campaigns</h2>
-      <p className="mono" style={{ fontSize: 11, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 20 }}>Bulk, secondary lane</p>
+      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 30, color: 'var(--ink)', marginBottom: 4 }}>Cold email</h2>
+      <p className="mono" style={{ fontSize: 11, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 6 }}>Scraped lists &middot; bulk &middot; run in OutboundOS</p>
+
+      <div className="card" style={{ marginBottom: 20, borderColor: 'var(--amber)', boxShadow: '4px 4px 0 var(--amber)' }}>
+        <div className="tag" style={{ color: 'var(--amber)' }}>Where this actually runs</div>
+        <p style={{ fontSize: 14, color: 'var(--ink2)', marginTop: 6 }}>
+          This page is the lightweight view. The real cold email engine is <strong>OutboundOS</strong>, a separate app
+          (<span className="mono" style={{ fontSize: 12 }}>AI Automations/</span>, <span className="mono" style={{ fontSize: 12 }}>localhost:3000</span>): multi-inbox Gmail sending,
+          email validation, multi-step sequences, per-account daily limits and send delays.
+          Leads for this lane come from Google Maps scraping, not hand-sourcing.
+        </p>
+      </div>
 
       <section className="card" style={{ marginBottom: 20 }}>
         <div className="tag">New campaign</div>

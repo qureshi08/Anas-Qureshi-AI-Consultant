@@ -3,13 +3,17 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+// Three distinct lead lanes (locked 2026-07-28), never blended:
+//   Cold DM   -> `prospects` table, sourced by hand on LinkedIn/Reddit
+//   Cold email -> `campaigns` + `leads` tables, scraped via Google Maps, run through OutboundOS
+//   Inbound   -> `inbound_leads` + `conversations`, from the site and the AI assistant
 const TABS = [
   { href: '/admin', label: 'Overview' },
   { href: '/admin/calls', label: 'Call requests' },
-  { href: '/admin/outbound', label: 'Outbound' },
+  { href: '/admin/outbound', label: 'Cold DM' },
+  { href: '/admin/campaigns', label: 'Cold email' },
   { href: '/admin/inbound', label: 'Inbound' },
   { href: '/admin/chats', label: 'AI chats' },
-  { href: '/admin/campaigns', label: 'Campaigns' },
 ];
 
 export default function AdminNav() {

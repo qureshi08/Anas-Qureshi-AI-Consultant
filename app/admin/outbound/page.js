@@ -18,8 +18,11 @@ export default async function AdminOutboundPage({ searchParams }) {
 
   return (
     <>
-      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 30, color: 'var(--ink)', marginBottom: 2 }}>Outbound</h2>
-      <p className="mono" style={{ fontSize: 11, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 20 }}>Source &middot; enrich &middot; reach &middot; track</p>
+      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 30, color: 'var(--ink)', marginBottom: 2 }}>Cold DM</h2>
+      <p className="mono" style={{ fontSize: 11, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 6 }}>Hand-sourced on LinkedIn and Reddit</p>
+      <p style={{ fontSize: 14, color: 'var(--ink3)', marginBottom: 20 }}>
+        One prospect at a time, personalised, sent by hand. Separate from the Cold email lane, which runs scraped lists through OutboundOS.
+      </p>
 
       <details style={{ marginBottom: 16 }}>
         <summary className="mono" style={{ cursor: 'pointer', fontSize: 12, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: '.1em' }}>Source / add a prospect</summary>
@@ -81,37 +84,40 @@ export default async function AdminOutboundPage({ searchParams }) {
             </tr>
           </thead>
           <tbody>
-            {rows.map(p => (
-              <form key={p.id} action={updateProspect} style={{ display: 'contents' }}>
-                <tr style={{ borderBottom: '1px dashed rgba(26,18,5,0.15)', verticalAlign: 'top' }}>
+            {rows.map(p => {
+              const formId = `prospect-${p.id}`;
+              return (
+                <tr key={p.id} style={{ borderBottom: '1px dashed rgba(26,18,5,0.15)', verticalAlign: 'top' }}>
                   <td style={{ padding: '10px 12px' }}>
-                    <input type="hidden" name="id" value={p.id} />
+                    <input type="hidden" name="id" value={p.id} form={formId} />
                     <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 17, color: 'var(--ink)' }}>{p.company}</div>
                     {p.website && (
                       <a href={`https://${p.website.replace(/^https?:\/\//, '')}`} target="_blank" rel="noreferrer" className="mono" style={{ fontSize: 10, color: 'var(--brick)' }}>{p.website}</a>
                     )}
                   </td>
                   <td style={{ padding: '10px 12px', minWidth: 130 }}>
-                    <input name="contact_name" placeholder="Contact" defaultValue={p.contact_name || ''} style={{ fontSize: 13, padding: '7px 10px' }} />
+                    <input name="contact_name" placeholder="Contact" defaultValue={p.contact_name || ''} style={{ fontSize: 13, padding: '7px 10px' }} form={formId} />
                   </td>
                   <td style={{ padding: '10px 12px', fontSize: 13, color: 'var(--ink3)', maxWidth: 160 }}>{p.niche || '—'}</td>
                   <td style={{ padding: '10px 12px', minWidth: 140 }}>
-                    <input name="linkedin" placeholder="LinkedIn URL" defaultValue={p.linkedin || ''} style={{ fontSize: 12, padding: '7px 10px' }} />
+                    <input name="linkedin" placeholder="LinkedIn URL" defaultValue={p.linkedin || ''} style={{ fontSize: 12, padding: '7px 10px' }} form={formId} />
                   </td>
                   <td style={{ padding: '10px 12px' }}>
-                    <textarea name="notes" placeholder="Notes (reply, next step…)" defaultValue={p.notes || ''} style={{ fontSize: 13, padding: '7px 10px', minHeight: 44, resize: 'vertical' }} />
+                    <textarea name="notes" placeholder="Notes (reply, next step…)" defaultValue={p.notes || ''} style={{ fontSize: 13, padding: '7px 10px', minHeight: 44, resize: 'vertical' }} form={formId} />
                   </td>
                   <td style={{ padding: '10px 12px' }}>
-                    <select name="status" defaultValue={p.status} style={{ fontSize: 13, padding: '7px 10px', borderColor: STAGE_COLOR[p.status] }}>
+                    <select name="status" defaultValue={p.status} style={{ fontSize: 13, padding: '7px 10px', borderColor: STAGE_COLOR[p.status] }} form={formId}>
                       {STAGES.map(s => <option key={s} value={s}>{STAGE_LABEL[s]}</option>)}
                     </select>
                   </td>
                   <td style={{ padding: '10px 12px' }}>
-                    <button className="btn" type="submit" style={{ fontSize: 13, padding: '7px 14px' }}>Save</button>
+                    <button className="btn" type="submit" style={{ fontSize: 13, padding: '7px 14px' }} form={formId}>Save</button>
+                    {/* eslint-disable-next-line react/no-unknown-property */}
+                    <form id={formId} action={updateProspect} style={{ display: 'none' }} />
                   </td>
                 </tr>
-              </form>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
