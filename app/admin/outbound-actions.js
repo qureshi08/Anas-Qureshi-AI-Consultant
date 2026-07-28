@@ -389,9 +389,9 @@ export async function toggleInbox(formData) {
 export async function saveOutboundSettings(formData) {
   await requireUser();
   const rows = [];
+  // Google credentials deliberately absent: they live in Vercel env vars only,
+  // so there is no second place for a wrong value to hide.
   const map = {
-    google_client_id: formData.get('google_client_id'),
-    google_client_secret: formData.get('google_client_secret'),
     email_signature: formData.get('email_signature'),
     delay_seconds: formData.get('delay_seconds'),
   };

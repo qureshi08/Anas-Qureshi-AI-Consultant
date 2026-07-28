@@ -166,51 +166,31 @@ export default async function InboxesPage({ searchParams }) {
       </div>
 
       {/* ── ADD ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, marginBottom: 24 }}>
-        <section className="card">
-          <div className="tag">Connect a Google account</div>
-          <p style={{ fontSize: 14, color: 'var(--ink3)', margin: '8px 0 12px' }}>
-            One click, pick the account, done. Repeat for as many Gmail accounts as you want,
-            each one adds its daily limit to the pool above.
-          </p>
-          {oauthReady ? (
-            <>
-              <a className="btn" href="/api/outbound/google/connect" style={{ fontSize: 16 }}>Connect Gmail &rarr;</a>
-              <p className="mono" style={{ fontSize: 10, color: 'var(--ink3)', marginTop: 10 }}>
-                Google will ask which account. Pick a different one each time to add another inbox.
-              </p>
-              {/* Shown so an invalid_client error can be traced without guessing.
-                  Client IDs are public by design, they travel in the auth URL. */}
-              <p className="mono" style={{ fontSize: 10, color: 'var(--ink3)', marginTop: 6, wordBreak: 'break-all' }}>
-                Using client ID from <strong>{creds.source === 'env' ? 'Vercel env' : 'settings table'}</strong>: {creds.clientId}
-              </p>
-            </>
-          ) : (
-            <p className="mono" style={{ fontSize: 11, color: 'var(--brick)' }}>
-              Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in Vercel, then redeploy. One time only.
+      <section className="card" style={{ marginBottom: 24 }}>
+        <div className="tag">Add another inbox</div>
+        <p style={{ fontSize: 14, color: 'var(--ink3)', margin: '8px 0 12px' }}>
+          One click, pick the account, done. Repeat for as many Gmail accounts as you want,
+          each one adds its daily limit to the pool above.
+        </p>
+        {oauthReady ? (
+          <>
+            <a className="btn" href="/api/outbound/google/connect" style={{ fontSize: 16 }}>Connect Gmail &rarr;</a>
+            <p className="mono" style={{ fontSize: 10, color: 'var(--ink3)', marginTop: 10 }}>
+              Google shows an account picker. Choose a different account each time.
+              Any account you connect must first be listed under Test users in Google Cloud.
             </p>
-          )}
-        </section>
-
-        <section className="card">
-          <div className="tag">Or add an app password</div>
-          <p style={{ fontSize: 14, color: 'var(--ink3)', margin: '8px 0 12px' }}>
-            Simpler, no Google Cloud setup. Generate one at myaccount.google.com under 2-Step Verification.
+          </>
+        ) : (
+          <p className="mono" style={{ fontSize: 11, color: 'var(--brick)' }}>
+            Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in Vercel, then redeploy. One time only.
           </p>
-          <form action={saveInbox} style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-            <input name="email" placeholder="you@gmail.com" required style={{ flex: '1 1 160px' }} />
-            <input name="sender_name" placeholder="Sender name" style={{ flex: '1 1 130px' }} />
-            <input name="app_password" type="password" placeholder="App password" required style={{ flex: '1 1 150px' }} />
-            <input name="daily_limit" type="number" min="1" defaultValue={50} style={{ flex: '0 1 100px' }} />
-            <button className="btn" type="submit" style={{ fontSize: 15, padding: '9px 18px' }}>+ Add</button>
-          </form>
-        </section>
-      </div>
+        )}
+      </section>
 
       {/* ── SETTINGS ── */}
       <details className="card">
         <summary className="mono" style={{ cursor: 'pointer', fontSize: 12, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: '.1em' }}>
-          Signature and Google credentials
+          Signature and sending defaults
         </summary>
         <form action={saveOutboundSettings} style={{ marginTop: 14 }}>
           <label style={{ display: 'block', marginBottom: 12 }}>
@@ -223,15 +203,7 @@ export default async function InboxesPage({ searchParams }) {
             <input name="delay_seconds" type="number" min="5" defaultValue={settings.delay_seconds || 30} style={{ marginTop: 4 }} />
           </label>
 
-          <div style={{ borderTop: '1.5px dashed rgba(26,18,5,0.15)', paddingTop: 12 }}>
-            <p className="mono" style={{ fontSize: 10, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 8 }}>
-              Google OAuth fallback {process.env.GOOGLE_CLIENT_ID ? '(not needed, Vercel env vars are set)' : '(only if you cannot use Vercel env vars)'}
-            </p>
-            <input name="google_client_id" defaultValue={settings.google_client_id || ''} placeholder="Google client ID" style={{ marginBottom: 8 }} />
-            <input name="google_client_secret" type="password" placeholder={settings.google_client_secret ? '•••••••• (saved)' : 'Google client secret'} />
-          </div>
-
-          <button className="btn" type="submit" style={{ marginTop: 14 }}>Save settings</button>
+          <button className="btn" type="submit">Save settings</button>
         </form>
       </details>
 
