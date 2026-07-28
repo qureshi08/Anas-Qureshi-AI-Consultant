@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { google } from 'googleapis';
 import { getAdminUser } from '../../../../../lib/requireAdmin';
-import { createAdminClient } from '../../../../../lib/supabase/admin';
+import { getGoogleCreds } from '../../../../../lib/outbound/googleCreds';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,20 +14,12 @@ export async function GET(request) {
   const user = await getAdminUser();
   if (!user) return NextResponse.redirect(new URL('/login', request.url));
 
-  const admin = createAdminClient();
-  const { data: rows } = await admin
-    .from('settings').select('key, value')
-    .in('key', ['google_client_id', 'google_client_secret']);
-  const s = {};
-  (rows || []).forEach(r => { s[r.key] = r.value; });
-
-  if (!s.google_client_id || !s.google_client_secret) {
+  const { clientId, clientSecret } = await getGoogleCreds();
+  if (!clientId || !clientSecret) {
     return NextResponse.redirect(new URL('/admin/inboxes?error=no-google-creds', request.url));
   }
 
-  const oauth2Client = new google.auth.OAuth2(
-    s.google_client_id, s.google_client_secret, redirectUri(request),
-  );
+  const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, redirectUri(request));
 
   const url = oauth2Client.generateAuthUrl({
     access_type: 'offline',

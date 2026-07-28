@@ -3,6 +3,7 @@ import nodemailer from 'nodemailer';
 import { google } from 'googleapis';
 import { getAdminUser } from '../../../../lib/requireAdmin';
 import { createAdminClient } from '../../../../lib/supabase/admin';
+import { getGoogleCreds } from '../../../../lib/outbound/googleCreds';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,11 +21,8 @@ export async function POST(request) {
 
   try {
     if (acc.refresh_token) {
-      const { data: rows } = await admin.from('settings').select('key, value')
-        .in('key', ['google_client_id', 'google_client_secret']);
-      const s = {};
-      (rows || []).forEach(r => { s[r.key] = r.value; });
-      const client = new google.auth.OAuth2(s.google_client_id, s.google_client_secret);
+      const { clientId, clientSecret } = await getGoogleCreds();
+      const client = new google.auth.OAuth2(clientId, clientSecret);
       client.setCredentials({ refresh_token: acc.refresh_token });
       const gmail = google.gmail({ version: 'v1', auth: client });
       const profile = await gmail.users.getProfile({ userId: 'me' });

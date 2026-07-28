@@ -80,31 +80,38 @@ Add both, leave all three environments ticked:
 |---|---|
 | `ADMIN_EMAILS` | `muhammadanasq@gmail.com` |
 | `CRON_SECRET` | any long random string |
+| `GOOGLE_CLIENT_ID` | the Client ID from Part 1 |
+| `GOOGLE_CLIENT_SECRET` | the secret from Part 1 |
 
 `ADMIN_EMAILS` is the only thing stopping a stranger's Google account from reaching the
 admin and its connected inboxes. Comma-separate to add more people later.
+
+`GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` are what make **Connect Gmail** a one-click
+button. Set them once here and you never paste a credential into the app again, no matter
+how many inboxes you connect.
 
 Then **Deployments** → newest → **⋯** → **Redeploy**. Environment variables only apply to
 new builds, so this step is not optional.
 
 ---
 
-## Part 4 — Connect a sending inbox
+## Part 4 — Connect your sending inboxes
 
-Two options. App password is faster; OAuth is better.
+Because Part 3 set the credentials as env vars, this is now pure clicking. Nothing to paste.
 
-### Option A: app password (5 minutes, no extra setup)
-1. <https://myaccount.google.com/apppasswords> (requires 2-Step Verification enabled)
-2. App name: `OutboundOS` → **Create** → copy the 16-character code
-3. Admin → **Cold email** → **Inboxes** → "Or add an app password"
-4. Enter your Gmail, sender name, the app password, daily limit (start at **20-30**)
-5. **+ Add** → then **Test connection** → expect "Connected as you@gmail.com"
+1. Admin → **Cold email** → **Inboxes**
+2. **Connect Gmail →**
+3. Google asks which account. Pick it, approve, you land back on Inboxes with it connected.
+4. **Test connection** → expect "Connected as you@gmail.com"
+5. Set its **daily limit** (start at **20**, raise it once the account is warm)
 
-### Option B: Gmail OAuth (better threading, mail appears in Sent)
-1. Admin → **Inboxes** → expand **Signature and Google credentials**
-2. Paste the same Client ID and Secret from Part 1 → **Save settings**
-3. Click **Connect Gmail** → approve → you land back with the inbox connected
-4. **Test connection** to confirm
+**To add a second, third, tenth inbox: click Connect Gmail again and pick a different
+account.** The account picker appears every time, so you are never stuck reconnecting the
+same mailbox. Five inboxes at 20/day = 100 emails a day, and sends rotate to whichever
+inbox has sent least so far today.
+
+If you'd rather not use OAuth for a given account, the "Or add an app password" form still
+works, but those inboxes can send and cannot be read, so reply sync skips them.
 
 ---
 
@@ -148,3 +155,6 @@ True mailbox verification needs a paid API such as ZeroBounce.
 | Test connection fails on app password | 2-Step Verification is off, or the password has spaces in it |
 | Follow-ups never send | `CRON_SECRET` missing, or no redeploy after adding it |
 | Send button greyed out | No leads pass the safety filter, or no email written in Compose |
+| "Connect Gmail" replaced by a red note | `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` missing in Vercel, or no redeploy after adding them |
+| Connect Gmail keeps re-linking the same account | You are only signed into one Google account in that browser. Sign into the others, or use an incognito window per account |
+| Every inbox stops working after a week | The Google app is still in **Testing**. Publish it (Part 1, Publishing status) |

@@ -39,7 +39,14 @@ export default async function InboxesPage() {
   (todaysLogs || []).forEach(l => { sentToday[l.sending_account_id] = (sentToday[l.sending_account_id] || 0) + 1; });
 
   const list = accounts || [];
-  const oauthReady = settings.google_client_id && settings.google_client_secret;
+
+  // Credentials come from Vercel env vars, so connecting an inbox is one click
+  // with nothing to paste. The settings table stays as a fallback for anyone
+  // who set it up that way before.
+  const oauthReady = Boolean(
+    (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET)
+    || (settings.google_client_id && settings.google_client_secret),
+  );
 
   return (
     <>
@@ -147,14 +154,19 @@ export default async function InboxesPage() {
         <section className="card">
           <div className="tag">Connect a Google account</div>
           <p style={{ fontSize: 14, color: 'var(--ink3)', margin: '8px 0 12px' }}>
-            The better option: sends through the Gmail API, so replies thread properly and everything
-            lands in your Sent folder.
+            One click, pick the account, done. Repeat for as many Gmail accounts as you want,
+            each one adds its daily limit to the pool above.
           </p>
           {oauthReady ? (
-            <a className="btn" href="/api/outbound/google/connect" style={{ fontSize: 16 }}>Connect Gmail &rarr;</a>
+            <>
+              <a className="btn" href="/api/outbound/google/connect" style={{ fontSize: 16 }}>Connect Gmail &rarr;</a>
+              <p className="mono" style={{ fontSize: 10, color: 'var(--ink3)', marginTop: 10 }}>
+                Google will ask which account. Pick a different one each time to add another inbox.
+              </p>
+            </>
           ) : (
             <p className="mono" style={{ fontSize: 11, color: 'var(--brick)' }}>
-              Add your Google client ID and secret below first.
+              Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in Vercel, then redeploy. One time only.
             </p>
           )}
         </section>
@@ -192,7 +204,7 @@ export default async function InboxesPage() {
 
           <div style={{ borderTop: '1.5px dashed rgba(26,18,5,0.15)', paddingTop: 12 }}>
             <p className="mono" style={{ fontSize: 10, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 8 }}>
-              Google OAuth (only needed to connect Gmail accounts)
+              Google OAuth fallback {process.env.GOOGLE_CLIENT_ID ? '(not needed, Vercel env vars are set)' : '(only if you cannot use Vercel env vars)'}
             </p>
             <input name="google_client_id" defaultValue={settings.google_client_id || ''} placeholder="Google client ID" style={{ marginBottom: 8 }} />
             <input name="google_client_secret" type="password" placeholder={settings.google_client_secret ? '•••••••• (saved)' : 'Google client secret'} />
