@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '../../../../lib/supabase/server';
+import { getAdminUser } from '../../../../lib/requireAdmin';
 import { createAdminClient } from '../../../../lib/supabase/admin';
 import { sendEmail } from '../../../../lib/outbound/emailService';
 
@@ -8,8 +8,7 @@ export const maxDuration = 60;
 
 /** Reply by hand to someone who wrote back, on the same thread. */
 export async function POST(request) {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAdminUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { leadId, body } = await request.json();

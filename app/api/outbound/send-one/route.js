@@ -9,7 +9,7 @@
  * Returns { done: true } when the campaign has no eligible leads left.
  */
 import { NextResponse } from 'next/server';
-import { createClient } from '../../../../lib/supabase/server';
+import { getAdminUser } from '../../../../lib/requireAdmin';
 import { createAdminClient } from '../../../../lib/supabase/admin';
 import { sendEmail, renderTemplate, variablesFor } from '../../../../lib/outbound/emailService';
 
@@ -19,8 +19,7 @@ export const maxDuration = 60;
 export async function POST(request) {
   // Same auth as the rest of /admin — this endpoint can spend money and send
   // mail in your name, so it is never public.
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAdminUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { campaignId, safetyFilter = 'SAFE_RISKY' } = await request.json();

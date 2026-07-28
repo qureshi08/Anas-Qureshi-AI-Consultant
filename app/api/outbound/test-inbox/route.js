@@ -1,15 +1,14 @@
 import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import { google } from 'googleapis';
-import { createClient } from '../../../../lib/supabase/server';
+import { getAdminUser } from '../../../../lib/requireAdmin';
 import { createAdminClient } from '../../../../lib/supabase/admin';
 
 export const dynamic = 'force-dynamic';
 
 /** Verify an inbox can actually authenticate, before you rely on it. */
 export async function POST(request) {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAdminUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { id } = await request.json();

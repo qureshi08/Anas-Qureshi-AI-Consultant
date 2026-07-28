@@ -1,12 +1,12 @@
 'use server';
 
-import { createClient } from '../../lib/supabase/server';
 import { createAdminClient } from '../../lib/supabase/admin';
+import { getAdminUser } from '../../lib/requireAdmin';
 import { revalidatePath } from 'next/cache';
 
+// Allowlist check, not just "is signed in" — see lib/auth.js for why.
 async function requireUser() {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAdminUser();
   if (!user) throw new Error('Unauthorized');
   return user;
 }

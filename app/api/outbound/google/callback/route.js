@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
 import { google } from 'googleapis';
-import { createClient } from '../../../../../lib/supabase/server';
+import { getAdminUser } from '../../../../../lib/requireAdmin';
 import { createAdminClient } from '../../../../../lib/supabase/admin';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAdminUser();
   if (!user) return NextResponse.redirect(new URL('/login', request.url));
 
   const url = new URL(request.url);

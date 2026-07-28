@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
+import { isAllowedAdmin } from './lib/auth';
 
 export async function middleware(request) {
   let response = NextResponse.next({ request });
@@ -22,18 +23,30 @@ export async function middleware(request) {
   );
 
   const { data: { user } } = await supabase.auth.getUser();
+  const { pathname } = request.nextUrl;
 
-  // Protect the admin area
-  if (request.nextUrl.pathname.startsWith('/admin') && !user) {
+  // Signed in with Google, but not on the allowlist. Sign-in alone is not
+  // authorisation: anyone can complete a Google flow.
+  if (pathname.startsWith('/admin') && user && !isAllowedAdmin(user)) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
+    url.searchParams.set('denied', '1');
     return NextResponse.redirect(url);
   }
 
-  // If already logged in, skip the login page
-  if (request.nextUrl.pathname === '/login' && user) {
+  // Not signed in at all
+  if (pathname.startsWith('/admin') && !user) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/login';
+    url.search = '';
+    return NextResponse.redirect(url);
+  }
+
+  // Already signed in and allowed, skip the login page
+  if (pathname === '/login' && isAllowedAdmin(user)) {
     const url = request.nextUrl.clone();
     url.pathname = '/admin';
+    url.search = '';
     return NextResponse.redirect(url);
   }
 
