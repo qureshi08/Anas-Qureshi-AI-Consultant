@@ -2,6 +2,7 @@ import { createAdminClient } from '../../../lib/supabase/admin';
 import { saveInbox, deleteInbox, toggleInbox, saveOutboundSettings } from '../outbound-actions';
 import ColdEmailNav from '../../components/ColdEmailNav';
 import OutboundActionButton from '../../components/OutboundActionButton';
+import { getGoogleCreds } from '../../../lib/outbound/googleCreds';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,7 +24,7 @@ const PWOC_RULES = {
   ],
 };
 
-export default async function InboxesPage() {
+export default async function InboxesPage({ searchParams }) {
   const admin = createAdminClient();
   const { data: accounts } = await admin.from('sending_accounts').select('*').order('id');
   const { data: settingRows } = await admin.from('settings').select('key, value');
@@ -41,12 +42,9 @@ export default async function InboxesPage() {
   const list = accounts || [];
 
   // Credentials come from Vercel env vars, so connecting an inbox is one click
-  // with nothing to paste. The settings table stays as a fallback for anyone
-  // who set it up that way before.
-  const oauthReady = Boolean(
-    (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET)
-    || (settings.google_client_id && settings.google_client_secret),
-  );
+  // with nothing to paste. The settings table stays as a fallback.
+  const creds = await getGoogleCreds();
+  const oauthReady = Boolean(creds.clientId && creds.clientSecret);
 
   return (
     <>
@@ -56,6 +54,24 @@ export default async function InboxesPage() {
       <p className="mono" style={{ fontSize: 11, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 20 }}>
         Who cold email sends as &middot; rotated automatically
       </p>
+
+      {/* The OAuth callback redirects failures back here. Without this they
+          arrived as a silent query string and the page looked like nothing
+          had happened. */}
+      {searchParams?.error && (
+        <div className="card" style={{ marginBottom: 16, borderColor: 'var(--brick)', boxShadow: '4px 4px 0 var(--brick)' }}>
+          <div className="tag" style={{ color: 'var(--brick)' }}>Connecting that inbox failed</div>
+          <p style={{ fontSize: 14, color: 'var(--ink2)', marginTop: 6 }}>{searchParams.error}</p>
+        </div>
+      )}
+      {searchParams?.connected && (
+        <div className="card" style={{ marginBottom: 16, borderColor: 'var(--forest)', boxShadow: '4px 4px 0 var(--forest)' }}>
+          <div className="tag" style={{ color: 'var(--forest)' }}>Inbox connected</div>
+          <p style={{ fontSize: 14, color: 'var(--ink2)', marginTop: 6 }}>
+            Hit Test connection below to confirm it authenticates, then set its daily limit.
+          </p>
+        </div>
+      )}
 
       {/* Combined capacity: the number that actually matters day to day */}
       {list.length > 0 && (() => {
@@ -162,6 +178,11 @@ export default async function InboxesPage() {
               <a className="btn" href="/api/outbound/google/connect" style={{ fontSize: 16 }}>Connect Gmail &rarr;</a>
               <p className="mono" style={{ fontSize: 10, color: 'var(--ink3)', marginTop: 10 }}>
                 Google will ask which account. Pick a different one each time to add another inbox.
+              </p>
+              {/* Shown so an invalid_client error can be traced without guessing.
+                  Client IDs are public by design, they travel in the auth URL. */}
+              <p className="mono" style={{ fontSize: 10, color: 'var(--ink3)', marginTop: 6, wordBreak: 'break-all' }}>
+                Using client ID from <strong>{creds.source === 'env' ? 'Vercel env' : 'settings table'}</strong>: {creds.clientId}
               </p>
             </>
           ) : (
