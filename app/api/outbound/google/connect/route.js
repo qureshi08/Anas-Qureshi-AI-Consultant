@@ -31,7 +31,11 @@ export async function GET(request) {
 
   const url = oauth2Client.generateAuthUrl({
     access_type: 'offline',
-    prompt: 'consent', // forces a refresh_token back every time
+    // 'select_account' is what makes connecting a SECOND, THIRD, FOURTH inbox
+    // possible. Without it Google silently reuses whichever account the browser
+    // is already signed into, so every attempt reconnects the same mailbox.
+    // 'consent' forces a refresh_token back every time.
+    prompt: 'select_account consent',
     scope: [
       'https://www.googleapis.com/auth/gmail.send',
       'https://www.googleapis.com/auth/gmail.modify',

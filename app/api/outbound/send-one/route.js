@@ -52,7 +52,6 @@ export async function POST(request) {
   }
   const lead = leads[0];
 
-  // Round-robin across active inboxes, respecting each one's daily limit.
   const { data: accounts } = await admin
     .from('sending_accounts').select('*').eq('active', 1).order('id', { ascending: true });
   if (!accounts || accounts.length === 0) {
@@ -69,11 +68,21 @@ export async function POST(request) {
     sentToday[l.sending_account_id] = (sentToday[l.sending_account_id] || 0) + 1;
   });
 
-  const account = accounts.find(a => (sentToday[a.id] || 0) < (a.daily_limit || 50));
+  // Rotate by picking whichever inbox has sent least so far today (that still
+  // has headroom). Each request is stateless, so an in-memory round-robin index
+  // would not survive between calls; going least-used-first spreads the volume
+  // evenly instead of draining inbox 1 to its cap before touching inbox 2,
+  // which is the burst pattern that gets accounts flagged.
+  const withRoom = accounts
+    .filter(a => (sentToday[a.id] || 0) < (a.daily_limit || 50))
+    .sort((a, b) => (sentToday[a.id] || 0) - (sentToday[b.id] || 0));
+
+  const account = withRoom[0];
   if (!account) {
+    const capacity = accounts.reduce((n, a) => n + (a.daily_limit || 50), 0);
     return NextResponse.json({
       done: true,
-      message: 'Every inbox has hit its daily limit. Pick this back up tomorrow.',
+      message: `All ${accounts.length} inboxes have hit their daily limit (${capacity} total). Pick this back up tomorrow.`,
     });
   }
 

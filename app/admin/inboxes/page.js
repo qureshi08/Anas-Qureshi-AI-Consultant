@@ -50,14 +50,34 @@ export default async function InboxesPage() {
         Who cold email sends as &middot; rotated automatically
       </p>
 
-      <div className="card" style={{ marginBottom: 20 }}>
-        <div className="tag">How sending is paced</div>
-        <p style={{ fontSize: 14, color: 'var(--ink2)', marginTop: 6 }}>
-          Each send rotates to the next active inbox and stops when that inbox hits its daily limit.
-          Low and slow keeps you out of spam folders. Sending runs from the campaign page while that
-          tab is open, so nothing sends behind your back.
-        </p>
-      </div>
+      {/* Combined capacity: the number that actually matters day to day */}
+      {list.length > 0 && (() => {
+        const active = list.filter(a => a.active);
+        const capacity = active.reduce((n, a) => n + (a.daily_limit || 50), 0);
+        const usedTotal = active.reduce((n, a) => n + (sentToday[a.id] || 0), 0);
+        const pctTotal = capacity ? Math.min(100, Math.round((usedTotal / capacity) * 100)) : 0;
+        return (
+          <div className="card" style={{ marginBottom: 20, borderColor: 'var(--forest)', boxShadow: '4px 4px 0 var(--forest)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 8 }}>
+              <div className="tag" style={{ color: 'var(--forest)' }}>Today&apos;s capacity</div>
+              <span className="mono" style={{ fontSize: 11, color: 'var(--ink3)' }}>
+                {active.length} active {active.length === 1 ? 'inbox' : 'inboxes'}
+              </span>
+            </div>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 34, color: 'var(--ink)', lineHeight: 1, marginTop: 6 }}>
+              {usedTotal} <span style={{ fontSize: 22, color: 'var(--ink3)' }}>/ {capacity} sent</span>
+            </div>
+            <div style={{ height: 8, background: 'var(--paper2)', borderRadius: 99, overflow: 'hidden', margin: '10px 0 8px' }}>
+              <div style={{ height: '100%', width: `${pctTotal}%`, background: pctTotal >= 100 ? 'var(--brick)' : 'var(--forest)' }} />
+            </div>
+            <p style={{ fontSize: 14, color: 'var(--ink2)' }}>
+              Sends rotate to whichever inbox has sent least so far today, so volume spreads evenly
+              instead of draining one mailbox first. Want ~100 a day? Connect 5 inboxes at 20 each.
+              Low and slow per mailbox is what keeps you out of spam folders.
+            </p>
+          </div>
+        );
+      })()}
 
       {/* ── ACCOUNTS ── */}
       {list.length === 0 && (
