@@ -1,12 +1,8 @@
 import Link from 'next/link';
 import { createAdminClient } from '../../../lib/supabase/admin';
 import { importProspects, addProspect, updateProspect } from '../actions';
-
-export const dynamic = 'force-dynamic';
-
-const STAGES = ['new', 'connected', 'replied', 'call', 'won', 'lost'];
-const STAGE_LABEL = { new: 'New', connected: 'Connected', replied: 'Replied', call: 'Call', won: 'Won', lost: 'Lost' };
-const STAGE_COLOR = { new: 'var(--ink3)', connected: 'var(--amber)', replied: 'var(--forest)', call: 'var(--forest)', won: 'var(--forest)', lost: 'var(--ink3)' };
+import { STAGES, STAGE_LABEL, STAGE_COLOR } from '../stages';
+import { parseNotes } from '../../../lib/prospectNotes';
 
 export default async function AdminOutboundPage({ searchParams }) {
   const admin = createAdminClient();
@@ -78,14 +74,17 @@ export default async function AdminOutboundPage({ searchParams }) {
               <th style={{ padding: '10px 12px' }}>Contact</th>
               <th style={{ padding: '10px 12px' }}>Niche</th>
               <th style={{ padding: '10px 12px' }}>LinkedIn</th>
-              <th style={{ padding: '10px 12px', minWidth: 220 }}>Notes</th>
+              <th style={{ padding: '10px 12px', minWidth: 180 }}>Notes</th>
+              <th style={{ padding: '10px 12px', minWidth: 220 }}>DM Draft</th>
               <th style={{ padding: '10px 12px', minWidth: 150 }}>Status</th>
+              <th style={{ padding: '10px 12px', minWidth: 160 }}>Activity Log</th>
               <th style={{ padding: '10px 12px' }}></th>
             </tr>
           </thead>
           <tbody>
             {rows.map(p => {
               const formId = `prospect-${p.id}`;
+              const { notes, draft, log } = parseNotes(p.notes);
               return (
                 <tr key={p.id} style={{ borderBottom: '1px dashed rgba(26,18,5,0.15)', verticalAlign: 'top' }}>
                   <td style={{ padding: '10px 12px' }}>
@@ -99,16 +98,27 @@ export default async function AdminOutboundPage({ searchParams }) {
                     <input name="contact_name" placeholder="Contact" defaultValue={p.contact_name || ''} style={{ fontSize: 13, padding: '7px 10px' }} form={formId} />
                   </td>
                   <td style={{ padding: '10px 12px', fontSize: 13, color: 'var(--ink3)', maxWidth: 160 }}>{p.niche || '—'}</td>
-                  <td style={{ padding: '10px 12px', minWidth: 140 }}>
+                  <td style={{ padding: '10px 12px', minWidth: 150 }}>
+                    {p.linkedin && (
+                      <a href={p.linkedin} target="_blank" rel="noreferrer" className="mono" style={{ fontSize: 11, color: 'var(--brick)', display: 'inline-block', marginBottom: 4, textDecoration: 'underline' }}>
+                        Open profile &#8599;
+                      </a>
+                    )}
                     <input name="linkedin" placeholder="LinkedIn URL" defaultValue={p.linkedin || ''} style={{ fontSize: 12, padding: '7px 10px' }} form={formId} />
                   </td>
                   <td style={{ padding: '10px 12px' }}>
-                    <textarea name="notes" placeholder="Notes (reply, next step…)" defaultValue={p.notes || ''} style={{ fontSize: 13, padding: '7px 10px', minHeight: 44, resize: 'vertical' }} form={formId} />
+                    <textarea name="notes" placeholder="Notes (reply, next step…)" defaultValue={notes} style={{ fontSize: 13, padding: '7px 10px', minHeight: 44, resize: 'vertical' }} form={formId} />
+                  </td>
+                  <td style={{ padding: '10px 12px' }}>
+                    <textarea name="dm_draft" placeholder="Ready-to-send DM" defaultValue={draft} style={{ fontSize: 13, padding: '7px 10px', minHeight: 44, resize: 'vertical', background: draft ? 'rgba(200,150,12,0.08)' : 'transparent' }} form={formId} />
                   </td>
                   <td style={{ padding: '10px 12px' }}>
                     <select name="status" defaultValue={p.status} style={{ fontSize: 13, padding: '7px 10px', borderColor: STAGE_COLOR[p.status] }} form={formId}>
                       {STAGES.map(s => <option key={s} value={s}>{STAGE_LABEL[s]}</option>)}
                     </select>
+                  </td>
+                  <td style={{ padding: '10px 12px', fontSize: 11, color: 'var(--ink3)', whiteSpace: 'pre-wrap', maxWidth: 200 }}>
+                    {log || <span style={{ opacity: 0.5 }}>No changes logged yet</span>}
                   </td>
                   <td style={{ padding: '10px 12px' }}>
                     <button className="btn" type="submit" style={{ fontSize: 13, padding: '7px 14px' }} form={formId}>Save</button>

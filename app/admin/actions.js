@@ -3,6 +3,8 @@
 import { createAdminClient } from '../../lib/supabase/admin';
 import { getAdminUser } from '../../lib/requireAdmin';
 import { revalidatePath } from 'next/cache';
+import { parseNotes, combineNotes, appendLogLine } from '../../lib/prospectNotes';
+import { STAGE_LABEL } from './stages';
 
 // Allowlist check, not just "is signed in" — see lib/auth.js for why.
 async function requireUser() {
@@ -77,11 +79,28 @@ export async function updateProspect(formData) {
   const id = formData.get('id');
   if (!id) return;
   const admin = createAdminClient();
+
+  const { data: current } = await admin.from('prospects').select('status, notes').eq('id', id).single();
+  const { log: existingLog } = parseNotes(current?.notes);
+
+  const newStatus = formData.get('status') || 'new';
+  const newNotesPart = formData.get('notes') || '';
+  const newDraftPart = formData.get('dm_draft') || '';
+
+  let log = existingLog;
+  if (current && current.status !== newStatus) {
+    const from = STAGE_LABEL[current.status] || current.status || '(none)';
+    const to = STAGE_LABEL[newStatus] || newStatus;
+    log = appendLogLine(existingLog, `status changed: ${from} -> ${to}`);
+  }
+
+  const notes = combineNotes({ notes: newNotesPart, draft: newDraftPart, log });
+
   await admin.from('prospects').update({
     contact_name: formData.get('contact_name') || null,
     linkedin: formData.get('linkedin') || null,
-    status: formData.get('status') || 'new',
-    notes: formData.get('notes') || null,
+    status: newStatus,
+    notes: notes || null,
   }).eq('id', id);
   revalidatePath('/admin/outbound');
 }

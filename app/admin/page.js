@@ -1,10 +1,8 @@
 import Link from 'next/link';
 import { createAdminClient } from '../../lib/supabase/admin';
+import { STAGES, STAGE_LABEL } from './stages';
 
 export const dynamic = 'force-dynamic';
-
-const STAGES = ['new', 'connected', 'replied', 'call', 'won', 'lost'];
-const STAGE_LABEL = { new: 'New', connected: 'Connected', replied: 'Replied', call: 'Call', won: 'Won', lost: 'Lost' };
 
 export default async function AdminOverviewPage() {
   const admin = createAdminClient();
