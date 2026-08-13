@@ -45,7 +45,10 @@ export default async function SendQueuePage({ searchParams }) {
   const repliedCount = leads.filter(l => l.status === 'replied').length;
   const bookedCount = leads.filter(l => l.status === 'booked').length;
   const bouncedCount = leads.filter(l => l.status === 'bounced').length;
-  const bounceRate = sentCount ? Math.round((bouncedCount / sentCount) * 100) : 0;
+  const pct = (n, d) => (d ? Math.round((n / d) * 100) : null);
+  const bounceRate = pct(bouncedCount, sentCount) ?? 0;
+  const replyRate = pct(repliedCount, sentCount);
+  const bookRate = pct(bookedCount, repliedCount);
 
   // Per-step funnel: how many leads got at least this far, and how many replied.
   const stepStats = steps.map(s => {
@@ -163,18 +166,22 @@ export default async function SendQueuePage({ searchParams }) {
             <div className="tag">Campaign funnel</div>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12, marginBottom: stepStats.length ? 20 : 0 }}>
               {[
-                ['Total', leads.length, 'var(--ink3)'],
-                ['Eligible', eligible.length, 'var(--amber)'],
-                ['Sent', sentCount, 'var(--ink)'],
-                ['Bounced', bouncedCount, bounceRate > 5 ? 'var(--brick)' : 'var(--ink3)'],
-                ['Replied', repliedCount, 'var(--forest)'],
-                ['Booked', bookedCount, 'var(--forest)'],
-              ].map(([label, value, color]) => (
+                ['Total', leads.length, 'var(--ink3)', null],
+                ['Eligible', eligible.length, 'var(--amber)', pct(eligible.length, leads.length)],
+                ['Sent', sentCount, 'var(--ink)', pct(sentCount, eligible.length)],
+                ['Bounced', bouncedCount, bounceRate > 5 ? 'var(--brick)' : 'var(--ink3)', bounceRate],
+                ['Replied', repliedCount, 'var(--forest)', replyRate],
+                ['Booked', bookedCount, 'var(--forest)', bookRate],
+              ].map(([label, value, color, rate]) => (
                 <div key={label} style={{ flex: '1 1 90px', textAlign: 'center' }}>
                   <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 28, color, lineHeight: 1 }}>{value}</div>
                   <div className="mono" style={{ fontSize: 9, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink3)', marginTop: 4 }}>{label}</div>
+                  {rate !== null && <div className="mono" style={{ fontSize: 10, color: 'var(--ink3)', marginTop: 2 }}>{rate}%</div>}
                 </div>
               ))}
+            </div>
+            <div className="mono" style={{ fontSize: 9, color: 'var(--ink3)', marginBottom: stepStats.length ? 16 : 0 }}>
+              % of: Eligible/Total &middot; Sent/Eligible &middot; Bounced+Replied/Sent &middot; Booked/Replied
             </div>
 
             {stepStats.length > 0 && (
