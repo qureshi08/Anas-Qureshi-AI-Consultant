@@ -15,7 +15,7 @@ export default function SyncRepliesButton({ label = 'Sync replies' }) {
       const res = await fetch('/api/outbound/sync-replies', { method: 'POST' });
       const data = await res.json();
       setMsg(data.message || (res.ok ? 'Done.' : 'Failed.'));
-      if (data.repliedCount || data.bookedCount) router.refresh();
+      if (data.repliedCount || data.bookedCount || data.bouncedCount) router.refresh();
     } catch (err) {
       setMsg(`Failed: ${err.message}`);
     }

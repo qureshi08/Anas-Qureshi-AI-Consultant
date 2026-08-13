@@ -44,6 +44,8 @@ export default async function SendQueuePage({ searchParams }) {
   const sentCount = leads.filter(l => l.sent_at).length;
   const repliedCount = leads.filter(l => l.status === 'replied').length;
   const bookedCount = leads.filter(l => l.status === 'booked').length;
+  const bouncedCount = leads.filter(l => l.status === 'bounced').length;
+  const bounceRate = sentCount ? Math.round((bouncedCount / sentCount) * 100) : 0;
 
   // Per-step funnel: how many leads got at least this far, and how many replied.
   const stepStats = steps.map(s => {
@@ -164,6 +166,7 @@ export default async function SendQueuePage({ searchParams }) {
                 ['Total', leads.length, 'var(--ink3)'],
                 ['Eligible', eligible.length, 'var(--amber)'],
                 ['Sent', sentCount, 'var(--ink)'],
+                ['Bounced', bouncedCount, bounceRate > 5 ? 'var(--brick)' : 'var(--ink3)'],
                 ['Replied', repliedCount, 'var(--forest)'],
                 ['Booked', bookedCount, 'var(--forest)'],
               ].map(([label, value, color]) => (
