@@ -1,4 +1,5 @@
 import { createAdminClient } from '../../../lib/supabase/admin';
+import { deleteConversation } from '../actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,36 +20,52 @@ export default async function AdminChatsPage() {
     const msgs = (chatMsgs || []).filter(m => m.conversation_id === c.id);
     const lastVisitor = [...msgs].reverse().find(m => m.role === 'user');
     return (
-      <details className="card" style={{ padding: 14, borderColor: hot ? 'var(--brick)' : 'var(--ink)', boxShadow: hot ? '4px 4px 0 var(--brick)' : '4px 4px 0 var(--ink)' }}>
-        <summary style={{ cursor: 'pointer', listStyle: 'none' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', alignItems: 'baseline' }}>
-            <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 19, color: hot ? 'var(--brick)' : 'var(--ink3)' }}>
-              {c.email || 'Anonymous visitor'}
-            </span>
-            <span className="mono" style={{ fontSize: 10, color: 'var(--ink3)' }}>{fmt(c.updated_at || c.created_at)} &middot; {msgs.length} msgs</span>
-          </div>
-          {lastVisitor && (
-            <div style={{ fontSize: 13, color: 'var(--ink2)', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              &ldquo;{lastVisitor.content.slice(0, 120)}&rdquo;
-            </div>
-          )}
-        </summary>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12, borderTop: '1.5px dashed rgba(26,18,5,0.15)', paddingTop: 12 }}>
-          {msgs.map(m => (
-            <div key={m.id} style={{
-              alignSelf: m.role === 'user' ? 'flex-start' : 'flex-end', maxWidth: '85%',
-              background: m.role === 'user' ? 'var(--brick-light)' : 'var(--paper2)',
-              border: '1.5px solid rgba(26,18,5,0.25)', borderRadius: 8, padding: '6px 10px',
-              fontSize: 13, color: 'var(--ink2)', lineHeight: 1.4,
-            }}>
-              <span className="mono" style={{ fontSize: 8, letterSpacing: '.1em', textTransform: 'uppercase', color: m.role === 'user' ? 'var(--brick)' : 'var(--ink3)', display: 'block', marginBottom: 2 }}>
-                {m.role === 'user' ? 'Visitor' : 'AI'}
+      <div style={{ position: 'relative' }}>
+        <details className="card" style={{ padding: 14, borderColor: hot ? 'var(--brick)' : 'var(--ink)', boxShadow: hot ? '4px 4px 0 var(--brick)' : '4px 4px 0 var(--ink)' }}>
+          <summary style={{ cursor: 'pointer', listStyle: 'none', paddingRight: 70 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', alignItems: 'baseline' }}>
+              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 19, color: hot ? 'var(--brick)' : 'var(--ink3)' }}>
+                {c.email || 'Anonymous visitor'}
               </span>
-              {m.content}
+              <span className="mono" style={{ fontSize: 10, color: 'var(--ink3)' }}>{fmt(c.updated_at || c.created_at)} &middot; {msgs.length} msgs</span>
             </div>
-          ))}
-        </div>
-      </details>
+            {lastVisitor && (
+              <div style={{ fontSize: 13, color: 'var(--ink2)', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                &ldquo;{lastVisitor.content.slice(0, 120)}&rdquo;
+              </div>
+            )}
+          </summary>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12, borderTop: '1.5px dashed rgba(26,18,5,0.15)', paddingTop: 12 }}>
+            {msgs.map(m => (
+              <div key={m.id} style={{
+                alignSelf: m.role === 'user' ? 'flex-start' : 'flex-end', maxWidth: '85%',
+                background: m.role === 'user' ? 'var(--brick-light)' : 'var(--paper2)',
+                border: '1.5px solid rgba(26,18,5,0.25)', borderRadius: 8, padding: '6px 10px',
+                fontSize: 13, color: 'var(--ink2)', lineHeight: 1.4,
+              }}>
+                <span className="mono" style={{ fontSize: 8, letterSpacing: '.1em', textTransform: 'uppercase', color: m.role === 'user' ? 'var(--brick)' : 'var(--ink3)', display: 'block', marginBottom: 2 }}>
+                  {m.role === 'user' ? 'Visitor' : 'AI'}
+                </span>
+                {m.content}
+              </div>
+            ))}
+          </div>
+        </details>
+        <form action={deleteConversation} style={{ position: 'absolute', top: 14, right: 14 }}>
+          <input type="hidden" name="id" value={c.id} />
+          <button
+            type="submit"
+            className="mono"
+            style={{
+              fontSize: 10, letterSpacing: '.05em', textTransform: 'uppercase',
+              color: 'var(--brick)', background: 'var(--paper)', border: '1.5px solid var(--brick)',
+              borderRadius: 4, padding: '3px 8px', cursor: 'pointer',
+            }}
+          >
+            Delete
+          </button>
+        </form>
+      </div>
     );
   };
 

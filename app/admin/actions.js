@@ -105,6 +105,16 @@ export async function updateProspect(formData) {
   revalidatePath('/admin/outbound');
 }
 
+export async function deleteConversation(formData) {
+  await requireUser();
+  const id = formData.get('id');
+  if (!id) return;
+  const admin = createAdminClient();
+  await admin.from('chat_messages').delete().eq('conversation_id', id);
+  await admin.from('conversations').delete().eq('id', id);
+  revalidatePath('/admin/chats');
+}
+
 export async function updateBooking(formData) {
   await requireUser();
   const id = formData.get('id');
