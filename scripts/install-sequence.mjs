@@ -7,6 +7,16 @@
  * cheapest fix available and the already-sent leads can be enrolled rather
  * than wasted.
  *
+ * Revision 2 (2026-08-15): the first version only personalized step 1. Steps
+ * 2 to 4 read identically for all 173 leads except name and company, which
+ * fails the actual bar Anas set: "even the next sequence emails will feel
+ * like it's made for me, not like sent to hundreds of people." {{spec}} (the
+ * lead's vertical, computed live at send time in emailService.js from their
+ * custom_note/industry/company, never blank) and {{step2_hook}} (their own
+ * title woven in where one exists) now carry through steps 2 to 4 as well,
+ * so something specific to the company appears in every message, not only
+ * the opener.
+ *
  * Timing note: the sequencer measures delay_days from the PREVIOUS send (it
  * rewrites sent_at each time it sends), so delays are gaps, not offsets from
  * step 1. 3 + 4 + 5 lands the last touch on day 12.
@@ -55,7 +65,7 @@ const STEPS = [
     step_number: 2,
     delay_days: 3,
     subject_template: 'Re: screening at {{company_short}}',
-    part_p: 'Hi {{first_name}}, one more detail in case it helps.',
+    part_p: 'Hi {{first_name}}, {{step2_hook}}, so here is one more detail in case it helps.',
     part_w: 'It takes me about five days. You send one real job description and a batch of applicants you already have, and it comes back scoring each one against your own criteria with a short reason per candidate.',
     part_o: 'You keep the judgement. It just clears the obvious no from the pile first.',
     part_c: 'Still free, and still no call needed.',
@@ -65,7 +75,7 @@ const STEPS = [
     step_number: 3,
     delay_days: 4,
     subject_template: 'Re: screening at {{company_short}}',
-    part_p: '{{first_name}}, different offer, no strings on this one.',
+    part_p: '{{first_name}}, different offer this time, no strings attached.',
     part_w: 'Tell me the one role you hire for most often and I will send back a short sketch of how I would wire the screening for it.',
     part_o: 'Yours to keep whether or not you ever want it built, and whether or not you reply again after that.',
     part_c: 'Which role is it?',
@@ -78,7 +88,7 @@ const STEPS = [
     part_p: '{{first_name}}, closing the loop so I am not another recurring email in your inbox.',
     part_w: 'The offer stands if it is ever useful. One real role, built free, no call.',
     part_o: '',
-    part_c: 'Otherwise all the best with the hiring at {{company_short}} this year.',
+    part_c: 'Otherwise all the best with the {{spec}} hiring at {{company_short}} this year.',
     part_signoff: 'Anas',
   },
 ];
