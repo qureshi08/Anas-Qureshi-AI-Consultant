@@ -46,9 +46,28 @@ const db = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE,
 // nothing in the vocabulary matches, the lead gets no line rather than a
 // clumsy one: a bad first line is worse than a plain one.
 
-// Never reference someone's race, gender, veteran status or diversity
-// certifications in cold outreach. Not as a sector, not as flattery, ever.
-const BANNED = /black|woman|women|female|minority|veteran|disab|wbe|wbenc|nmsdc|sdvosb|mbe|dbe|8\(a\)|hubzone|lgbt/i;
+// Never reference someone's race, gender, veteran status, tribal affiliation,
+// disability, or diversity certification in cold outreach. Not as a sector,
+// not as flattery, ever. Extractors below only ever return a controlled label
+// or a number pulled by a narrow regex, never a copied slice of the note, so
+// this list guards the label vocabulary rather than needing to scan free text.
+const BANNED = /black|woman|women|female|minority|veteran|disab|indigenous|navajo|tribal|tero|dobe\b|wbe|wbenc|nmsdc|sdvosb|mbe\b|dbe\b|8\(a\)|hubzone|lgbt|hispanic|latino|latina|asian[- ]american|native american|pacific islander/i;
+
+// A note can carry its own internal caveat from the sourcing pass ("WEAK
+// CONFIDENCE", "verify before outreach", a bracketed [job_board_...] tag). A
+// lead flagged this way gets no line and is reported separately, because
+// composing confident personal copy from a note that says "unverified" is
+// worse than the generic fallback ever was.
+const LOW_CONFIDENCE = /weak confidence|verify before|not established|unclear|uncertain|unconfirmed|possible solo\/side-venture/i;
+
+// Marital or family relationship structure is personal information about a
+// stranger, not a business fact, and has no place in cold outreach even when
+// it is volunteered in the sourcing note.
+const RELATIONSHIP = /husband[- ]?wife|husband and wife|married couple/i;
+
+function stripInternalTags(note) {
+  return (note || '').replace(/\[[^\]]*\]/g, ' ');
+}
 
 const SECTORS = [
   [/\b(it|tech|technology|software|developer|engineering tech)\b/i, 'IT'],
@@ -73,7 +92,17 @@ const SECTORS = [
   [/\bexecutive|c-suite|ceo|cfo|board\b/i, 'executive'],
 ];
 
-function specialtyOf(note, industry, company) {
+function kindOf(hay) {
+  return /executive search|retained|headhunt/i.test(hay) ? 'search'
+    : /\bstaffing\b/i.test(hay) ? 'staffing'
+    : 'recruiting';
+}
+
+// A named vertical when one is present ("finance and accounting staffing").
+// Returns null rather than a generic fallback, so callers can tell the two
+// cases apart: a real vertical earns its own line shape, a generic one earns
+// a plainer shape that does not pretend to more research than exists.
+function verticalOf(note, industry, company) {
   const hay = `${note || ''} ${industry || ''} ${company || ''}`;
   const hits = [];
   for (const [re, label] of SECTORS) {
@@ -89,15 +118,26 @@ function specialtyOf(note, industry, company) {
     hits.length = 1;
   }
 
-  const kind = /executive search|retained|headhunt/i.test(hay) ? 'search'
-    : /\bstaffing\b/i.test(hay) ? 'staffing'
-    : 'recruiting';
-
+  const kind = kindOf(hay);
   // "executive search" reads wrong as "executive search search".
   if (hits[0] === 'executive' && kind === 'search') {
     return hits[1] ? `${hits[1]} executive search` : 'executive search';
   }
   return `${hits.join(' and ')} ${kind}`;
+}
+
+// Every lead on this list is in recruiting or staffing by definition (see the
+// ICP lock in BusinessOS/protocols/ai-consultant-outreach-kit.md), so when no
+// named vertical matches, "recruiting" or "staffing" on its own is still a
+// TRUE fact, just a plainer one. This is what widens coverage past the 49
+// that had no line at all: most of them simply say "general staffing" or
+// never name a niche, which used to fail the whole function.
+function specialtyOf(note, industry, company) {
+  const named = verticalOf(note, industry, company);
+  if (named) return named;
+  const hay = `${note || ''} ${industry || ''} ${company || ''}`;
+  if (/staffing|recruit|search firm|headhunt|placement|talent/i.test(hay)) return kindOf(hay);
+  return null;
 }
 
 function yearsOf(note) {
@@ -116,74 +156,192 @@ function sizeOf(note) {
   return null;
 }
 
-const isSolo = (n) => /\bsolo\b|one-?person|\bherself\b|\bhimself\b|owner-?operator|solo-?principal|solo-?founder/i.test(n || '');
+const isSolo = (n) => /\bsolo\b|one-?person|\bherself\b|\bhimself\b|owner-?operator|solo-?principal|solo-?founder|true solo operator/i.test(n || '');
 const isTiny = (n) => /\btiny\b|\bsmall team\b|\bboutique\b/i.test(n || '');
+
+function locationsOf(note) {
+  const m = /\b(\d{1,2})\s*(?:locations?|branches?|offices?)\b/i.exec(note || '');
+  return m ? Number(m[1]) : null;
+}
+
+// The single strongest personalization axis available: a real number that
+// evidences the exact pain the offer targets. "60,000+ applications
+// historically" says more than any adjective could.
+function volumeOf(note) {
+  const m = /\b([\d,]{2,7})\+?\s*(applications?|placements?|candidates?|resumes?|cvs?|hires?)\b/i.exec(note || '');
+  if (!m) return null;
+  const n = Number(m[1].replace(/,/g, ''));
+  if (!n || n < 100) return null; // small counts do not read as a "volume" claim
+  const noun = /application/i.test(m[2]) ? 'applications'
+    : /placement/i.test(m[2]) ? 'placements'
+    : /candidate/i.test(m[2]) ? 'candidates'
+    : /hire/i.test(m[2]) ? 'hires'
+    : 'resumes';
+  return { n: n.toLocaleString('en-US'), noun };
+}
+
+// Facts about the owner doing the work personally, which is the exact thing
+// the offer removes, so this is the highest-relevance tier when present. The
+// source note writes these in third person ("screens every applicant
+// himself") since it was written for internal use; every phrase below is
+// composed in second person instead, both because it reads better in a cold
+// email and because it sidesteps ever assigning a pronoun to a stranger.
+function personalActionOf(note) {
+  const n = note || '';
+  if (/screens? (every )?applicants? (personally|himself|herself|yourself)|screening candidates? is (her|his|your) whole product/i.test(n)) {
+    return 'you are screening every applicant yourself';
+  }
+  if (/matches? candidates? personally|personally matches candidates/i.test(n)) {
+    return 'you are personally matching every candidate';
+  }
+  if (/handling intake and screening (herself|himself|yourself)/i.test(n)) {
+    return 'you are handling intake and screening on your own';
+  }
+  if (/founder still recruiting (himself|herself|yourself)/i.test(n)) {
+    return 'you are still doing the recruiting yourself after all this time';
+  }
+  return null;
+}
+
+// A clean achievement, when one exists free of any demographic framing.
+// Deliberately narrow to structural award shapes only ("named 2025 X of the
+// Year", Inc. 5000) rather than a general "named ..." pattern: the general
+// version matched "named Talent Acquisition staff" (a staff credit, not an
+// award) and would have matched "featured in Negocios Now Hispanic Business"
+// as if it were safe. Missing a real achievement is a fine trade for never
+// lifting a wrong or identity-adjacent one.
+function achievementOf(note) {
+  const n = note || '';
+  // Every branch returns a phrase shaped to follow "was", so both call-site
+  // templates ("saw X was ___" and "X being ___ caught my eye") read cleanly.
+  // The Inc. 5000 / best-place / fastest-growing branches return a fixed
+  // string rather than anything lifted from the note, so a banned term
+  // sitting elsewhere in the same sentence (a certification alongside a real
+  // award, which happens often in these notes) cannot leak through them. Only
+  // the "of the year" branch captures note text, so only it is checked.
+  if (/\binc\.?\s*5000\b/i.test(n)) return 'recognized on the Inc. 5000 for how fast it has grown';
+  const ofTheYear = /named (\d{4}\s+)?([\w' -]{4,50}?of the year)/i.exec(n);
+  if (ofTheYear && !BANNED.test(ofTheYear[0])) {
+    return `named ${ofTheYear[1] || ''}${ofTheYear[2]}`.replace(/\s{2,}/g, ' ').trim();
+  }
+  const bestPlace = /\bbest place(?:s)? to work\b/i.exec(n);
+  if (bestPlace) return 'named a best place to work';
+  const fastest = /\bfastest[- ]growing\b/i.exec(n);
+  if (fastest) return 'named one of the fastest growing firms in the space';
+  return null;
+}
 
 // ---- composition ----------------------------------------------------------
 // Several shapes, chosen by what the note actually contains, so a whole list
 // does not arrive reading from one mould.
 
 function compose(lead, i) {
-  const note = lead.custom_note || '';
+  const rawNote = lead.custom_note || '';
+  if (LOW_CONFIDENCE.test(rawNote)) return { line: null, reason: 'low-confidence flag in sourcing note' };
+
+  const note = stripInternalTags(rawNote);
   const company = (lead.company || '')
     .replace(/\([^)]*\)/g, '')                       // drop "(CP Staffing)", "(SROVA)"
     .replace(/,?\s*(LLC|L\.L\.C\.|Inc\.?|Ltd\.?|Corp\.?|Co\.)\s*$/i, '')
     .replace(/\s{2,}/g, ' ')
     .trim();
-  const spec = specialtyOf(note, lead.industry, lead.company);
+  if (!company) return { line: null, reason: 'no usable company name' };
+
+  const spec = specialtyOf(note, lead.industry, lead.company);   // named vertical, or a plain "staffing/recruiting/search" fallback
+  const named = verticalOf(note, lead.industry, lead.company);   // non-null only when a real vertical matched
   const years = yearsOf(note);
   const size = sizeOf(note);
+  const locations = locationsOf(note);
+  const volume = volumeOf(note);
+  const action = personalActionOf(note);
+  const achievement = achievementOf(note);
   const solo = isSolo(note);
-  if (!company || !spec) return null;
 
   const rot = (arr) => arr[i % arr.length];
 
-  if (years && years.kind === 'since' && spec) {
-    return rot([
-      `saw ${company} has been doing ${spec} since ${years.value}, which is a long time to be running the same intake by hand.`,
-      `${company} has been at ${spec} since ${years.value}, so you have almost certainly seen every version of the screening problem by now.`,
-      `saw ${company} goes back to ${years.value} in ${spec}, and that is a rare run in this business.`,
-    ]);
+  // Highest tier first: a real number or a real achievement outranks a
+  // category label every time, because it proves research rather than
+  // asserting it.
+  if (volume) {
+    return { line: rot([
+      `saw ${company} has handled ${volume.n}+ ${volume.noun} historically, which is a serious amount of manual reading.`,
+      `${volume.n}+ ${volume.noun} over the years at ${company} is not a small-inbox problem any more.`,
+    ]) };
   }
 
-  if (years && years.kind === 'span' && spec) {
-    return rot([
-      `${years.value} years of ${spec} means you have read a lot of CVs personally.`,
-      `saw you have been placing people in ${spec} for ${years.value}+ years, mostly hands on by the look of it.`,
-    ]);
+  if (achievement) {
+    return { line: rot([
+      `saw ${company} was ${achievement}, congratulations on that.`,
+      `${company} being ${achievement} caught my eye.`,
+    ]) };
   }
 
-  if (solo && spec) {
-    return rot([
-      `saw you are running ${company} yourself, and doing the ${spec} screening on top of winning the work.`,
-      `${company} looks like a one person operation on the ${spec} side, which means the applicant reading lands on you.`,
-      `saw you handle ${spec} at ${company} solo, intake and screening included.`,
-    ]);
+  if (action && spec) {
+    return { line: rot([
+      `saw ${action} at ${company}, on top of everything else running the business takes.`,
+      `${action}, which is exactly the part of ${spec} that eats the most time.`,
+    ]) };
+  }
+
+  if (years && years.kind === 'since') {
+    return { line: rot([
+      spec ? `saw ${company} has been doing ${spec} since ${years.value}, which is a long time to be running the same intake by hand.`
+           : `saw ${company} has been running since ${years.value}, long enough to have read a lot of applications by now.`,
+      spec ? `${company} has been at ${spec} since ${years.value}, so you have almost certainly seen every version of the screening problem by now.`
+           : `${company} goes back to ${years.value}, which is a rare run in this business.`,
+    ]) };
+  }
+
+  if (years && years.kind === 'span') {
+    return { line: rot([
+      spec ? `${years.value} years of ${spec} means you have read a lot of CVs personally.`
+           : `${years.value} years in the business means you have read a lot of CVs personally.`,
+      spec ? `saw you have been placing people in ${spec} for ${years.value}+ years, mostly hands on by the look of it.`
+           : `saw you have been placing people for ${years.value}+ years, mostly hands on by the look of it.`,
+    ]) };
+  }
+
+  if (locations && locations > 1) {
+    return { line: rot([
+      `running ${locations} locations at ${company} means a lot of open roles moving at once.`,
+      `saw ${company} covers ${locations} locations, which is a lot of parallel hiring to keep on top of.`,
+    ]) };
+  }
+
+  if (solo && !RELATIONSHIP.test(note)) {
+    return { line: rot([
+      spec ? `saw you are running ${company} yourself, and doing the ${spec} screening on top of winning the work.`
+           : `saw you are running ${company} yourself, screening included, on top of winning the work.`,
+      spec ? `${company} looks like a one person operation on the ${spec} side, which means the applicant reading lands on you.`
+           : `${company} looks like a one person operation, which means the applicant reading lands on you.`,
+      spec ? `saw you handle ${spec} at ${company} solo, intake and screening included.`
+           : `saw you run ${company} solo, intake and screening included.`,
+    ]) };
   }
 
   if (size && spec) {
     const article = /^[aeiou8]/i.test(String(size)) ? 'an' : 'a';
-    return rot([
+    return { line: rot([
       `${article} ${size} person shop covering ${spec} is a lot of ground for the number of people reading applications.`,
       `saw ${company} runs ${spec} with a team of about ${size}, so the first pass on applicants has nowhere to go but your desk.`,
-    ]);
+    ]) };
   }
 
   if (isTiny(note) && spec) {
-    return rot([
+    return { line: rot([
       `saw ${company} is a small ${spec} shop, which usually means the owner is still doing the first read on applicants.`,
       `${company} looks like a boutique on the ${spec} side, small enough that screening has not been handed off.`,
-    ]);
+    ]) };
   }
 
   if (spec) {
-    return rot([
+    return { line: rot([
       `saw ${company} focuses on ${spec} rather than trying to cover everything.`,
       `${company} looks focused on ${spec}, which is usually where the applicant volume gets heaviest.`,
-    ]);
+    ]) };
   }
 
-  return null; // no honest specific available, better to skip than to fake one
+  return { line: null, reason: 'no honest specific found' };
 }
 
 // ---- run ------------------------------------------------------------------
@@ -195,12 +353,18 @@ const { data: leads, error } = await db
 
 if (error) { console.error(error.message); process.exit(1); }
 
-let written = 0, skipped = 0;
+let written = 0;
 const preview = [];
+const lowConfidence = [];
+const noSpecific = [];
 
 for (const [i, lead] of leads.entries()) {
-  const line = compose(lead, i);
-  if (!line) { skipped++; continue; }
+  const { line, reason } = compose(lead, i);
+  if (!line) {
+    if (reason === 'low-confidence flag in sourcing note') lowConfidence.push(lead.company);
+    else noSpecific.push(lead.company);
+    continue;
+  }
   preview.push(`${lead.company}\n   ${line}`);
   if (!DRY) {
     await db.from('leads').update({ notes: line }).eq('id', lead.id);
@@ -208,5 +372,10 @@ for (const [i, lead] of leads.entries()) {
   written++;
 }
 
-console.log(preview.slice(0, 30).join('\n'));
-console.log(`\n${DRY ? 'DRY RUN. ' : ''}composed ${written}, skipped ${skipped} with no honest specific, of ${leads.length}`);
+console.log(preview.join('\n'));
+console.log(`\n${DRY ? 'DRY RUN. ' : ''}composed ${written} of ${leads.length}`);
+console.log(`no honest specific found: ${noSpecific.length}`);
+if (lowConfidence.length) {
+  console.log(`\nLOW-CONFIDENCE, held back on purpose, check by hand before sending (${lowConfidence.length}):`);
+  lowConfidence.forEach(c => console.log(`  - ${c}`));
+}
