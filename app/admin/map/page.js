@@ -1,70 +1,33 @@
 import { createAdminClient } from '../../../lib/supabase/admin';
+import { BENCH, ICP_NOTE, zeroCeiling, pZeroAtBenchmark } from './benchmarks';
+import MapView from './MapView';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-// The business, drawn as phases rather than as a status checklist. Phase order
-// is the order a stranger travels: POSITION -> FIND -> REACH -> CONVERT -> PAID,
-// with MEASURE sitting underneath all of them because it is what licenses a
-// change anywhere upstream. Colour is a property of each node (locked / dial /
-// blind), never the grouping, so a green box and an amber box can sit inside
-// the same phase.
+// The business drawn as the phases a stranger travels, not as a status list.
+//
+// The lock rule, per Anas 2026-08-15: a SYSTEM can be locked because it either
+// runs or it doesn't. STRATEGY can only be locked by over-performing against an
+// outside benchmark. So the offer, the price, the ICP and the positioning are
+// never "locked" here no matter how settled they feel -- they are bets until
+// the numbers beat the market.
 
-const T = {
-  lock:  { fill: 'var(--forest-fill)', line: 'var(--forest)', text: 'var(--ink)',  badge: 'LOCKED' },
-  work:  { fill: 'var(--forest-fill)', line: 'var(--forest)', text: 'var(--ink)',  badge: 'WORKING' },
-  dial:  { fill: 'var(--amber-fill)',  line: 'var(--amber)',  text: 'var(--ink)',  badge: 'DIAL' },
-  blind: { fill: 'var(--brick-fill)',  line: 'var(--brick)',  text: 'var(--ink)',  badge: 'BLIND' },
-  none:  { fill: 'none',               line: 'var(--ink3)',   text: 'var(--ink3)', badge: 'NEVER RUN' },
-};
-
-function Node({ x, y, w, h, tone = 'work', title, line1, line2, stat, dashed }) {
-  const t = T[tone];
-  return (
-    <g>
-      {tone !== 'none' && <rect x={x + 4} y={y + 4} width={w} height={h} fill="var(--ink)" />}
-      <rect
-        x={x} y={y} width={w} height={h}
-        fill={t.fill} stroke={t.line} strokeWidth="2.5"
-        strokeDasharray={dashed ? '9 7' : undefined}
-      />
-      <text x={x + 12} y={y + 24} fontFamily="var(--font-display)" fontSize="21" fill={t.text}>{title}</text>
-      {stat != null && (
-        <text x={x + w - 12} y={y + 25} textAnchor="end" fontFamily="var(--font-display)"
-              fontSize="24" fill={t.line}>{stat}</text>
-      )}
-      {line1 && <text x={x + 12} y={y + 42} fontFamily="var(--font-body)" fontSize="13" fill="var(--ink2)">{line1}</text>}
-      {line2 && <text x={x + 12} y={y + 58} fontFamily="var(--font-body)" fontSize="13" fill="var(--ink3)">{line2}</text>}
-      <text x={x + w - 12} y={y + h - 8} textAnchor="end" fontFamily="var(--font-mono)"
-            fontSize="8.5" letterSpacing=".12em" fill={t.line}>{t.badge}</text>
-    </g>
-  );
-}
-
-function Hub({ x, y, w, n, title, sub }) {
-  return (
-    <g>
-      <rect x={x + 4} y={y + 4} width={w} height={56} fill="var(--ink)" />
-      <rect x={x} y={y} width={w} height={56} fill="var(--ink)" stroke="var(--ink)" strokeWidth="2.5" />
-      <text x={x + 12} y={y + 24} fontFamily="var(--font-mono)" fontSize="9.5" letterSpacing=".16em" fill="var(--amber)">
-        PHASE {n}
-      </text>
-      <text x={x + 12} y={y + 46} fontFamily="var(--font-display)" fontSize="26" fill="var(--paper)">{title}</text>
-      <text x={x + w - 12} y={y + 46} textAnchor="end" fontFamily="var(--font-body)" fontSize="12" fill="var(--paper2)">{sub}</text>
-    </g>
-  );
-}
+const pct = (n, d) => (d ? (n / d) * 100 : 0);
+const r1 = (n) => Math.round(n * 10) / 10;
+const domainOf = (e) => ((e || '').split('@')[1] || '').toLowerCase();
 
 export default async function MapPage() {
   const admin = createAdminClient();
 
-  const [pRes, lRes, ibRes, cRes, bRes, logRes] = await Promise.all([
-    admin.from('prospects').select('status, niche, source'),
-    admin.from('leads').select('id, status, sent_at, replied_at, booked_at, first_name, last_name, company, validation_status'),
+  const [pRes, lRes, ibRes, cRes, bRes, logRes, campRes] = await Promise.all([
+    admin.from('prospects').select('status, niche, source, notes, created_at'),
+    admin.from('leads').select('id, email, status, sent_at, replied_at, booked_at, first_name, last_name, company, validation_status, current_step'),
     admin.from('inbound_leads').select('id'),
     admin.from('conversations').select('id, email'),
-    admin.from('bookings').select('status, email, created_at'),
-    admin.from('email_logs').select('lead_id, status, subject, body, sent_at').in('status', ['auto_reply', 'received']),
+    admin.from('bookings').select('status, email'),
+    admin.from('email_logs').select('lead_id, status, subject, body, sent_at'),
+    admin.from('campaigns').select('id, name, subject_template'),
   ]);
 
   const ps = pRes.data || [];
@@ -73,287 +36,442 @@ export default async function MapPage() {
   const convos = cRes.data || [];
   const bookings = bRes.data || [];
   const logs = logRes.data || [];
+  const camps = campRes.data || [];
 
-  // ---- Cold DM lane -------------------------------------------------------
-  const REPLIED_DM = ['replied', 'call', 'won'];
+  // ---------------- lanes ----------------
+  const DM_REPLIED = ['replied', 'call', 'won'];
+  const SENT_STATES = ['sent', 'bounced', 'replied', 'booked'];
+
   const pTotal = ps.length;
   const pNew = ps.filter(p => p.status === 'new').length;
-  const pTouched = pTotal - pNew;               // anything past 'new' had a send
-  const pReplied = ps.filter(p => REPLIED_DM.includes(p.status)).length;
+  const pTouched = pTotal - pNew;
+  const pNoNote = ps.filter(p => p.status === 'request_sent_no_note').length;
+  const pWithNote = ps.filter(p => p.status === 'request_sent_with_note').length;
+  const pConnected = ps.filter(p => ['connected', 'dm_sent', 'dm_read', ...DM_REPLIED].includes(p.status)).length;
+  const pDmSent = ps.filter(p => ['dm_sent', 'dm_read', ...DM_REPLIED].includes(p.status)).length;
+  const pReplied = ps.filter(p => DM_REPLIED.includes(p.status)).length;
+  const requestsOut = pNoNote + pWithNote + pConnected;
 
-  // ---- Cold email lane ----------------------------------------------------
-  const SENT_STATES = ['sent', 'bounced', 'replied', 'booked'];
   const eAttempted = ls.filter(l => SENT_STATES.includes(l.status)).length;
   const eBounced = ls.filter(l => l.status === 'bounced').length;
-  const eReplied = ls.filter(l => l.status === 'replied' || l.status === 'booked').length;
-  const eSkipped = ls.filter(l => (l.status || '').startsWith('skipped')).length;
+  const eReplied = ls.filter(l => ['replied', 'booked'].includes(l.status)).length;
+  const eSkippedRole = ls.filter(l => l.status === 'skipped_role_address').length;
+  const eSkippedUnver = ls.filter(l => l.status === 'skipped_unverified').length;
   const ePending = ls.filter(l => l.status === 'pending').length;
   const eDelivered = eAttempted - eBounced;
-  const bounceRate = eAttempted ? Math.round((eBounced / eAttempted) * 1000) / 10 : 0;
+  const bounceRate = r1(pct(eBounced, eAttempted));
 
-  // ---- Inbound lane -------------------------------------------------------
-  const chatLeads = convos.filter(c => c.email).length;
-  // Bookings made from Anas's own address are test rows, not demand.
-  const realBookings = bookings.filter(b => !/manas192168|anasqureshi/i.test(b.email || ''));
-
-  // ---- Blended ------------------------------------------------------------
-  const touches = pTouched + eAttempted;
-  const replies = pReplied + eReplied;
-  const THRESHOLD = 1000;
-  const pctToThreshold = Math.min(100, (touches / THRESHOLD) * 100);
-  const replyRate = touches ? Math.round((replies / touches) * 1000) / 10 : 0;
-
-  // ---- ICP concentration --------------------------------------------------
-  const RECRUIT = /recruit|staffing|talent|headhunt|executive search|\brpo\b|\bhr\b/i;
-  const pOnIcp = ps.filter(p => RECRUIT.test(p.niche || '')).length;
-  const icpShare = pTotal ? Math.round((pOnIcp / pTotal) * 100) : 0;
-
-  // ---- Auto-replies -------------------------------------------------------
-  // An out-of-office is not interest, so it never counts as a reply. It is
-  // still the only hard proof we have that a send reached a real, monitored
-  // human mailbox rather than a spam folder, so it is reported on its own.
   const autoLogs = logs.filter(l => l.status === 'auto_reply');
   const autoReplies = autoLogs.length;
   const leadById = new Map(ls.map(l => [l.id, l]));
-  const autoNames = autoLogs
-    .map(l => leadById.get(l.lead_id))
-    .filter(Boolean)
-    .map(l => l.company || [l.first_name, l.last_name].filter(Boolean).join(' '));
 
-  // ---- A genuine reply, if one ever lands ---------------------------------
-  const answered = ls
-    .filter(l => l.replied_at && (l.status === 'replied' || l.status === 'booked'))
-    .sort((a, b) => new Date(b.replied_at) - new Date(a.replied_at));
-  const hot = answered[0];
-  const hotName = hot ? [hot.first_name, hot.last_name].filter(Boolean).join(' ') : null;
-  const turnaround = hot && hot.sent_at
-    ? Math.max(0, Math.round((new Date(hot.replied_at) - new Date(hot.sent_at)) / 60000))
-    : null;
+  const chatLeads = convos.filter(c => c.email).length;
+  const realBookings = bookings.filter(b => !/manas192168|anasqureshi/i.test(b.email || ''));
 
+  const touches = pTouched + eAttempted;
+  const replies = pReplied + eReplied;
+  const replyRate = r1(pct(replies, touches));
+  const THRESHOLD = 1000;
+
+  // ---------------- benchmark verdicts ----------------
+  const emailCeiling = zeroCeiling(eAttempted);
+  const emailPZero = pZeroAtBenchmark(eAttempted, BENCH.emailReply.avg);
+  const dmCeiling = zeroCeiling(pDmSent);
+
+  const emailCopyVerdict = eReplied > 0
+    ? (pct(eReplied, eAttempted) >= BENCH.emailReply.good ? 'over' : pct(eReplied, eAttempted) >= BENCH.emailReply.avg ? 'at' : 'under')
+    : (emailCeiling !== null && emailCeiling < BENCH.emailReply.avg ? 'under' : 'bet');
+
+  const dmCopyVerdict = pReplied > 0
+    ? (pct(pReplied, pDmSent) >= BENCH.liReply.avg ? 'over' : 'at')
+    : (dmCeiling !== null && dmCeiling < BENCH.liReply.avg ? 'under' : 'bet');
+
+  const bounceVerdict = eAttempted === 0 ? 'bet'
+    : bounceRate <= BENCH.emailBounce.good ? 'over'
+    : bounceRate <= BENCH.emailBounce.avg ? 'at' : 'under';
+
+  // Connection notes: the free-account note cap means most requests went out
+  // bare, and bare requests are the single biggest documented acceptance drag.
+  const noteVerdict = requestsOut === 0 ? 'bet' : (pct(pWithNote, requestsOut) < 50 ? 'under' : 'at');
+
+  // ---------------- breakdowns for the drill-downs ----------------
+  const tally = (arr, key) => {
+    const t = {};
+    for (const x of arr) { const k = key(x) || '(none)'; t[k] = (t[k] || 0) + 1; }
+    return Object.entries(t).sort((a, b) => b[1] - a[1]);
+  };
+
+  const sourceRows = tally(ps, p => p.source);
+  const validationRows = tally(ls, l => l.validation_status);
+  const bouncedDomains = tally(ls.filter(l => l.status === 'bounced'), l => domainOf(l.email));
+  const RECRUIT = /recruit|staffing|talent|headhunt|executive search|\brpo\b|\bhr\b/i;
+  const onIcp = ps.filter(p => RECRUIT.test(p.niche || '')).length;
+  const offIcp = ps.filter(p => p.niche && !RECRUIT.test(p.niche)).map(p => p.niche);
+  const icpShare = Math.round(pct(onIcp, pTotal));
+
+  // sends per day, both lanes
+  const SENT_DATE = /\[(\d{4}-\d{2}-\d{2})\]/;
+  const byDay = {};
+  const bump = (d, lane) => { if (!d) return; byDay[d] = byDay[d] || { dm: 0, email: 0 }; byDay[d][lane]++; };
+  for (const p of ps) {
+    if (p.status === 'new') continue;
+    const m = SENT_DATE.exec(p.notes || '');
+    bump(m ? m[1] : (p.created_at || '').slice(0, 10), 'dm');
+  }
+  for (const l of ls) if (l.sent_at) bump(l.sent_at.slice(0, 10), 'email');
+  const dayRows = Object.keys(byDay).sort().map(d => [d, `${byDay[d].dm} DM · ${byDay[d].email} email`]);
+  const sendingDays = Object.keys(byDay).length;
+
+  const fmt = (d) => (d ? new Date(d).toISOString().slice(0, 10) : '—');
   const lastSend = ls.filter(l => l.sent_at).sort((a, b) => new Date(b.sent_at) - new Date(a.sent_at))[0];
 
-  const fmt = (d) => d ? new Date(d).toISOString().slice(0, 10) : '—';
+  const hot = ls
+    .filter(l => l.replied_at && ['replied', 'booked'].includes(l.status))
+    .sort((a, b) => new Date(b.replied_at) - new Date(a.replied_at))[0];
 
-  // column geometry
-  const C = { p1: 30, p2: 320, p3: 600, p4: 960, p5: 1220 };
-  const W = { p1: 260, p2: 250, p3: 330, p4: 230, p5: 200 };
-  const R = { a: 34, b: 116, c: 192, d: 268, e: 344 };
+  // ---------------- the model handed to the view ----------------
+  const N = (id, o) => ({ id, ...o });
 
-  return (
-    <div>
-      {/* ---------------- live banner ---------------- */}
-      {hot ? (
-        <div style={{
-          border: '2.5px solid var(--brick)', background: 'var(--brick-fill)', padding: '14px 18px',
-          boxShadow: '4px 4px 0 var(--ink)', marginBottom: 22,
-        }}>
-          <div className="mono" style={{ fontSize: 10, letterSpacing: '.14em', color: 'var(--brick)' }}>
-            LIVE · A HUMAN ANSWERED
-          </div>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: 27, color: 'var(--ink)', lineHeight: 1.15, marginTop: 2 }}>
-            {hotName} at {hot.company}
-          </div>
-          <div style={{ fontFamily: 'var(--font-body)', fontSize: 15, color: 'var(--ink2)' }}>
-            Replied {turnaround != null ? `${turnaround} minutes after the send` : 'to a cold email'} on {fmt(hot.replied_at)}.
-            {hot.booked_at ? ' A call is booked.' : ' Nothing has gone back yet.'}
-          </div>
-        </div>
-      ) : (
-        <div style={{
-          border: '2.5px solid var(--ink)', background: 'var(--paper2)', padding: '14px 18px',
-          boxShadow: '4px 4px 0 var(--ink)', marginBottom: 22,
-        }}>
-          <div className="mono" style={{ fontSize: 10, letterSpacing: '.14em', color: 'var(--ink3)' }}>
-            NO HUMAN HAS ANSWERED YET
-          </div>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: 27, color: 'var(--ink)', lineHeight: 1.15, marginTop: 2 }}>
-            {replies} real {replies === 1 ? 'reply' : 'replies'} from {touches} tries
-          </div>
-          <div style={{ fontFamily: 'var(--font-body)', fontSize: 15, color: 'var(--ink2)' }}>
-            {autoReplies > 0
-              ? `${autoReplies} auto-reply from ${autoNames.join(', ')} is excluded. An out-of-office is not interest, but it does prove a send landed in a real monitored inbox.`
-              : 'No auto-replies either, so nothing has confirmed delivery to a human inbox yet.'}
-          </div>
-        </div>
-      )}
+  const nodes = [
+    // ---- PHASE 1 · POSITION (all strategy: never lockable without proof) ----
+    N('offer', {
+      phase: 1, row: 0, title: 'THE OFFER', stat: '0',
+      verdict: 'bet', sub: 'one free build, then paid',
+      why: 'Strategy, so it cannot be locked. It has also never run once.',
+      detail: {
+        headline: 'Zero free builds delivered to a direct prospect. Ever.',
+        bench: 'No benchmark applies until it has run once.',
+        bullets: [
+          'The entire offer design rests on free build converting to paid, and that rate is not low, it is unmeasured.',
+          'The nearest evidence is a concrete build with a price attached getting a same-day yes. That is one data point, and it came through a warm channel.',
+          'This is the cheapest unknown on the whole page to close: it takes one delivery, not a hundred more sends.',
+        ],
+        rows: [['Free builds delivered', '0'], ['Paid clients', '0'], ['Money received', '$0']],
+      },
+    }),
+    N('price', {
+      phase: 1, row: 1, title: 'THE PRICE', stat: '$300+',
+      verdict: 'bet', sub: '$300 to $3,000 menu',
+      why: 'Strategy. Never tested against a real buyer.',
+      detail: {
+        headline: 'The menu has never been quoted to a direct client and accepted.',
+        bench: 'No benchmark until someone is quoted.',
+        bullets: [
+          'Automation $300 to $1,000, assistant $500 to $1,500, internal tool $1,000 to $3,000.',
+          'The one live negotiation ended below the opening quote, which is why floor terms now get written down before any call.',
+          'Delivery cost is near zero, so almost the entire price is margin. That is the part that is genuinely settled.',
+        ],
+        rows: [['Quotes given', '0'], ['Accepted', '0']],
+      },
+    }),
+    N('icp', {
+      phase: 1, row: 2, title: 'THE ICP', stat: `${icpShare}%`,
+      verdict: 'bet', sub: 'recruiting and staffing',
+      why: 'Strategy. Well chosen on outside evidence, still unvalidated by a reply.',
+      detail: {
+        headline: `${onIcp} of ${pTotal} sourced prospects are genuinely in the recruiting and staffing vertical.`,
+        bench: ICP_NOTE,
+        bullets: [
+          'That external benchmark matters more than it looks: this vertical is the best-replying one measured, so a flat result here points at the message rather than at the audience.',
+          'Sourcing is hitting the target it was aimed at. The list is not the leak.',
+          `Locked to ${THRESHOLD} tries before reconsidering, currently ${touches}. The freeze exists because switching too early is the most expensive documented failure here.`,
+        ],
+        rows: [
+          ['On-ICP prospects', `${onIcp} (${icpShare}%)`],
+          ['Off-ICP still on the list', String(offIcp.length)],
+          ...offIcp.slice(0, 6).map(n => ['  off-ICP', n]),
+        ],
+      },
+    }),
+    N('proofrule', {
+      phase: 1, row: 3, title: 'PROOF RULE', stat: '🔒',
+      verdict: 'locked', sub: 'own builds only, never the employer',
+      why: 'A constraint, not a strategy. Constraints lock.',
+      detail: {
+        headline: 'Never name or use employer client work as personal proof.',
+        bench: 'Not a performance question. This one is a hard boundary.',
+        bullets: [
+          'This is the one thing on the page that is locked regardless of how it performs, because it is a rule rather than a tactic.',
+          'Usable proof: the live assistant, this pipeline app, the outbound engine. All built by you, all showable.',
+          'It came from a real takedown order, so it is not theoretical.',
+        ],
+        rows: [['Status', 'Permanent'], ['Reason', 'Boundary, not tactic']],
+      },
+    }),
 
-      {/* ---------------- headline numbers ---------------- */}
-      <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-        border: '2.5px solid var(--ink)', background: 'var(--paper)', boxShadow: '4px 4px 0 var(--ink)', marginBottom: 26,
-      }}>
-        {[
-          { k: 'Touches sent', v: touches, n: `${pTouched} DM · ${eAttempted} email` },
-          { k: 'Real replies', v: replies, n: `${replyRate}% of touches` },
-          { k: 'Auto-replies', v: autoReplies, n: 'proof of delivery, not interest' },
-          { k: 'Free builds', v: 0, n: 'never run' },
-          { k: 'Received', v: '$0', n: 'the only real score' },
-          { k: 'Last send', v: fmt(lastSend?.sent_at).slice(5), n: 'email lane' },
-        ].map((s, i) => (
-          <div key={s.k} style={{ padding: '11px 14px', borderRight: i < 4 ? '2px solid rgba(26,18,5,.14)' : 'none' }}>
-            <div className="mono" style={{ fontSize: 9.5, letterSpacing: '.14em', textTransform: 'uppercase', color: 'var(--ink3)' }}>{s.k}</div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 34, lineHeight: 1.05, color: s.v === 0 || s.v === '$0' ? 'var(--brick)' : 'var(--ink)' }}>{s.v}</div>
-            <div style={{ fontFamily: 'var(--font-body)', fontSize: 12.5, color: 'var(--ink3)' }}>{s.n}</div>
-          </div>
-        ))}
-      </div>
+    // ---- PHASE 2 · FIND (systems: lockable) ----
+    N('sourcing', {
+      phase: 2, row: 0, title: 'SOURCING ENGINE', stat: String(pTotal + ls.length),
+      verdict: 'locked', sub: 'automated, runs without you',
+      why: 'A mechanism that reliably produces on-target rows. Systems lock.',
+      detail: {
+        headline: `${pTotal} prospects and ${ls.length} email leads found, ${icpShare}% on target.`,
+        bench: 'Judged on whether it runs and hits the brief. It does both.',
+        bullets: [
+          'Replaced manual batch sessions and paid people-search tools entirely, at zero cost.',
+          'One run feeds both outbound lanes from the same pass.',
+          'This is the clearest example on the page of something that has genuinely earned a lock.',
+        ],
+        rows: sourceRows.map(([k, v]) => [k, String(v)]),
+      },
+    }),
+    N('filter', {
+      phase: 2, row: 1, title: 'THE FILTER', stat: String(eSkippedRole + eSkippedUnver),
+      verdict: 'locked', sub: 'kills bad addresses before sending',
+      why: 'A mechanism, doing measurable work.',
+      detail: {
+        headline: `${eSkippedRole + eSkippedUnver} leads rejected before a single send.`,
+        bench: `Bounce rate benchmark: ${BENCH.emailBounce.avg}% average, under ${BENCH.emailBounce.good}% is good.`,
+        bullets: [
+          `${eSkippedRole} role addresses (info@, sales@) excluded automatically. Those were confirmed as a real bounce source, not a theory.`,
+          `${eSkippedUnver} excluded as unverifiable.`,
+          'This filter is the direct reason the bounce rate is survivable rather than catastrophic.',
+        ],
+        rows: [
+          ['Skipped, role address', String(eSkippedRole)],
+          ['Skipped, unverified', String(eSkippedUnver)],
+          ...validationRows.map(([k, v]) => [`Validation: ${k}`, String(v)]),
+        ],
+      },
+    }),
 
-      {/* ---------------- the map ---------------- */}
-      <div style={{ border: '2.5px solid var(--ink)', background: 'var(--paper)', boxShadow: '5px 5px 0 var(--ink)', overflowX: 'auto' }}>
-        <svg viewBox="0 0 1450 660" style={{ display: 'block', width: '100%', minWidth: 1000, height: 'auto' }}
-             role="img" aria-label="The business drawn as five phases with a measurement layer underneath, each node coloured locked, dial or blind.">
-          <defs>
-            <marker id="mk" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-              <path d="M0,0 L10,5 L0,10 z" fill="var(--ink)" />
-            </marker>
-            <marker id="mkd" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-              <path d="M0,0 L10,5 L0,10 z" fill="var(--amber)" />
-            </marker>
-            <marker id="mkb" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-              <path d="M0,0 L10,5 L0,10 z" fill="var(--forest)" />
-            </marker>
-          </defs>
+    // ---- PHASE 3 · REACH ----
+    N('dm', {
+      phase: 3, row: 0, title: 'COLD DM · SYSTEM', stat: String(pTouched),
+      verdict: 'working', sub: 'hand-sent, fully logged',
+      why: 'The mechanism works. What it carries is judged separately.',
+      detail: {
+        headline: `${pTouched} touches out by hand, ${pNew} still queued.`,
+        bench: `LinkedIn acceptance benchmark ${BENCH.liAccept.avg}% average.`,
+        bullets: [
+          'Every send is logged with a date, which is why the counter can now be rebuilt from the database.',
+          `${pConnected} prospects have been marked connected. If people have accepted without the status being updated, acceptance is invisible and that is a tracking gap worth closing.`,
+          'Sending is manual by design. Automated LinkedIn interaction is the thing that gets accounts restricted.',
+        ],
+        rows: [
+          ['Sourced, not yet touched', String(pNew)],
+          ['Requests sent, no note', String(pNoNote)],
+          ['Requests sent, with note', String(pWithNote)],
+          ['Connected', String(pConnected)],
+          ['DMs sent', String(pDmSent)],
+          ['Replies', String(pReplied)],
+        ],
+      },
+    }),
+    N('notes', {
+      phase: 3, row: 1, title: 'CONNECTION NOTES', stat: `${pWithNote}/${requestsOut || 0}`,
+      verdict: noteVerdict, sub: 'the cheapest fix on this page',
+      why: 'Measurably below the benchmark, and the cause is known.',
+      detail: {
+        headline: `${pNoNote} connection requests went out with no note attached.`,
+        bench: `Personalized requests run about ${BENCH.liAccept.personalized}% acceptance against roughly ${BENCH.liAccept.generic}% for bare ones. A note also lifts post-acceptance reply from about 5.4% to 9.4%.`,
+        bullets: [
+          'That is roughly a threefold difference in acceptance, sitting at the very top of the funnel where it compounds through everything downstream.',
+          'The cause is not laziness, it is the free LinkedIn account note cap. That makes this a budget question rather than a discipline question.',
+          'Worth pricing: if Premium lifts acceptance from 15% toward 45% on the remaining queue, it pays for itself long before the 1,000-try mark.',
+          'Nothing else on this page offers a 3x improvement for a fixed monthly cost.',
+        ],
+        rows: [
+          ['Requests with a note', String(pWithNote)],
+          ['Requests with no note', String(pNoNote)],
+          ['Benchmark, personalized', `${BENCH.liAccept.personalized}%`],
+          ['Benchmark, generic', `${BENCH.liAccept.generic}%`],
+        ],
+      },
+    }),
+    N('email', {
+      phase: 3, row: 2, title: 'COLD EMAIL · SYSTEM', stat: String(eAttempted),
+      verdict: 'locked', sub: 'validator, bounce guard, sequencer',
+      why: 'A mechanism that runs correctly. The copy it carries is judged separately.',
+      detail: {
+        headline: `${eDelivered} delivered, ${eBounced} bounced, ${ePending} still queued.`,
+        bench: `Bounce ${bounceRate}% against a ${BENCH.emailBounce.avg}% average and a ${BENCH.emailBounce.good}% "good list" line.`,
+        bullets: [
+          'This lane already died once at 637 sends with no proof, an unwarmed sender and a blacklisted IP. The rebuild added validation, bounce detection and role-address exclusion specifically to stop that repeating.',
+          `Currently sending through connected Gmail accounts rather than a dedicated warmed domain. That is the one part of the old failure still present.`,
+          `Campaign: ${camps[0]?.name || 'none'}.`,
+        ],
+        rows: [
+          ['Attempted', String(eAttempted)],
+          ['Delivered', String(eDelivered)],
+          ['Bounced', `${eBounced} (${bounceRate}%)`],
+          ['Pending', String(ePending)],
+          ...dayRows.map(([d, v]) => [d, v]),
+        ],
+      },
+    }),
+    N('copy', {
+      phase: 3, row: 3, title: 'THE COPY', stat: `${replyRate}%`,
+      verdict: emailCopyVerdict, sub: 'the words, in both lanes',
+      why: 'Strategy, and this one now has enough volume to judge.',
+      detail: {
+        headline: `${replies} real replies from ${touches} tries.`,
+        bench: `Benchmark reply rate is ${BENCH.emailReply.avg}% average, ${BENCH.emailReply.good}% solid, ${BENCH.emailReply.strong}%+ strong.`,
+        bullets: [
+          emailPZero !== null
+            ? `If the copy performed at the ${BENCH.emailReply.avg}% average, the chance of seeing zero replies across ${eAttempted} emails is about ${(emailPZero * 100).toFixed(1)}%. This is not a small-sample problem any more.`
+            : 'Not enough sends yet to judge.',
+          emailCeiling !== null
+            ? `With 95% confidence the true email reply rate is below ${r1(emailCeiling)}%, against a ${BENCH.emailReply.avg}% benchmark.`
+            : '',
+          `On LinkedIn only ${pDmSent} actual messages have gone out, so ${dmCeiling !== null ? `the ceiling there is a looser ${r1(dmCeiling)}%` : 'there is not enough volume yet'}. The DM lane is not yet judged, the email lane is.`,
+          'Because the ICP benchmarks well and delivery is confirmed, the message is now the most likely explanation. Change the copy, not the vertical.',
+        ].filter(Boolean),
+        rows: [
+          ['Email attempted', String(eAttempted)],
+          ['Email replies', String(eReplied)],
+          ['DMs actually sent', String(pDmSent)],
+          ['DM replies', String(pReplied)],
+          ['Benchmark average', `${BENCH.emailReply.avg}%`],
+        ],
+      },
+    }),
+    N('inbound', {
+      phase: 3, row: 4, title: 'INBOUND · SITE', stat: String(inbound.length + chatLeads),
+      verdict: inbound.length + chatLeads > 0 ? 'working' : 'none',
+      sub: 'built, running, nobody arriving',
+      why: 'The system works. It has never been given traffic.',
+      detail: {
+        headline: `${inbound.length} form leads and ${chatLeads} chat leads, all time.`,
+        bench: 'No benchmark applies to a page with no visitors.',
+        bullets: [
+          'The landing page, the live assistant and the capture pipeline are all built and functioning.',
+          'A perfect page multiplied by near-zero traffic is near zero. The bottleneck is upstream of the page, so improving the page cannot fix it.',
+          'Content is the intended traffic source, and it has been posting intermittently at best.',
+        ],
+        rows: [['Form leads', String(inbound.length)], ['Chat leads', String(chatLeads)], ['Real call requests', String(realBookings.length)]],
+      },
+    }),
 
-          {/* phase-to-phase spine */}
-          {[[C.p1 + W.p1, C.p2], [C.p2 + W.p2, C.p3], [C.p3 + W.p3, C.p4], [C.p4 + W.p4, C.p5]].map(([x1, x2], i) => (
-            <path key={i} d={`M${x1 + 6},${R.a + 30} L${x2 - 6},${R.a + 30}`} stroke="var(--ink)" strokeWidth="3" markerEnd="url(#mk)" fill="none" />
-          ))}
+    // ---- PHASE 4 · CONVERT ----
+    N('replies', {
+      phase: 4, row: 0, title: 'REAL REPLIES', stat: String(replies),
+      verdict: replies > 0 ? 'at' : 'under', sub: 'humans, not machines',
+      why: 'Below benchmark with enough volume for that to mean something.',
+      detail: {
+        headline: `${replies} genuine replies across ${touches} tries.`,
+        bench: `${BENCH.emailReply.avg}% would have produced about ${Math.round(eAttempted * BENCH.emailReply.avg / 100)} replies from the email lane alone.`,
+        bullets: [
+          'The out-of-office that was previously counted here has been removed. A machine acknowledging receipt is not interest.',
+          'The scanner now excludes auto-responders by header and by subject, so this number stays honest without anyone policing it.',
+          hot ? `Live: ${[hot.first_name, hot.last_name].filter(Boolean).join(' ')} at ${hot.company}.` : 'No human has answered yet.',
+        ],
+        rows: [['DM replies', String(pReplied)], ['Email replies', String(eReplied)], ['Auto-replies, excluded', String(autoReplies)]],
+      },
+    }),
+    N('auto', {
+      phase: 4, row: 1, title: 'AUTO-REPLIES', stat: String(autoReplies),
+      verdict: autoReplies > 0 ? 'working' : 'none', sub: 'proof of delivery, not interest',
+      why: 'The only hard evidence mail reaches a real inbox.',
+      detail: {
+        headline: autoReplies > 0
+          ? `${autoReplies} auto-reply, which confirms at least one send reached a monitored human mailbox.`
+          : 'No auto-replies yet, so delivery to a human inbox is still unconfirmed.',
+        bench: 'Not a performance metric. It is a delivery probe.',
+        bullets: [
+          'This splits a question that used to be unanswerable: a message problem and a delivery problem look identical until something proves the mail arrives.',
+          'It arrived, was opened by a mail client, and triggered a response. That points the finger at the message.',
+          ...autoLogs.map(l => {
+            const lead = leadById.get(l.lead_id);
+            return `${lead?.company || 'unknown'} — ${l.subject}`;
+          }),
+        ],
+        rows: autoLogs.map(l => {
+          const lead = leadById.get(l.lead_id);
+          return [lead?.company || 'unknown', fmt(l.sent_at)];
+        }),
+      },
+    }),
+    N('freebuild', {
+      phase: 4, row: 2, title: 'FREE BUILD', stat: '0',
+      verdict: 'none', sub: 'never delivered, not once',
+      why: 'No data of any kind exists.',
+      detail: {
+        headline: 'The single largest blind spot on this page.',
+        bench: 'Nothing to compare against.',
+        bullets: [
+          'Every number upstream is an argument about how to reach this step. Nothing downstream can be judged until it runs once.',
+          'It does not need a reply to happen. A build could be made speculatively for a named prospect and sent cold as the opener.',
+          'That would also convert into the proof that Phase 1 is missing.',
+        ],
+        rows: [['Delivered', '0'], ['Converted to paid', 'unmeasured']],
+      },
+    }),
 
-          {/* ===== PHASE 1 · POSITION ===== */}
-          <Hub x={C.p1} y={R.a} w={W.p1} n="1" title="POSITION" sub="who you are" />
-          <path d={`M${C.p1 + 16},${R.a + 60} L${C.p1 + 16},${R.e - 8}`} stroke="var(--ink)" strokeWidth="2.5" fill="none" />
-          {[R.b, R.c, R.d].map(y => (
-            <path key={y} d={`M${C.p1 + 16},${y + 33} L${C.p1 + 28},${y + 33}`} stroke="var(--ink)" strokeWidth="2.5" fill="none" />
-          ))}
-          <Node x={C.p1 + 28} y={R.b} w={W.p1 - 28} h={66} tone="lock"
-                title="THE OFFER" line1="A working build, never advice" line2="$300 to $3,000 · floor set first" />
-          <Node x={C.p1 + 28} y={R.c} w={W.p1 - 28} h={66} tone="dial" stat={`${icpShare}%`}
-                title="THE ICP" line1={`${pOnIcp} of ${pTotal} sourced are recruiting`} line2="changeable, and the first thing to change" />
-          <Node x={C.p1 + 28} y={R.d} w={W.p1 - 28} h={66} tone="lock"
-                title="THE PROOF" line1="Your own builds only" line2="live assistant · this pipeline app" />
+    // ---- PHASE 5 · PAID ----
+    N('paid', {
+      phase: 5, row: 0, title: 'RECEIVED', stat: '$0',
+      verdict: 'none', sub: 'the only real score',
+      why: 'Never run.',
+      detail: {
+        headline: '$0 received. One direct client at $300 is the win condition.',
+        bench: 'A verbal yes is not a win, agreed terms are not a win, money in is a win.',
+        bullets: [
+          `${realBookings.length} real call requests. The two rows in the bookings table are your own test entries and are excluded.`,
+          'One retainer replaces the job. The funnel does not need to be big, it needs to be worked.',
+        ],
+        rows: [['Received', '$0'], ['Real call requests', String(realBookings.length)]],
+      },
+    }),
 
-          {/* ===== PHASE 2 · FIND ===== */}
-          <Hub x={C.p2} y={R.a} w={W.p2} n="2" title="FIND" sub="get names" />
-          <path d={`M${C.p2 + 16},${R.a + 60} L${C.p2 + 16},${R.c + 41}`} stroke="var(--ink)" strokeWidth="2.5" fill="none" />
-          {[R.b, R.c].map(y => (
-            <path key={y} d={`M${C.p2 + 16},${y + 33} L${C.p2 + 28},${y + 33}`} stroke="var(--ink)" strokeWidth="2.5" fill="none" />
-          ))}
-          <Node x={C.p2 + 28} y={R.b} w={W.p2 - 28} h={66} tone="work" stat={pTotal + ls.length}
-                title="SOURCING ENGINE" line1={`${pTotal} prospects · ${ls.length} email leads`} line2="automated, runs without you" />
-          <Node x={C.p2 + 28} y={R.c} w={W.p2 - 28} h={66} tone="work" stat={eSkipped}
-                title="THE FILTER" line1={`${eSkipped} rejected before sending`} line2="role addresses + unverifiable" />
+    // ---- PHASE 6 · MEASURE (systems) ----
+    N('counter', {
+      phase: 6, row: 0, title: 'THE COUNTER', stat: String(touches),
+      verdict: 'locked', sub: 'generated, never typed',
+      why: 'A mechanism, and it now cannot drift.',
+      detail: {
+        headline: `${touches} touches, rebuilt from the database on demand.`,
+        bench: 'Judged on whether it can lie. It no longer can.',
+        bullets: [
+          'The hand-written version had understated the total by 68 and had undercounted one day by 23.',
+          'Run node Website/scripts/rebuild-rep-counter.mjs to refresh the markdown. This page is the live version of the same queries.',
+          `Sending has happened on ${sendingDays} distinct days.`,
+        ],
+        rows: dayRows,
+      },
+    }),
+    N('threshold', {
+      phase: 6, row: 1, title: 'THE ICP THRESHOLD', stat: `${Math.round(pct(touches, THRESHOLD))}%`,
+      verdict: 'locked', sub: `${touches} of ${THRESHOLD} tries`,
+      why: 'A decision rule. Rules lock.',
+      detail: {
+        headline: `${THRESHOLD - touches} tries before the ICP is allowed to be reconsidered.`,
+        bench: 'Exists so a decision cannot be made by mood.',
+        bullets: [
+          'Message-level changes are deliberately NOT gated by this. Copy can change today, and on the evidence it should.',
+          'Only the vertical itself is frozen. That distinction is what stops a copy problem from being misdiagnosed as an audience problem.',
+        ],
+        rows: [['Tries logged', String(touches)], ['Threshold', String(THRESHOLD)], ['Remaining', String(THRESHOLD - touches)]],
+      },
+    }),
+    N('bounce', {
+      phase: 6, row: 2, title: 'BOUNCE GUARD', stat: `${bounceRate}%`,
+      verdict: bounceVerdict, sub: 'the thing that killed the last attempt',
+      why: 'Measured against the market, not against a feeling.',
+      detail: {
+        headline: `${eBounced} bounces from ${eAttempted} attempts.`,
+        bench: `Average is ${BENCH.emailBounce.avg}%. A well-maintained list stays under ${BENCH.emailBounce.good}%, the best under ${BENCH.emailBounce.best}%.`,
+        bullets: [
+          bounceRate <= BENCH.emailBounce.avg
+            ? `At ${bounceRate}% this is inside the average band, so it is not an emergency.`
+            : `At ${bounceRate}% this is above the average band and needs attention now.`,
+          `It is still roughly ${r1(bounceRate / BENCH.emailBounce.good)}x the "good list" line, and reputation damage compounds quietly before it shows up as a block.`,
+          'Almost every lead validates as RISKY rather than SAFE, because mailbox existence cannot be confirmed from a serverless host with port 25 blocked. That is a known limitation, not a data problem.',
+        ],
+        rows: bouncedDomains.map(([k, v]) => [k, String(v)]),
+      },
+    }),
+  ];
 
-          {/* ===== PHASE 3 · REACH ===== */}
-          <Hub x={C.p3} y={R.a} w={W.p3} n="3" title="REACH" sub="get in front of them" />
-          <path d={`M${C.p3 + 16},${R.a + 60} L${C.p3 + 16},${R.e + 41}`} stroke="var(--ink)" strokeWidth="2.5" fill="none" />
-          {[R.b, R.c, R.d, R.e].map(y => (
-            <path key={y} d={`M${C.p3 + 16},${y + 33} L${C.p3 + 28},${y + 33}`} stroke="var(--ink)" strokeWidth="2.5" fill="none" />
-          ))}
-          <Node x={C.p3 + 28} y={R.b} w={W.p3 - 28} h={66} tone="work" stat={pTouched}
-                title="COLD DM · LINKEDIN" line1={`${pTouched} sent by hand, ${pNew} still waiting in the queue`} line2={`${pReplied} replies`} />
-          <Node x={C.p3 + 28} y={R.c} w={W.p3 - 28} h={66} tone="work" stat={eAttempted}
-                title="COLD EMAIL · OUTBOUNDOS" line1={`${eDelivered} delivered, ${eBounced} bounced (${bounceRate}%)`} line2={`${eReplied} reply · ${ePending} still queued`} />
-          <Node x={C.p3 + 28} y={R.d} w={W.p3 - 28} h={66} tone="blind" stat={inbound.length + chatLeads}
-                title="INBOUND · SITE + ASSISTANT" line1={`${inbound.length} form leads, ${chatLeads} chat leads`} line2="built and running, nobody is arriving" />
-          <Node x={C.p3 + 28} y={R.e} w={W.p3 - 28} h={66} tone="dial"
-                title="COPY + CONTENT" line1="the words in all three lanes above" line2="free to change, any day, no rebuild" />
+  const summary = {
+    touches, replies, replyRate, autoReplies, pTouched, eAttempted, eBounced, bounceRate,
+    pNew, pNoNote, pDmSent, icpShare, threshold: THRESHOLD,
+    lastSend: fmt(lastSend?.sent_at),
+    emailCeiling: emailCeiling !== null ? r1(emailCeiling) : null,
+    emailPZero: emailPZero !== null ? r1(emailPZero * 100) : null,
+    benchReply: BENCH.emailReply.avg,
+    expectedReplies: Math.round(eAttempted * BENCH.emailReply.avg / 100),
+  };
 
-          {/* ===== PHASE 4 · CONVERT ===== */}
-          <Hub x={C.p4} y={R.a} w={W.p4} n="4" title="CONVERT" sub="start a conversation" />
-          <path d={`M${C.p4 + 16},${R.a + 60} L${C.p4 + 16},${R.d + 41}`} stroke="var(--ink)" strokeWidth="2.5" fill="none" />
-          {[R.b, R.c, R.d].map(y => (
-            <path key={y} d={`M${C.p4 + 16},${y + 33} L${C.p4 + 28},${y + 33}`} stroke="var(--ink)" strokeWidth="2.5" fill="none" />
-          ))}
-          <Node x={C.p4 + 28} y={R.b} w={W.p4 - 28} h={66} tone={replies > 0 ? 'work' : 'blind'} stat={replies}
-                title="REAL REPLIES" line1={hot ? `${hotName}, ${turnaround} min` : 'nobody yet'} line2={`${replyRate}% of everything sent`} />
-          <Node x={C.p4 + 28} y={R.c} w={W.p4 - 28} h={66} tone={autoReplies > 0 ? 'work' : 'none'} dashed={autoReplies === 0} stat={autoReplies}
-                title="AUTO-REPLIES" line1="machines, never counted as interest" line2="but they prove the mail arrives" />
-          <Node x={C.p4 + 28} y={R.d} w={W.p4 - 28} h={66} tone="none" dashed stat="0"
-                title="FREE BUILD" line1="never delivered, not once" line2="the whole offer rests on this" />
-
-          {/* ===== PHASE 5 · PAID ===== */}
-          <Hub x={C.p5} y={R.a} w={W.p5} n="5" title="PAID" sub="money in" />
-          <path d={`M${C.p5 + 16},${R.a + 60} L${C.p5 + 16},${R.c + 41}`} stroke="var(--ink)" strokeWidth="2.5" fill="none" />
-          {[R.b, R.c].map(y => (
-            <path key={y} d={`M${C.p5 + 16},${y + 33} L${C.p5 + 28},${y + 33}`} stroke="var(--ink)" strokeWidth="2.5" fill="none" />
-          ))}
-          <Node x={C.p5 + 28} y={R.b} w={W.p5 - 28} h={66} tone="none" dashed stat={realBookings.length}
-                title="CALLS BOOKED" line1="no real bookings yet" line2="test rows excluded" />
-          <Node x={C.p5 + 28} y={R.c} w={W.p5 - 28} h={66} tone="none" dashed stat="$0"
-                title="RECEIVED" line1="a verbal yes is not a win" line2="$300 in the account is" />
-
-          {/* ===== feedback: a delivered build becomes proof ===== */}
-          <path d={`M${C.p4 + 100},${R.d + 66} L${C.p4 + 100},428 L${C.p1 + 158},428 L${C.p1 + 158},${R.d + 66}`}
-                stroke="var(--forest)" strokeWidth="2.5" strokeDasharray="8 6" fill="none" markerEnd="url(#mkb)" />
-          <text x={C.p2 + 40} y="422" fontFamily="var(--font-mono)" fontSize="10" letterSpacing=".1em" fill="var(--forest)">
-            ONE DELIVERED BUILD BECOMES THE PROOF THAT FIXES PHASE 1
-          </text>
-
-          {/* ===== MEASURE band ===== */}
-          <line x1="30" y1="452" x2="1420" y2="452" stroke="var(--ink)" strokeWidth="2.5" />
-          <Hub x={C.p1} y={470} w={W.p1} n="6" title="MEASURE" sub="what licenses a change" />
-          <Node x={C.p2 + 28} y={470} w={W.p2 - 28} h={56} tone="work" stat={touches}
-                title="REP COUNTER" line1="synced from this database" />
-          <Node x={C.p3 + 28} y={470} w={W.p3 - 28} h={56} tone="dial" stat={`${Math.round(pctToThreshold)}%`}
-                title="TRIES TOWARD THE ICP CALL" line1={`${touches} of ${THRESHOLD} · the ICP holds until then`} />
-          <Node x={C.p4 + 28} y={470} w={W.p4 + W.p5 - 28} h={56} tone={bounceRate > 5 ? 'blind' : 'work'} stat={`${bounceRate}%`}
-                title="BOUNCE GUARD" line1={`${eBounced} bounced of ${eAttempted} · watch this, it killed the last attempt`} />
-
-          {/* threshold bar */}
-          <rect x={C.p2 + 28} y="542" width={1420 - (C.p2 + 28)} height="20" fill="var(--paper2)" stroke="var(--ink)" strokeWidth="2.5" />
-          <rect x={C.p2 + 31} y="545" width={Math.max(2, ((1420 - (C.p2 + 28)) - 6) * (pctToThreshold / 100))} height="14" fill="var(--forest)" />
-          <text x={C.p2 + 28} y="578" fontFamily="var(--font-mono)" fontSize="10" letterSpacing=".1em" fill="var(--ink3)">
-            {touches} TRIES LOGGED
-          </text>
-          <text x="1420" y="578" textAnchor="end" fontFamily="var(--font-mono)" fontSize="10" letterSpacing=".1em" fill="var(--ink3)">
-            {THRESHOLD} BEFORE THE ICP IS RECONSIDERED
-          </text>
-
-          {/* ===== feedback: measure licenses the dials ===== */}
-          <path d={`M${C.p1 + 158},470 L${C.p1 + 158},${R.c + 66}`} stroke="var(--amber)" strokeWidth="2.5" strokeDasharray="8 6" fill="none" markerEnd="url(#mkd)" />
-          <path d={`M${C.p3 + 300},470 L${C.p3 + 300},${R.e + 66}`} stroke="var(--amber)" strokeWidth="2.5" strokeDasharray="8 6" fill="none" markerEnd="url(#mkd)" />
-          <text x={C.p1 + 166} y="466" fontFamily="var(--font-mono)" fontSize="10" letterSpacing=".1em" fill="var(--amber)">
-            NUMBERS DECIDE THE DIALS, MOOD DOES NOT
-          </text>
-
-          <text x="725" y="640" textAnchor="middle" fontFamily="var(--font-mono)" fontSize="10.5" letterSpacing=".12em" fill="var(--ink3)">
-            GREEN IS SETTLED · AMBER IS YOURS TO TURN · RED IS BLIND, NOT FAILED · DASHED HAS NEVER RUN
-          </text>
-        </svg>
-      </div>
-
-      {/* ---------------- where it actually stands ---------------- */}
-      <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16, marginTop: 26,
-      }}>
-        {[
-          {
-            t: 'Phase 3 is not the problem',
-            b: `All three lanes are built and two are firing. ${eAttempted} emails out with a ${bounceRate}% bounce rate, ${pTouched} DMs out by hand. Nothing upstream of a reply is broken.`,
-          },
-          {
-            t: 'Phase 4 is the problem',
-            b: hot
-              ? `Someone answered in ${turnaround} minutes and the answer back has not gone out. The narrowest part of the machine is the one being left alone.`
-              : `${replies} real replies across ${touches} tries. ${autoReplies > 0
-                  ? `The ${autoReplies} auto-reply confirms mail is being delivered to a live inbox, so this is a message problem, not a delivery problem.`
-                  : 'Nothing has confirmed delivery either, so a message problem and a delivery problem still look identical from here.'}`,
-          },
-          {
-            t: 'Phase 5 has never run',
-            b: 'Zero free builds delivered, so the free-build-to-paid rate is not low, it is unmeasured. That is the single largest blind spot on this page.',
-          },
-        ].map(c => (
-          <div key={c.t} style={{ border: '2.5px solid var(--ink)', background: 'var(--paper)', padding: '14px 16px', boxShadow: '4px 4px 0 var(--ink)' }}>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 23, color: 'var(--ink)', lineHeight: 1.1 }}>{c.t}</div>
-            <p style={{ fontFamily: 'var(--font-body)', fontSize: 14.5, color: 'var(--ink2)', marginTop: 5 }}>{c.b}</p>
-          </div>
-        ))}
-      </div>
-
-      <p className="mono" style={{ fontSize: 10.5, letterSpacing: '.1em', color: 'var(--ink3)', marginTop: 20 }}>
-        READ LIVE FROM SUPABASE ON EVERY LOAD · NOTHING ON THIS PAGE IS TYPED BY HAND
-      </p>
-    </div>
-  );
+  return <MapView nodes={nodes} summary={summary} />;
 }
