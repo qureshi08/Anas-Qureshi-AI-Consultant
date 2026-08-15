@@ -56,10 +56,6 @@ const LOW_CONFIDENCE = /weak confidence|verify before|not established|unclear|un
 // it is volunteered in the sourcing note.
 const RELATIONSHIP = /husband[- ]?wife|husband and wife|married couple/i;
 
-function stripInternalTags(note) {
-  return (note || '').replace(/\[[^\]]*\]/g, ' ');
-}
-
 function yearsOf(note) {
   const since = /\bsince (\d{4})\b/i.exec(note) || /\bfounded in (\d{4})\b/i.exec(note);
   if (since) return { kind: 'since', value: Number(since[1]) };
