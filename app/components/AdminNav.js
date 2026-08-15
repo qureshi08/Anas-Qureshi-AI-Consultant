@@ -14,6 +14,7 @@ const TABS = [
   { href: '/admin/cold-email', label: 'Cold email' },
   { href: '/admin/inbound', label: 'Inbound' },
   { href: '/admin/chats', label: 'AI chats' },
+  { href: '/admin/map', label: 'The map' },
 ];
 
 // Everything in the cold email workspace lights up the Cold email tab.

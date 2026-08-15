@@ -8,6 +8,11 @@
   --brick-mid: #F07030;
   --forest: #2D7A4F;
   --amber: #C8960C;
+  /* Tinted fills, used to colour node bodies on the /admin/map schematic
+     while the solid tokens above stay the stroke and text colour. */
+  --forest-fill: #DCEEE1;
+  --amber-fill: #F9EBC4;
+  --brick-fill: #FBE0CE;
   --font-display: 'Caveat', cursive;
   --font-body: 'Patrick Hand', cursive;
   --font-mono: 'Space Mono', monospace;
