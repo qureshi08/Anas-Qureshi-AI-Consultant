@@ -58,12 +58,13 @@ function Hub({ x, y, w, n, title, sub }) {
 export default async function MapPage() {
   const admin = createAdminClient();
 
-  const [pRes, lRes, ibRes, cRes, bRes] = await Promise.all([
+  const [pRes, lRes, ibRes, cRes, bRes, logRes] = await Promise.all([
     admin.from('prospects').select('status, niche, source'),
-    admin.from('leads').select('status, sent_at, replied_at, booked_at, first_name, last_name, company, validation_status'),
+    admin.from('leads').select('id, status, sent_at, replied_at, booked_at, first_name, last_name, company, validation_status'),
     admin.from('inbound_leads').select('id'),
     admin.from('conversations').select('id, email'),
     admin.from('bookings').select('status, email, created_at'),
+    admin.from('email_logs').select('lead_id, status, subject, body, sent_at').in('status', ['auto_reply', 'received']),
   ]);
 
   const ps = pRes.data || [];
@@ -71,6 +72,7 @@ export default async function MapPage() {
   const inbound = ibRes.data || [];
   const convos = cRes.data || [];
   const bookings = bRes.data || [];
+  const logs = logRes.data || [];
 
   // ---- Cold DM lane -------------------------------------------------------
   const REPLIED_DM = ['replied', 'call', 'won'];
@@ -106,9 +108,21 @@ export default async function MapPage() {
   const pOnIcp = ps.filter(p => RECRUIT.test(p.niche || '')).length;
   const icpShare = pTotal ? Math.round((pOnIcp / pTotal) * 100) : 0;
 
-  // ---- The live reply, if any --------------------------------------------
+  // ---- Auto-replies -------------------------------------------------------
+  // An out-of-office is not interest, so it never counts as a reply. It is
+  // still the only hard proof we have that a send reached a real, monitored
+  // human mailbox rather than a spam folder, so it is reported on its own.
+  const autoLogs = logs.filter(l => l.status === 'auto_reply');
+  const autoReplies = autoLogs.length;
+  const leadById = new Map(ls.map(l => [l.id, l]));
+  const autoNames = autoLogs
+    .map(l => leadById.get(l.lead_id))
+    .filter(Boolean)
+    .map(l => l.company || [l.first_name, l.last_name].filter(Boolean).join(' '));
+
+  // ---- A genuine reply, if one ever lands ---------------------------------
   const answered = ls
-    .filter(l => l.replied_at)
+    .filter(l => l.replied_at && (l.status === 'replied' || l.status === 'booked'))
     .sort((a, b) => new Date(b.replied_at) - new Date(a.replied_at));
   const hot = answered[0];
   const hotName = hot ? [hot.first_name, hot.last_name].filter(Boolean).join(' ') : null;
@@ -128,13 +142,13 @@ export default async function MapPage() {
   return (
     <div>
       {/* ---------------- live banner ---------------- */}
-      {hot && (
+      {hot ? (
         <div style={{
-          border: '2.5px solid var(--brick)', background: '#FBE0CE', padding: '14px 18px',
+          border: '2.5px solid var(--brick)', background: 'var(--brick-fill)', padding: '14px 18px',
           boxShadow: '4px 4px 0 var(--ink)', marginBottom: 22,
         }}>
           <div className="mono" style={{ fontSize: 10, letterSpacing: '.14em', color: 'var(--brick)' }}>
-            LIVE · SOMEONE ANSWERED
+            LIVE · A HUMAN ANSWERED
           </div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: 27, color: 'var(--ink)', lineHeight: 1.15, marginTop: 2 }}>
             {hotName} at {hot.company}
@@ -142,6 +156,23 @@ export default async function MapPage() {
           <div style={{ fontFamily: 'var(--font-body)', fontSize: 15, color: 'var(--ink2)' }}>
             Replied {turnaround != null ? `${turnaround} minutes after the send` : 'to a cold email'} on {fmt(hot.replied_at)}.
             {hot.booked_at ? ' A call is booked.' : ' Nothing has gone back yet.'}
+          </div>
+        </div>
+      ) : (
+        <div style={{
+          border: '2.5px solid var(--ink)', background: 'var(--paper2)', padding: '14px 18px',
+          boxShadow: '4px 4px 0 var(--ink)', marginBottom: 22,
+        }}>
+          <div className="mono" style={{ fontSize: 10, letterSpacing: '.14em', color: 'var(--ink3)' }}>
+            NO HUMAN HAS ANSWERED YET
+          </div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 27, color: 'var(--ink)', lineHeight: 1.15, marginTop: 2 }}>
+            {replies} real {replies === 1 ? 'reply' : 'replies'} from {touches} tries
+          </div>
+          <div style={{ fontFamily: 'var(--font-body)', fontSize: 15, color: 'var(--ink2)' }}>
+            {autoReplies > 0
+              ? `${autoReplies} auto-reply from ${autoNames.join(', ')} is excluded. An out-of-office is not interest, but it does prove a send landed in a real monitored inbox.`
+              : 'No auto-replies either, so nothing has confirmed delivery to a human inbox yet.'}
           </div>
         </div>
       )}
@@ -153,7 +184,8 @@ export default async function MapPage() {
       }}>
         {[
           { k: 'Touches sent', v: touches, n: `${pTouched} DM · ${eAttempted} email` },
-          { k: 'Replies', v: replies, n: `${replyRate}% of touches` },
+          { k: 'Real replies', v: replies, n: `${replyRate}% of touches` },
+          { k: 'Auto-replies', v: autoReplies, n: 'proof of delivery, not interest' },
           { k: 'Free builds', v: 0, n: 'never run' },
           { k: 'Received', v: '$0', n: 'the only real score' },
           { k: 'Last send', v: fmt(lastSend?.sent_at).slice(5), n: 'email lane' },
@@ -233,9 +265,9 @@ export default async function MapPage() {
             <path key={y} d={`M${C.p4 + 16},${y + 33} L${C.p4 + 28},${y + 33}`} stroke="var(--ink)" strokeWidth="2.5" fill="none" />
           ))}
           <Node x={C.p4 + 28} y={R.b} w={W.p4 - 28} h={66} tone={replies > 0 ? 'work' : 'blind'} stat={replies}
-                title="REPLIES" line1={hot ? `${hotName}, ${turnaround} min` : 'nobody yet'} line2={`${replyRate}% of everything sent`} />
-          <Node x={C.p4 + 28} y={R.c} w={W.p4 - 28} h={66} tone={replies > 0 ? 'dial' : 'none'} dashed={replies === 0}
-                title="THE ANSWER BACK" line1={hot && !hot.booked_at ? 'owed right now' : 'nothing waiting'} line2="this is where a reply is won or lost" />
+                title="REAL REPLIES" line1={hot ? `${hotName}, ${turnaround} min` : 'nobody yet'} line2={`${replyRate}% of everything sent`} />
+          <Node x={C.p4 + 28} y={R.c} w={W.p4 - 28} h={66} tone={autoReplies > 0 ? 'work' : 'none'} dashed={autoReplies === 0} stat={autoReplies}
+                title="AUTO-REPLIES" line1="machines, never counted as interest" line2="but they prove the mail arrives" />
           <Node x={C.p4 + 28} y={R.d} w={W.p4 - 28} h={66} tone="none" dashed stat="0"
                 title="FREE BUILD" line1="never delivered, not once" line2="the whole offer rests on this" />
 
@@ -303,7 +335,9 @@ export default async function MapPage() {
             t: 'Phase 4 is the problem',
             b: hot
               ? `Someone answered in ${turnaround} minutes and the answer back has not gone out. The narrowest part of the machine is the one being left alone.`
-              : `Nothing has come back yet across ${touches} tries.`,
+              : `${replies} real replies across ${touches} tries. ${autoReplies > 0
+                  ? `The ${autoReplies} auto-reply confirms mail is being delivered to a live inbox, so this is a message problem, not a delivery problem.`
+                  : 'Nothing has confirmed delivery either, so a message problem and a delivery problem still look identical from here.'}`,
           },
           {
             t: 'Phase 5 has never run',
