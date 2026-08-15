@@ -17,6 +17,16 @@
  * so something specific to the company appears in every message, not only
  * the opener.
  *
+ * Revision 3 (2026-08-15): step 1's proof line was "the AI assistant on my
+ * site", a conversational Q&A build. The pitch sells screening and scoring
+ * against criteria. Different capability. Anas: "out of all the things you
+ * picked AI assistant... pick what's related to the pain point." Swapped for
+ * proof that actually maps: the outbound engine already scores every contact
+ * (validation_status SAFE/RISKY/INVALID) and filters non-qualifiers before
+ * sending, same shape as "score candidates against your own criteria and
+ * flag the fits", and it is self-referential (this email itself passed that
+ * filter), no invented claim, no employer proof.
+ *
  * Timing note: the sequencer measures delay_days from the PREVIOUS send (it
  * rewrites sent_at each time it sends), so delays are gaps, not offsets from
  * step 1. 3 + 4 + 5 lands the last touch on day 12.
@@ -49,7 +59,10 @@ const CAMPAIGN_ID = 2;
 
 // Proof is deliberately limited to what Anas built himself and can show on
 // demand. The employer's applicant system is real but is not usable proof
-// under the locked rule, so it appears nowhere here.
+// under the locked rule, so it appears nowhere here. Step 1's proof is the
+// outbound engine's own scoring and filtering (see revision 3 above), chosen
+// because it maps to the actual claim being sold, not because it is the only
+// build available.
 const STEPS = [
   {
     step_number: 1,
@@ -57,7 +70,7 @@ const STEPS = [
     subject_template: 'screening at {{company_short}}',
     part_p: 'Hi {{first_name}}, {{personal_line}}',
     part_w: 'I build the layer that reads applicants against the role and flags the few worth your time, so the pile is not sitting there between your sales calls.',
-    part_o: 'The AI assistant on my own site is one of mine, you can talk to it and see the standard. Happy to build one free on a single real open role of yours, working, no cost either way.',
+    part_o: 'My own outreach already runs this: every contact gets scored and only the ones that qualify get an email, this one included. Happy to build the same for your applicants, free, on one real role.',
     part_c: 'Worth a look?',
     part_signoff: 'Anas',
   },
