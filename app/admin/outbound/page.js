@@ -3,6 +3,7 @@ import { createAdminClient } from '../../../lib/supabase/admin';
 import { importProspects, addProspect, updateProspect } from '../actions';
 import { STAGES, STAGE_LABEL, STAGE_COLOR } from '../stages';
 import { parseNotes } from '../../../lib/prospectNotes';
+import { externalUrl, linkedinUrl } from '../../../lib/externalUrl';
 
 export default async function AdminOutboundPage({ searchParams }) {
   const admin = createAdminClient();
@@ -90,8 +91,8 @@ export default async function AdminOutboundPage({ searchParams }) {
                   <td style={{ padding: '10px 12px' }}>
                     <input type="hidden" name="id" value={p.id} form={formId} />
                     <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 17, color: 'var(--ink)' }}>{p.company}</div>
-                    {p.website && (
-                      <a href={`https://${p.website.replace(/^https?:\/\//, '')}`} target="_blank" rel="noreferrer" className="mono" style={{ fontSize: 10, color: 'var(--brick)' }}>{p.website}</a>
+                    {externalUrl(p.website) && (
+                      <a href={externalUrl(p.website)} target="_blank" rel="noreferrer" className="mono" style={{ fontSize: 10, color: 'var(--brick)' }}>{p.website}</a>
                     )}
                   </td>
                   <td style={{ padding: '10px 12px', minWidth: 130 }}>
@@ -99,8 +100,8 @@ export default async function AdminOutboundPage({ searchParams }) {
                   </td>
                   <td style={{ padding: '10px 12px', fontSize: 13, color: 'var(--ink3)', maxWidth: 160 }}>{p.niche || '—'}</td>
                   <td style={{ padding: '10px 12px', minWidth: 150 }}>
-                    {p.linkedin && (
-                      <a href={p.linkedin} target="_blank" rel="noreferrer" className="mono" style={{ fontSize: 11, color: 'var(--brick)', display: 'inline-block', marginBottom: 4, textDecoration: 'underline' }}>
+                    {linkedinUrl(p.linkedin) && (
+                      <a href={linkedinUrl(p.linkedin)} target="_blank" rel="noreferrer" className="mono" style={{ fontSize: 11, color: 'var(--brick)', display: 'inline-block', marginBottom: 4, textDecoration: 'underline' }}>
                         Open profile &#8599;
                       </a>
                     )}

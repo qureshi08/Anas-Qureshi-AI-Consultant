@@ -5,6 +5,7 @@ import { getAdminUser } from '../../lib/requireAdmin';
 import { revalidatePath } from 'next/cache';
 import { parseNotes, combineNotes, appendLogLine } from '../../lib/prospectNotes';
 import { STAGE_LABEL } from './stages';
+import { externalUrl, linkedinUrl } from '../../lib/externalUrl';
 
 // Allowlist check, not just "is signed in" — see lib/auth.js for why.
 async function requireUser() {
@@ -67,7 +68,9 @@ export async function addProspect(formData) {
   await admin.from('prospects').insert({
     company,
     contact_name: formData.get('contact_name') || null,
-    website: formData.get('website') || null,
+    // Store absolute URLs. A bare "linkedin.com/in/x" renders as a relative
+    // href and 404s on our own domain instead of opening the profile.
+    website: externalUrl(formData.get('website')),
     niche: formData.get('niche') || null,
     status: 'new',
   });
@@ -98,7 +101,7 @@ export async function updateProspect(formData) {
 
   await admin.from('prospects').update({
     contact_name: formData.get('contact_name') || null,
-    linkedin: formData.get('linkedin') || null,
+    linkedin: linkedinUrl(formData.get('linkedin')),
     status: newStatus,
     notes: notes || null,
   }).eq('id', id);
