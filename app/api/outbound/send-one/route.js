@@ -86,9 +86,22 @@ export async function POST(request) {
     });
   }
 
+  // A lead sourced with its own fully personalized copy (opening, offer, and
+  // CTA all specific to that prospect, per the 2026-08-17 locked rule) carries
+  // it in raw_data instead of relying on the campaign's one fixed template.
+  // Every other lead falls through to the normal template rendering below,
+  // unchanged.
+  let custom = null;
+  if (lead.raw_data) {
+    try {
+      const parsed = JSON.parse(lead.raw_data);
+      if (parsed.custom_subject && parsed.custom_body) custom = parsed;
+    } catch (_) {}
+  }
+
   const variables = variablesFor(lead);
-  const subject = renderTemplate(campaign.subject_template, variables);
-  const body = renderTemplate(campaign.body_template, variables);
+  const subject = custom ? custom.custom_subject : renderTemplate(campaign.subject_template, variables);
+  const body = custom ? custom.custom_body : renderTemplate(campaign.body_template, variables);
 
   const result = await sendEmail({
     campaignId, leadId: lead.id, to: lead.email, subject, body, account,
