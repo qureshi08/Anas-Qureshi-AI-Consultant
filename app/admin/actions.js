@@ -108,6 +108,15 @@ export async function updateProspect(formData) {
   revalidatePath('/admin/outbound');
 }
 
+export async function deleteProspect(formData) {
+  await requireUser();
+  const id = formData.get('id');
+  if (!id) return;
+  const admin = createAdminClient();
+  await admin.from('prospects').delete().eq('id', id);
+  revalidatePath('/admin/outbound');
+}
+
 export async function deleteConversation(formData) {
   await requireUser();
   const id = formData.get('id');

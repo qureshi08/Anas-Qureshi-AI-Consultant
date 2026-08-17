@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { createAdminClient } from '../../../lib/supabase/admin';
-import { importProspects, addProspect, updateProspect } from '../actions';
+import { importProspects, addProspect, updateProspect, deleteProspect } from '../actions';
 import { STAGES, STAGE_LABEL, STAGE_COLOR } from '../stages';
 import { parseNotes } from '../../../lib/prospectNotes';
 import { externalUrl, linkedinUrl } from '../../../lib/externalUrl';
@@ -122,7 +122,23 @@ export default async function AdminOutboundPage({ searchParams }) {
                     {log || <span style={{ opacity: 0.5 }}>No changes logged yet</span>}
                   </td>
                   <td style={{ padding: '10px 12px' }}>
-                    <button className="btn" type="submit" style={{ fontSize: 13, padding: '7px 14px' }} form={formId}>Save</button>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}>
+                      <button className="btn" type="submit" style={{ fontSize: 13, padding: '7px 14px' }} form={formId}>Save</button>
+                      <form action={deleteProspect}>
+                        <input type="hidden" name="id" value={p.id} />
+                        <button
+                          type="submit"
+                          className="mono"
+                          style={{
+                            fontSize: 10, letterSpacing: '.05em', textTransform: 'uppercase',
+                            color: 'var(--brick)', background: 'var(--paper)', border: '1.5px solid var(--brick)',
+                            borderRadius: 4, padding: '5px 10px', cursor: 'pointer',
+                          }}
+                        >
+                          Discard
+                        </button>
+                      </form>
+                    </div>
                     {/* eslint-disable-next-line react/no-unknown-property */}
                     <form id={formId} action={updateProspect} style={{ display: 'none' }} />
                   </td>
