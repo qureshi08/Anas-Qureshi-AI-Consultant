@@ -1,4 +1,14 @@
 /**
+ * LEGACY, locked 2026-08-17: this fixed-template sequence is what a real
+ * comparison (`email_logs`, 306 sends, 0 positive replies) found was likely
+ * hurting reply rate, not just failing to help — every send here uses the
+ * identical offer with only name/company swapped in. Do not enroll new leads
+ * into this templated sequence, and do not model new outreach copy on it.
+ * The current rule (`CLAUDE.md` "Outreach personalization rule", memory
+ * `feedback_full_personalization_outcome_selling`) requires every email's
+ * opening, offer, AND call-to-action to be individually written per prospect.
+ * Kept here only so the already-enrolled historical leads keep working.
+ *
  * Installs the four step follow-up sequence on the recruiting campaign.
  *
  * Why: campaign_steps held exactly ONE row, so all 168 sends were one-shot.
