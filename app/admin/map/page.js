@@ -104,9 +104,11 @@ export default async function MapPage() {
   const sourceRows = tally(ps, p => p.source);
   const validationRows = tally(ls, l => l.validation_status);
   const bouncedDomains = tally(ls.filter(l => l.status === 'bounced'), l => domainOf(l.email));
-  const RECRUIT = /recruit|staffing|talent|headhunt|executive search|\brpo\b|\bhr\b/i;
-  const onIcp = ps.filter(p => RECRUIT.test(p.niche || '')).length;
-  const offIcp = ps.filter(p => p.niche && !RECRUIT.test(p.niche)).map(p => p.niche);
+  // ICP switched 2026-08-21: recruiting/staffing retired, marketing/digital agencies is current.
+  // Old prospects tagged recruiting/staffing now correctly count as off-ICP.
+  const ICP_RE = /marketing agenc|digital agenc|creative agenc|ad agenc/i;
+  const onIcp = ps.filter(p => ICP_RE.test(p.niche || '')).length;
+  const offIcp = ps.filter(p => p.niche && !ICP_RE.test(p.niche)).map(p => p.niche);
   const icpShare = Math.round(pct(onIcp, pTotal));
 
   // sends per day, both lanes
@@ -166,15 +168,15 @@ export default async function MapPage() {
     }),
     N('icp', {
       phase: 1, row: 2, title: 'THE ICP', stat: `${icpShare}%`,
-      verdict: 'bet', sub: 'recruiting and staffing',
-      why: 'Strategy. Well chosen on outside evidence, still unvalidated by a reply.',
+      verdict: 'bet', sub: 'marketing/digital agencies (switched 2026-08-21)',
+      why: 'Strategy. Recruiting/staffing retired, this is a fresh, unvalidated test.',
       detail: {
-        headline: `${onIcp} of ${pTotal} sourced prospects are genuinely in the recruiting and staffing vertical.`,
+        headline: `${onIcp} of ${pTotal} sourced prospects are genuinely in the marketing/digital-agency vertical.`,
         bench: ICP_NOTE,
         bullets: [
-          'That external benchmark matters more than it looks: this vertical is the best-replying one measured, so a flat result here points at the message rather than at the audience.',
-          'Sourcing is hitting the target it was aimed at. The list is not the leak.',
-          `Locked to ${THRESHOLD} tries before reconsidering, currently ${touches}. The freeze exists because switching too early is the most expensive documented failure here.`,
+          'Recruiting/staffing was retired 2026-08-21 at 518+ combined touches, before the 1,000-try threshold, by a deliberate documented decision: 3 real replies, all negative, two rejecting the specific AI-screening feature. Full reasoning in goal.md.',
+          'This vertical has no track record here yet, on-ICP share reflects sourcing since the switch, prospects still tagged recruiting/staffing now correctly show as off-ICP.',
+          'The 1,000-try discipline still applies going forward: this ICP is not switched again on a whim, only by another deliberate documented call.',
         ],
         rows: [
           ['On-ICP prospects', `${onIcp} (${icpShare}%)`],
@@ -319,7 +321,7 @@ export default async function MapPage() {
             ? `With 95% confidence the true email reply rate is below ${r1(emailCeiling)}%, against a ${BENCH.emailReply.avg}% benchmark.`
             : '',
           `On LinkedIn only ${pDmSent} actual messages have gone out, so ${dmCeiling !== null ? `the ceiling there is a looser ${r1(dmCeiling)}%` : 'there is not enough volume yet'}. The DM lane is not yet judged, the email lane is.`,
-          'Because the ICP benchmarks well and delivery is confirmed, the message is now the most likely explanation. Change the copy, not the vertical.',
+          'The prior ICP (recruiting/staffing) was retired 2026-08-21 after its own message-vs-audience read: replies specifically rejected the AI-screening feature, not just went silent. On the current ICP (marketing/digital agencies), judge copy fresh, this history is not a benchmark for the new vertical.',
         ].filter(Boolean),
         rows: [
           ['Email attempted', String(eAttempted)],
@@ -436,14 +438,15 @@ export default async function MapPage() {
     }),
     N('threshold', {
       phase: 6, row: 1, title: 'THE ICP THRESHOLD', stat: `${Math.round(pct(touches, THRESHOLD))}%`,
-      verdict: 'locked', sub: `${touches} of ${THRESHOLD} tries`,
-      why: 'A decision rule. Rules lock.',
+      verdict: 'locked', sub: `${touches} of ${THRESHOLD} tries (lifetime, blended)`,
+      why: 'A decision rule. Rules lock, but a documented override is not the same as ignoring one.',
       detail: {
-        headline: `${THRESHOLD - touches} tries before the ICP is allowed to be reconsidered.`,
-        bench: 'Exists so a decision cannot be made by mood.',
+        headline: `2026-08-21: recruiting/staffing was retired at ${touches >= 518 ? '518' : touches} touches, before this threshold, by deliberate decision, not drift.`,
+        bench: 'Exists so a decision cannot be made by mood, not to force volume past the point the signal is already clear.',
         bullets: [
           'Message-level changes are deliberately NOT gated by this. Copy can change today, and on the evidence it should.',
-          'Only the vertical itself is frozen. That distinction is what stops a copy problem from being misdiagnosed as an audience problem.',
+          'This counter is the lifetime blended total across every ICP ever tried, it does not reset at a switch. The current ICP (marketing/digital agencies) is held to the same discipline: not switched again without an equally deliberate, documented call.',
+          'Full reasoning for the 2026-08-21 override: goal.md and failure-archaeology.',
         ],
         rows: [['Tries logged', String(touches)], ['Threshold', String(THRESHOLD)], ['Remaining', String(THRESHOLD - touches)]],
       },

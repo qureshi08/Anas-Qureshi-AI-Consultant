@@ -16,11 +16,14 @@ export const BENCH = {
   liReply:     { avg: 10.4, icp: 18.9, unit: '%', label: 'LinkedIn post-connection reply' },
 };
 
-// The staffing and recruiting vertical posts the HIGHEST post-connection reply
-// rate of any industry measured (18.9% vs a 10.4% all-industry average). That is
-// external evidence the ICP choice is sound, which matters: it means a flat
-// result points at the message, not at the people.
-export const ICP_NOTE = 'Staffing & recruiting posts the highest LinkedIn reply rate of any vertical measured (18.9% vs 10.4% average).';
+// Recruiting/staffing (the prior ICP) benchmarked as the highest-replying
+// vertical measured (18.9% vs a 10.4% all-industry average), yet still
+// produced 3 real replies across 518+ touches, all negative, two rejecting
+// the specific AI-screening feature. Retired 2026-08-21, see goal.md and
+// failure-archaeology. No vertical-specific benchmark has been researched
+// yet for the current ICP (marketing/digital agencies), so this note is
+// honestly "no data" rather than reusing the old, no-longer-relevant number.
+export const ICP_NOTE = 'No vertical-specific reply-rate benchmark exists yet for marketing/digital agencies. Judge this ICP on its own numbers as they come in, not on the retired recruiting/staffing figure.';
 
 /**
  * With zero successes in n trials, the 95% upper bound on the true rate is
