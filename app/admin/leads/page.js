@@ -5,6 +5,7 @@ import {
   deleteAllCampaignLeads, updateLeadStatus, validateOneLead,
 } from '../outbound-actions';
 import ColdEmailNav from '../../components/ColdEmailNav';
+import { campaignEra, PIVOT } from '../../../lib/era';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,9 +26,13 @@ const LEAD_STATUSES = ['pending', 'sent', 'replied', 'booked', 'skipped', 'faile
 
 export default async function LeadsPage({ searchParams }) {
   const admin = createAdminClient();
-  const { data: campaigns } = await admin.from('campaigns').select('id, name').order('created_at', { ascending: false });
+  const { data: campaigns } = await admin.from('campaigns').select('id, name, created_at').order('created_at', { ascending: false });
   const list = campaigns || [];
-  const campaignId = searchParams?.campaign || (list[0] ? String(list[0].id) : '');
+  const currentList = list.filter(c => campaignEra(c) === 'current');
+  const archivedList = list.filter(c => campaignEra(c) === 'recruiting');
+  const campaignId = searchParams?.campaign || (currentList[0] ? String(currentList[0].id) : (list[0] ? String(list[0].id) : ''));
+  const activeCampaign = list.find(c => String(c.id) === String(campaignId));
+  const campaignArchived = activeCampaign ? campaignEra(activeCampaign) === 'recruiting' : false;
   const filter = searchParams?.status || 'all';
 
   let leads = [];
@@ -66,8 +71,8 @@ export default async function LeadsPage({ searchParams }) {
 
       {list.length > 0 && (
         <>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-            {list.map(c => (
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: archivedList.length ? 8 : 16 }}>
+            {currentList.map(c => (
               <Link
                 key={c.id}
                 href={`/admin/leads?campaign=${c.id}`}
@@ -83,6 +88,37 @@ export default async function LeadsPage({ searchParams }) {
               </Link>
             ))}
           </div>
+          {archivedList.length > 0 && (
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16, alignItems: 'center' }}>
+              <span className="mono" style={{ fontSize: 9.5, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--ink3)' }}>
+                Archive (recruiting era):
+              </span>
+              {archivedList.map(c => (
+                <Link
+                  key={c.id}
+                  href={`/admin/leads?campaign=${c.id}`}
+                  className="mono"
+                  style={{
+                    fontSize: 10, textTransform: 'uppercase', letterSpacing: '.06em', textDecoration: 'none',
+                    padding: '5px 11px', border: '1.5px dashed rgba(26,18,5,0.35)', borderRadius: 6,
+                    color: String(c.id) === String(campaignId) ? 'var(--paper)' : 'var(--ink3)',
+                    background: String(c.id) === String(campaignId) ? 'var(--ink3)' : 'transparent',
+                  }}
+                >
+                  {c.name}
+                </Link>
+              ))}
+            </div>
+          )}
+          {campaignArchived && (
+            <div className="card" style={{ marginBottom: 16, borderColor: 'var(--brick)', boxShadow: '4px 4px 0 var(--brick)' }}>
+              <div className="tag" style={{ color: 'var(--brick)' }}>Retired-era campaign</div>
+              <p style={{ fontSize: 14, color: 'var(--ink2)', marginTop: 6 }}>
+                These leads target the recruiting/staffing ICP, retired {PIVOT} (goal.md). Kept for history, not for
+                loading or sending in the current test.
+              </p>
+            </div>
+          )}
 
           {/* Stats bar */}
           {total > 0 && (

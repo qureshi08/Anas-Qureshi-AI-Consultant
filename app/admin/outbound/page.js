@@ -4,14 +4,18 @@ import { importProspects, addProspect, updateProspect, deleteProspect } from '..
 import { STAGES, STAGE_LABEL, STAGE_COLOR } from '../stages';
 import { parseNotes } from '../../../lib/prospectNotes';
 import { externalUrl, linkedinUrl } from '../../../lib/externalUrl';
+import { resolveEra, prospectDate, inEra } from '../../../lib/era';
+import EraTabs from '../../components/EraTabs';
 
 export default async function AdminOutboundPage({ searchParams }) {
+  const era = resolveEra(searchParams?.era);
   const admin = createAdminClient();
   const { data: prospects } = await admin.from('prospects').select('*').order('created_at', { ascending: false });
-  const all = prospects || [];
+  const all = (prospects || []).filter(p => inEra(era, prospectDate(p)));
 
   const activeStatus = searchParams?.status && STAGES.includes(searchParams.status) ? searchParams.status : null;
   const rows = activeStatus ? all.filter(p => p.status === activeStatus) : all;
+  const eraQ = era !== 'current' ? `era=${era}` : '';
 
   return (
     <>
@@ -20,6 +24,8 @@ export default async function AdminOutboundPage({ searchParams }) {
       <p style={{ fontSize: 14, color: 'var(--ink3)', marginBottom: 20 }}>
         One prospect at a time, personalised, sent by hand. Separate from the Cold email lane, which runs scraped lists through OutboundOS.
       </p>
+
+      <EraTabs era={era} basePath="/admin/outbound" extraQuery={activeStatus ? `status=${activeStatus}` : ''} />
 
       <details style={{ marginBottom: 16 }}>
         <summary className="mono" style={{ cursor: 'pointer', fontSize: 12, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: '.1em' }}>Source / add a prospect</summary>
@@ -47,7 +53,7 @@ export default async function AdminOutboundPage({ searchParams }) {
       </details>
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-        <Link href="/admin/outbound" className="mono" style={{
+        <Link href={`/admin/outbound${eraQ ? `?${eraQ}` : ''}`} className="mono" style={{
           fontSize: 11, letterSpacing: '.08em', textTransform: 'uppercase', textDecoration: 'none',
           padding: '6px 12px', border: '2px solid var(--ink)', borderRadius: 6,
           color: !activeStatus ? 'var(--paper)' : 'var(--ink)', background: !activeStatus ? 'var(--ink)' : 'transparent',
@@ -55,7 +61,7 @@ export default async function AdminOutboundPage({ searchParams }) {
           All &middot; {all.length}
         </Link>
         {STAGES.map(s => (
-          <Link key={s} href={`/admin/outbound?status=${s}`} className="mono" style={{
+          <Link key={s} href={`/admin/outbound?status=${s}${eraQ ? `&${eraQ}` : ''}`} className="mono" style={{
             fontSize: 11, letterSpacing: '.08em', textTransform: 'uppercase', textDecoration: 'none',
             padding: '6px 12px', border: '2px solid var(--ink)', borderRadius: 6,
             color: activeStatus === s ? 'var(--paper)' : 'var(--ink)', background: activeStatus === s ? 'var(--ink)' : 'transparent',

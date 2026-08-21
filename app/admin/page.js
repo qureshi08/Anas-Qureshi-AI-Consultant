@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { createAdminClient } from '../../lib/supabase/admin';
 import { STAGES, STAGE_LABEL } from './stages';
+import { resolveEra, prospectDate, leadDate, inEra } from '../../lib/era';
+import EraTabs from '../components/EraTabs';
 
 export const dynamic = 'force-dynamic';
 
@@ -65,24 +67,31 @@ function FunnelBlock({ title, subtitle, rows, barColor }) {
   );
 }
 
-export default async function AdminOverviewPage() {
+export default async function AdminOverviewPage({ searchParams }) {
+  const era = resolveEra(searchParams?.era);
   const admin = createAdminClient();
-  const { data: prospects } = await admin.from('prospects').select('status');
-  const { data: allLeads } = await admin.from('leads').select('status');
+  const { data: prospects } = await admin.from('prospects').select('status, notes, created_at');
+  const { data: allLeads } = await admin.from('leads').select('status, sent_at, created_at');
   const { data: bookings } = await admin.from('bookings').select('status');
   const { data: inbound } = await admin.from('inbound_leads').select('id');
   const { data: conversations } = await admin.from('conversations').select('id, email');
 
-  const ps = prospects || [];
-  const leads = allLeads || [];
+  const psAll = prospects || [];
+  const leadsAll = allLeads || [];
+  const ps = psAll.filter(p => inEra(era, prospectDate(p)));
+  const leads = leadsAll.filter(l => inEra(era, leadDate(l)));
   const stageCount = (s) => ps.filter(p => p.status === s).length;
   const requestedCalls = (bookings || []).filter(b => b.status === 'requested').length;
   const chatLeads = (conversations || []).filter(c => c.email).length;
 
   // ---- Goal strip: the actual thing that matters, per goal.md ----
-  const DEADLINE = new Date('2026-08-15T23:59:59');
-  const daysLeft = Math.max(0, Math.ceil((DEADLINE - new Date()) / (1000 * 60 * 60 * 24)));
-  const wonCount = stageCount('won'); // LinkedIn 'won' is the only closed-deal status tracked today; email has no won/lost concept yet, see note below.
+  // The original Aug 15 deadline passed with $0 received (honesty clause,
+  // goal.md). The active window is now the 10-working-day marketing-agency
+  // test, 2026-08-24 to 2026-09-04, opened 2026-08-21.
+  const TEST_END = new Date('2026-09-04T23:59:59');
+  const daysLeft = Math.max(0, Math.ceil((TEST_END - new Date()) / (1000 * 60 * 60 * 24)));
+  // Won is the goal itself, so it always counts lifetime across every era.
+  const wonCount = psAll.filter(p => p.status === 'won').length; // LinkedIn 'won' is the only closed-deal status tracked today; email has no won/lost concept yet, see note below.
 
   // ---- LinkedIn (Cold DM) funnel ----
   const dmLostCount = stageCount('lost');
@@ -113,13 +122,15 @@ export default async function AdminOverviewPage() {
 
   return (
     <>
+      <EraTabs era={era} basePath="/admin" />
+
       {/* Goal strip -- everything below exists to move these three numbers. */}
       <div className="card" style={{ marginBottom: 24, borderColor: daysLeft <= 3 ? 'var(--brick)' : 'var(--ink)', boxShadow: `4px 4px 0 ${daysLeft <= 3 ? 'var(--brick)' : 'var(--ink)'}` }}>
         <div className="tag">The goal · goal.md</div>
         <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginTop: 8 }}>
           <div>
             <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 32, color: daysLeft <= 3 ? 'var(--brick)' : 'var(--ink)' }}>{daysLeft} days left</div>
-            <div className="mono" style={{ fontSize: 10, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: '.08em' }}>to Aug 15, 2026</div>
+            <div className="mono" style={{ fontSize: 10, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: '.08em' }}>marketing-agency test · to Sep 4, 2026</div>
           </div>
           <div>
             <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 32, color: wonCount >= 1 ? 'var(--forest)' : 'var(--ink)' }}>{wonCount} of 1</div>

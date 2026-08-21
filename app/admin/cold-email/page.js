@@ -2,22 +2,27 @@ import Link from 'next/link';
 import { createAdminClient } from '../../../lib/supabase/admin';
 import ColdEmailNav from '../../components/ColdEmailNav';
 import SyncRepliesButton from '../../components/SyncRepliesButton';
+import { resolveEra, leadDate, inEra, campaignEra } from '../../../lib/era';
+import EraTabs from '../../components/EraTabs';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ColdEmailDashboard() {
+export default async function ColdEmailDashboard({ searchParams }) {
+  const era = resolveEra(searchParams?.era);
   const admin = createAdminClient();
   const { data: campaigns } = await admin.from('campaigns').select('*').order('created_at', { ascending: false });
-  const { data: leads } = await admin.from('leads').select('campaign_id, status, sent_at');
+  const { data: leads } = await admin.from('leads').select('campaign_id, status, sent_at, created_at');
 
-  const all = leads || [];
+  const all = (leads || []).filter(l => inEra(era, leadDate(l)));
   const sent = all.filter(l => l.sent_at).length;
   const replied = all.filter(l => l.status === 'replied' || l.status === 'booked').length;
   const booked = all.filter(l => l.status === 'booked').length;
   const pct = (n, d) => (d > 0 ? `${Math.round((n / d) * 100)}%` : '—');
 
+  const visibleCampaigns = (campaigns || []).filter(c => era === 'all' || campaignEra(c) === (era === 'current' ? 'current' : 'recruiting'));
+
   const stats = [
-    ['Campaigns', (campaigns || []).length, null],
+    ['Campaigns', visibleCampaigns.length, null],
     ['Total leads', all.length, null],
     ['Emails sent', sent, 'highlight'],
     ['Replies', replied, null],
@@ -39,6 +44,8 @@ export default async function ColdEmailDashboard() {
         </div>
         <SyncRepliesButton />
       </div>
+
+      <EraTabs era={era} basePath="/admin/cold-email" />
 
       <section style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 30 }}>
         {stats.map(([label, value, kind], i) => (
@@ -62,14 +69,14 @@ export default async function ColdEmailDashboard() {
         <Link href="/admin/campaigns" className="mono" style={{ fontSize: 11, color: 'var(--brick)', textDecoration: 'none' }}>All campaigns &rarr;</Link>
       </div>
 
-      {(!campaigns || campaigns.length === 0) && (
+      {visibleCampaigns.length === 0 && (
         <p style={{ color: 'var(--ink3)' }}>
-          No campaigns yet. <Link href="/admin/campaigns" style={{ color: 'var(--brick)' }}>Create one</Link>, write the email in Compose, then add leads.
+          No campaigns in this era yet. <Link href="/admin/campaigns" style={{ color: 'var(--brick)' }}>Create one</Link>, write the email in Compose, then add leads.
         </p>
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {(campaigns || []).slice(0, 5).map(c => {
+        {visibleCampaigns.slice(0, 5).map(c => {
           const ls = all.filter(l => l.campaign_id === c.id);
           const cSent = ls.filter(l => l.sent_at).length;
           const cReplied = ls.filter(l => l.status === 'replied' || l.status === 'booked').length;

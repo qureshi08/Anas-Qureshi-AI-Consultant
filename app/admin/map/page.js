@@ -1,5 +1,6 @@
 import { createAdminClient } from '../../../lib/supabase/admin';
 import { BENCH, ICP_NOTE, zeroCeiling, pZeroAtBenchmark } from './benchmarks';
+import { PIVOT } from '../../../lib/era';
 import MapView from './MapView';
 
 export const dynamic = 'force-dynamic';
@@ -17,12 +18,11 @@ const pct = (n, d) => (d ? (n / d) * 100 : 0);
 const r1 = (n) => Math.round(n * 10) / 10;
 const domainOf = (e) => ((e || '').split('@')[1] || '').toLowerCase();
 
-// The ICP switched on this date (recruiting/staffing -> marketing agencies, see
-// goal.md 2026-08-21). Everything sent or sourced before it belongs to the old
-// era; the default view shows only the current era so a fresh test is judged on
-// its own numbers. Nothing is deleted -- ?era=recruiting and ?era=all show the
-// full history, and the lifetime counter below always stays blended.
-const PIVOT = '2026-08-21';
+// The ICP switched on PIVOT (recruiting/staffing -> marketing agencies, see
+// goal.md 2026-08-21 and lib/era.js, the single source of truth). The default
+// view shows only the current era so a fresh test is judged on its own numbers.
+// Nothing is deleted -- ?era=recruiting and ?era=all show the full history, and
+// the lifetime counter below always stays blended.
 const ERAS = { current: 'current', recruiting: 'recruiting', all: 'all' };
 
 export default async function MapPage({ searchParams }) {
