@@ -17,12 +17,21 @@ const pct = (n, d) => (d ? (n / d) * 100 : 0);
 const r1 = (n) => Math.round(n * 10) / 10;
 const domainOf = (e) => ((e || '').split('@')[1] || '').toLowerCase();
 
-export default async function MapPage() {
+// The ICP switched on this date (recruiting/staffing -> marketing agencies, see
+// goal.md 2026-08-21). Everything sent or sourced before it belongs to the old
+// era; the default view shows only the current era so a fresh test is judged on
+// its own numbers. Nothing is deleted -- ?era=recruiting and ?era=all show the
+// full history, and the lifetime counter below always stays blended.
+const PIVOT = '2026-08-21';
+const ERAS = { current: 'current', recruiting: 'recruiting', all: 'all' };
+
+export default async function MapPage({ searchParams }) {
+  const era = ERAS[searchParams?.era] || 'current';
   const admin = createAdminClient();
 
   const [pRes, lRes, ibRes, cRes, bRes, logRes, campRes] = await Promise.all([
     admin.from('prospects').select('status, niche, source, notes, created_at'),
-    admin.from('leads').select('id, email, status, sent_at, replied_at, booked_at, first_name, last_name, company, validation_status, current_step'),
+    admin.from('leads').select('id, email, status, sent_at, replied_at, booked_at, first_name, last_name, company, validation_status, current_step, created_at'),
     admin.from('inbound_leads').select('id'),
     admin.from('conversations').select('id, email'),
     admin.from('bookings').select('status, email'),
@@ -30,13 +39,31 @@ export default async function MapPage() {
     admin.from('campaigns').select('id, name, subject_template'),
   ]);
 
-  const ps = pRes.data || [];
-  const ls = lRes.data || [];
+  const allPs = pRes.data || [];
+  const allLs = lRes.data || [];
   const inbound = ibRes.data || [];
   const convos = cRes.data || [];
   const bookings = bRes.data || [];
-  const logs = logRes.data || [];
+  const allLogs = logRes.data || [];
   const camps = campRes.data || [];
+
+  // ---------------- era assignment ----------------
+  // A prospect's era comes from its send date ([YYYY-MM-DD] tag in notes) when
+  // touched, else its created_at. A lead's era comes from sent_at when sent,
+  // else created_at. Rows dated before PIVOT are the recruiting era.
+  const NOTE_DATE = /\[(\d{4}-\d{2}-\d{2})\]/;
+  const pDate = (p) => {
+    const m = NOTE_DATE.exec(p.notes || '');
+    return m ? m[1] : (p.created_at || '').slice(0, 10);
+  };
+  const lDate = (l) => ((l.sent_at || l.created_at || '').slice(0, 10));
+  const isCurrent = (d) => d >= PIVOT;
+  const inEra = (d) => era === 'all' || (era === 'current' ? isCurrent(d) : !isCurrent(d));
+
+  const ps = allPs.filter(p => inEra(pDate(p)));
+  const ls = allLs.filter(l => inEra(lDate(l)));
+  const lsIds = new Set(ls.map(l => l.id));
+  const logs = allLogs.filter(l => lsIds.has(l.lead_id));
 
   // ---------------- lanes ----------------
   const DM_REPLIED = ['replied', 'call', 'won'];
@@ -73,6 +100,13 @@ export default async function MapPage() {
   const replyRate = r1(pct(replies, touches));
   const THRESHOLD = 1000;
 
+  // Lifetime blended total across every era. The 1,000-try counter deliberately
+  // never resets at an ICP switch, so it is always computed from the unfiltered
+  // data regardless of which era view is active.
+  const lifeTouches =
+    allPs.filter(p => p.status !== 'new').length +
+    allLs.filter(l => SENT_STATES.includes(l.status)).length;
+
   // ---------------- benchmark verdicts ----------------
   const emailCeiling = zeroCeiling(eAttempted);
   const emailPZero = pZeroAtBenchmark(eAttempted, BENCH.emailReply.avg);
@@ -105,8 +139,11 @@ export default async function MapPage() {
   const validationRows = tally(ls, l => l.validation_status);
   const bouncedDomains = tally(ls.filter(l => l.status === 'bounced'), l => domainOf(l.email));
   // ICP switched 2026-08-21: recruiting/staffing retired, marketing/digital agencies is current.
-  // Old prospects tagged recruiting/staffing now correctly count as off-ICP.
-  const ICP_RE = /marketing agenc|digital agenc|creative agenc|ad agenc/i;
+  // The on-target test matches the era being viewed, so the historical view still
+  // grades old prospects against the ICP they were actually sourced for.
+  const MARKETING_RE = /marketing agenc|digital agenc|creative agenc|ad agenc/i;
+  const RECRUIT_RE = /recruit|staffing|talent|headhunt|executive search|\brpo\b|\bhr\b/i;
+  const ICP_RE = era === 'recruiting' ? RECRUIT_RE : MARKETING_RE;
   const onIcp = ps.filter(p => ICP_RE.test(p.niche || '')).length;
   const offIcp = ps.filter(p => p.niche && !ICP_RE.test(p.niche)).map(p => p.niche);
   const icpShare = Math.round(pct(onIcp, pTotal));
@@ -309,7 +346,9 @@ export default async function MapPage() {
     N('copy', {
       phase: 3, row: 3, title: 'THE COPY', stat: `${replyRate}%`,
       verdict: emailCopyVerdict, sub: 'the words, in both lanes',
-      why: 'Strategy, and this one now has enough volume to judge.',
+      why: eAttempted >= 100
+        ? 'Strategy, and this one now has enough volume to judge.'
+        : 'Strategy. Not enough volume in this era yet to judge.',
       detail: {
         headline: `${replies} real replies from ${touches} tries.`,
         bench: `Benchmark reply rate is ${BENCH.emailReply.avg}% average, ${BENCH.emailReply.good}% solid, ${BENCH.emailReply.strong}%+ strong.`,
@@ -437,18 +476,18 @@ export default async function MapPage() {
       },
     }),
     N('threshold', {
-      phase: 6, row: 1, title: 'THE ICP THRESHOLD', stat: `${Math.round(pct(touches, THRESHOLD))}%`,
-      verdict: 'locked', sub: `${touches} of ${THRESHOLD} tries (lifetime, blended)`,
+      phase: 6, row: 1, title: 'THE ICP THRESHOLD', stat: `${Math.round(pct(lifeTouches, THRESHOLD))}%`,
+      verdict: 'locked', sub: `${lifeTouches} of ${THRESHOLD} tries (lifetime, blended)`,
       why: 'A decision rule. Rules lock, but a documented override is not the same as ignoring one.',
       detail: {
-        headline: `2026-08-21: recruiting/staffing was retired at ${touches >= 518 ? '518' : touches} touches, before this threshold, by deliberate decision, not drift.`,
+        headline: `2026-08-21: recruiting/staffing was retired at 518 touches, before this threshold, by deliberate decision, not drift.`,
         bench: 'Exists so a decision cannot be made by mood, not to force volume past the point the signal is already clear.',
         bullets: [
           'Message-level changes are deliberately NOT gated by this. Copy can change today, and on the evidence it should.',
-          'This counter is the lifetime blended total across every ICP ever tried, it does not reset at a switch. The current ICP (marketing/digital agencies) is held to the same discipline: not switched again without an equally deliberate, documented call.',
+          'This counter is the lifetime blended total across every ICP ever tried, it does not reset at a switch or change with the era filter. The current ICP (marketing/digital agencies) is held to the same discipline: not switched again without an equally deliberate, documented call.',
           'Full reasoning for the 2026-08-21 override: goal.md and failure-archaeology.',
         ],
-        rows: [['Tries logged', String(touches)], ['Threshold', String(THRESHOLD)], ['Remaining', String(THRESHOLD - touches)]],
+        rows: [['Tries logged (lifetime)', String(lifeTouches)], ['Threshold', String(THRESHOLD)], ['Remaining', String(Math.max(0, THRESHOLD - lifeTouches))]],
       },
     }),
     N('bounce', {
@@ -478,6 +517,7 @@ export default async function MapPage() {
     emailPZero: emailPZero !== null ? r1(emailPZero * 100) : null,
     benchReply: BENCH.emailReply.avg,
     expectedReplies: Math.round(eAttempted * BENCH.emailReply.avg / 100),
+    era, pivot: PIVOT, lifeTouches,
   };
 
   return <MapView nodes={nodes} summary={summary} />;

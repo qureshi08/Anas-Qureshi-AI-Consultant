@@ -68,8 +68,48 @@ export default function MapView({ nodes, summary }) {
     );
   }
 
+  const ERA_TABS = [
+    { key: 'current', href: '/admin/map', label: 'CURRENT TEST · MARKETING AGENCIES', note: `since ${summary.pivot}` },
+    { key: 'recruiting', href: '/admin/map?era=recruiting', label: 'ARCHIVE · RECRUITING/STAFFING', note: `retired ${summary.pivot}` },
+    { key: 'all', href: '/admin/map?era=all', label: 'ALL TIME · BLENDED', note: 'every era combined' },
+  ];
+
   return (
     <div>
+      {/* ---------- era switcher ---------- */}
+      <div style={{
+        display: 'flex', flexWrap: 'wrap', gap: 0, marginBottom: 20,
+        border: '2.5px solid var(--ink)', background: 'var(--paper)', boxShadow: '4px 4px 0 var(--ink)',
+      }}>
+        {ERA_TABS.map((t, i) => {
+          const active = summary.era === t.key;
+          return (
+            <a key={t.key} href={t.href} style={{
+              flex: '1 1 200px', padding: '10px 14px', textDecoration: 'none',
+              borderRight: i < 2 ? '2px solid rgba(26,18,5,.14)' : 'none',
+              background: active ? 'var(--ink)' : 'transparent',
+            }}>
+              <div className="mono" style={{
+                fontSize: 10, letterSpacing: '.13em',
+                color: active ? 'var(--amber)' : 'var(--ink3)',
+              }}>{active ? '▸ ' : ''}{t.label}</div>
+              <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: active ? 'var(--paper2)' : 'var(--ink3)' }}>{t.note}</div>
+            </a>
+          );
+        })}
+      </div>
+      {summary.era !== 'current' && (
+        <div style={{
+          border: '2.5px solid var(--brick)', background: 'var(--brick-fill, var(--paper2))',
+          padding: '8px 14px', marginBottom: 20,
+          fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--ink2)',
+        }}>
+          {summary.era === 'recruiting'
+            ? 'Viewing the retired recruiting/staffing era. These numbers are history, not the live test. Nothing here should drive a decision about the current ICP.'
+            : 'Viewing every era blended together. Use the current-test view to judge the live ICP on its own numbers.'}
+        </div>
+      )}
+
       {/* ---------- headline ---------- */}
       <div style={{
         display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(146px, 1fr))',
