@@ -31,7 +31,7 @@ export default async function MapPage({ searchParams }) {
 
   const [pRes, lRes, ibRes, cRes, bRes, logRes, campRes] = await Promise.all([
     admin.from('prospects').select('status, niche, source, notes, created_at'),
-    admin.from('leads').select('id, email, status, sent_at, replied_at, booked_at, first_name, last_name, company, validation_status, current_step, created_at'),
+    admin.from('leads').select('id, email, status, sent_at, replied_at, booked_at, first_name, last_name, company, validation_status, current_step, created_at, campaign_id'),
     admin.from('inbound_leads').select('id'),
     admin.from('conversations').select('id, email'),
     admin.from('bookings').select('status, email'),
@@ -49,9 +49,22 @@ export default async function MapPage({ searchParams }) {
 
   // ---------------- era assignment ----------------
   // A prospect's era comes from its send date ([YYYY-MM-DD] tag in notes) when
-  // touched, else its created_at. A lead's era comes from sent_at when sent,
-  // else created_at. Rows dated before PIVOT are the recruiting era.
+  // touched, else its created_at. Rows dated before PIVOT are the recruiting era.
+  //
+  // A lead's era is decided by its OWN campaign's ICP, not by send recency.
+  // Campaign #2 (recruiting/staffing) kept its follow-up sequence (steps 2-4)
+  // running past the 2026-08-21 pivot, and every follow-up send rewrites
+  // sent_at to that day's date -- so a pure date check misclassified live
+  // recruiting-campaign follow-ups as "current" marketing-agency touches
+  // (confirmed 2026-08-25: 116 of the 230 "current era" email attempts were
+  // actually campaign #2, not campaign #4). Campaign identity is stable and
+  // doesn't drift the way a send timestamp does, so it takes priority; date
+  // is only the fallback for a lead whose campaign name doesn't match either
+  // regex (a future campaign this code doesn't know about yet).
   const NOTE_DATE = /\[(\d{4}-\d{2}-\d{2})\]/;
+  const MARKETING_RE = /marketing agenc|digital agenc|creative agenc|ad agenc/i;
+  const RECRUIT_RE = /recruit|staffing|talent|headhunt|executive search|\brpo\b|\bhr\b/i;
+  const campNameById = new Map(camps.map(c => [c.id, c.name || '']));
   const pDate = (p) => {
     const m = NOTE_DATE.exec(p.notes || '');
     return m ? m[1] : (p.created_at || '').slice(0, 10);
@@ -59,9 +72,21 @@ export default async function MapPage({ searchParams }) {
   const lDate = (l) => ((l.sent_at || l.created_at || '').slice(0, 10));
   const isCurrent = (d) => d >= PIVOT;
   const inEra = (d) => era === 'all' || (era === 'current' ? isCurrent(d) : !isCurrent(d));
+  const leadIsCurrentByCampaign = (l) => {
+    const name = campNameById.get(l.campaign_id) || '';
+    if (MARKETING_RE.test(name)) return true;
+    if (RECRUIT_RE.test(name)) return false;
+    return null;
+  };
+  const inLeadEra = (l) => {
+    if (era === 'all') return true;
+    const byCampaign = leadIsCurrentByCampaign(l);
+    if (byCampaign !== null) return era === 'current' ? byCampaign : !byCampaign;
+    return inEra(lDate(l));
+  };
 
   const ps = allPs.filter(p => inEra(pDate(p)));
-  const ls = allLs.filter(l => inEra(lDate(l)));
+  const ls = allLs.filter(l => inLeadEra(l));
   const lsIds = new Set(ls.map(l => l.id));
   const logs = allLogs.filter(l => lsIds.has(l.lead_id));
 
@@ -141,8 +166,7 @@ export default async function MapPage({ searchParams }) {
   // ICP switched 2026-08-21: recruiting/staffing retired, marketing/digital agencies is current.
   // The on-target test matches the era being viewed, so the historical view still
   // grades old prospects against the ICP they were actually sourced for.
-  const MARKETING_RE = /marketing agenc|digital agenc|creative agenc|ad agenc/i;
-  const RECRUIT_RE = /recruit|staffing|talent|headhunt|executive search|\brpo\b|\bhr\b/i;
+  // (MARKETING_RE / RECRUIT_RE are defined above, reused here for the same purpose.)
   const ICP_RE = era === 'recruiting' ? RECRUIT_RE : MARKETING_RE;
   const onIcp = ps.filter(p => ICP_RE.test(p.niche || '')).length;
   const offIcp = ps.filter(p => p.niche && !ICP_RE.test(p.niche)).map(p => p.niche);
