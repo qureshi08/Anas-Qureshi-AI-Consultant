@@ -1,13 +1,20 @@
 // Era switcher shared by the admin pages. Server-component friendly: plain
 // links, no client state. `basePath` is the page path; `extraQuery` carries any
 // other query params the page needs to preserve (e.g. "status=replied").
-import { PIVOT } from '../../lib/era';
+import { PIVOT, PIVOT_2 } from '../../lib/era';
 
 const TABS = [
-  { key: 'current', label: 'CURRENT · MARKETING AGENCIES', note: `since ${PIVOT}` },
+  { key: 'current', label: 'CURRENT · WHATSAPP RECEPTIONIST', note: `since ${PIVOT_2}` },
+  { key: 'marketing', label: 'ARCHIVE · MARKETING AGENCIES', note: `${PIVOT} to ${PIVOT_2}` },
   { key: 'recruiting', label: 'ARCHIVE · RECRUITING', note: `retired ${PIVOT}` },
   { key: 'all', label: 'ALL TIME', note: 'blended' },
 ];
+
+const BANNER_TEXT = {
+  marketing: 'Viewing the retired marketing/digital agencies era. History, not the live test. Nothing here should drive a decision about the current ICP.',
+  recruiting: 'Viewing the retired recruiting/staffing era. History, not the live test. Nothing here should drive a decision about the current ICP.',
+  all: 'Viewing every era blended. Use the current view to judge the live test on its own numbers.',
+};
 
 export default function EraTabs({ era, basePath, extraQuery = '' }) {
   const href = (key) => {
@@ -45,9 +52,7 @@ export default function EraTabs({ era, basePath, extraQuery = '' }) {
           border: '2px solid var(--brick)', borderRadius: 6, padding: '8px 12px', marginBottom: 16,
           fontFamily: 'var(--font-body)', fontSize: 13.5, color: 'var(--ink2)', background: 'var(--paper2)',
         }}>
-          {era === 'recruiting'
-            ? 'Viewing the retired recruiting/staffing era. History, not the live test. Nothing here should drive a decision about the current ICP.'
-            : 'Viewing every era blended. Use the current view to judge the live test on its own numbers.'}
+          {BANNER_TEXT[era] || BANNER_TEXT.all}
         </div>
       )}
     </>

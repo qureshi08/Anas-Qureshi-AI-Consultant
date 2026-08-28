@@ -5,7 +5,7 @@ import SendRunner from '../../components/SendRunner';
 import SyncRepliesButton from '../../components/SyncRepliesButton';
 import OutboundActionButton from '../../components/OutboundActionButton';
 import ReplyToLead from '../../components/ReplyToLead';
-import { campaignEra, PIVOT } from '../../../lib/era';
+import { campaignEra, PIVOT, PIVOT_2 } from '../../../lib/era';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,11 +14,11 @@ export default async function SendQueuePage({ searchParams }) {
   const { data: campaigns } = await admin.from('campaigns').select('*').order('created_at', { ascending: false });
   const list = campaigns || [];
   const currentList = list.filter(c => campaignEra(c) === 'current');
-  const archivedList = list.filter(c => campaignEra(c) === 'recruiting');
+  const archivedList = list.filter(c => campaignEra(c) !== 'current');
   // Default to the newest current-era campaign; archived ones only by explicit click.
   const campaignId = searchParams?.campaign || (currentList[0] ? String(currentList[0].id) : (list[0] ? String(list[0].id) : ''));
   const campaign = list.find(c => String(c.id) === String(campaignId));
-  const campaignArchived = campaign ? campaignEra(campaign) === 'recruiting' : false;
+  const campaignArchived = campaign ? campaignEra(campaign) !== 'current' : false;
   const safety = searchParams?.safety || 'SAFE_RISKY';
 
   let leads = [];
@@ -110,7 +110,7 @@ export default async function SendQueuePage({ searchParams }) {
             <div className="card" style={{ marginBottom: 14, borderColor: 'var(--amber)', boxShadow: '4px 4px 0 var(--amber)' }}>
               <div className="tag" style={{ color: 'var(--amber)' }}>No current-era campaign yet</div>
               <p style={{ fontSize: 14, color: 'var(--ink2)', marginTop: 6 }}>
-                Every campaign here predates the {PIVOT} ICP switch. The marketing-agency test needs its own campaign,{' '}
+                Every campaign here predates the {PIVOT_2} ICP switch. The WhatsApp receptionist test needs its own campaign,{' '}
                 <Link href="/admin/campaigns" style={{ color: 'var(--brick)' }}>create it first &rarr;</Link>
               </p>
             </div>
@@ -135,7 +135,7 @@ export default async function SendQueuePage({ searchParams }) {
           {archivedList.length > 0 && (
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14, alignItems: 'center' }}>
               <span className="mono" style={{ fontSize: 9.5, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--ink3)' }}>
-                Archive (recruiting era):
+                Archive (retired eras):
               </span>
               {archivedList.map(c => (
                 <Link
@@ -158,9 +158,9 @@ export default async function SendQueuePage({ searchParams }) {
             <div className="card" style={{ marginBottom: 14, borderColor: 'var(--brick)', boxShadow: '4px 4px 0 var(--brick)' }}>
               <div className="tag" style={{ color: 'var(--brick)' }}>Retired-era campaign</div>
               <p style={{ fontSize: 14, color: 'var(--ink2)', marginTop: 6 }}>
-                This campaign targets the recruiting/staffing ICP, retired {PIVOT} (goal.md). Its pending leads are
-                history, not the live test. Do not send from here by default; the current test runs from a
-                marketing-agency campaign.
+                This campaign targets a retired ICP &mdash; recruiting/staffing (retired {PIVOT}) or marketing/digital
+                agencies (retired {PIVOT_2}), see goal.md. Its pending leads are history, not the live test. Do not
+                send from here by default; the current test runs from the WhatsApp&#8209;receptionist campaign.
               </p>
             </div>
           )}

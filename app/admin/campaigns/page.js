@@ -3,7 +3,7 @@ import { createAdminClient } from '../../../lib/supabase/admin';
 import { createCampaign } from '../actions';
 import { deleteCampaign } from '../outbound-actions';
 import ColdEmailNav from '../../components/ColdEmailNav';
-import { campaignEra, PIVOT } from '../../../lib/era';
+import { campaignEra, PIVOT, PIVOT_2 } from '../../../lib/era';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +17,7 @@ const GOALS = [
 const PLATFORMS = [
   ['Cold email', 'email'],
   ['LinkedIn DM', 'linkedin'],
+  ['WhatsApp', 'whatsapp'],
   ['Instagram DM', 'instagram'],
   ['SMS', 'sms'],
 ];
@@ -82,29 +83,40 @@ export default async function AdminCampaignsPage() {
 
       {(() => {
         const current = (campaigns || []).filter(c => campaignEra(c) === 'current');
-        const archived = (campaigns || []).filter(c => campaignEra(c) === 'recruiting');
+        const marketing = (campaigns || []).filter(c => campaignEra(c) === 'marketing');
+        const recruiting = (campaigns || []).filter(c => campaignEra(c) === 'recruiting');
         return (
           <>
             {current.length === 0 && (campaigns || []).length > 0 && (
               <div className="card" style={{ marginBottom: 16, borderColor: 'var(--amber)', boxShadow: '4px 4px 0 var(--amber)' }}>
                 <div className="tag" style={{ color: 'var(--amber)' }}>No current-era campaign yet</div>
                 <p style={{ fontSize: 14, color: 'var(--ink2)', marginTop: 6 }}>
-                  Every campaign below predates the {PIVOT} ICP switch (recruiting/staffing, retired). The marketing-agency
-                  test needs its own campaign; create one above rather than reusing an archived one.
+                  Every campaign below predates the {PIVOT_2} ICP switch (marketing agencies, retired). The WhatsApp
+                  receptionist test needs its own campaign; create one above rather than reusing an archived one.
                 </p>
               </div>
             )}
             {current.length > 0 && (
-              <div className="tag" style={{ marginBottom: 10 }}>Current era &middot; marketing agencies</div>
+              <div className="tag" style={{ marginBottom: 10 }}>Current era &middot; WhatsApp receptionist (Gulf/Pakistan)</div>
             )}
             <CampaignList items={current} countsFor={countsFor} />
-            {archived.length > 0 && (
+            {marketing.length > 0 && (
               <details style={{ marginTop: 20 }}>
                 <summary className="mono" style={{ cursor: 'pointer', fontSize: 11, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: '.08em' }}>
-                  Archive &middot; recruiting/staffing era &middot; {archived.length} campaigns (retired {PIVOT}, kept for history)
+                  Archive &middot; marketing agencies era &middot; {marketing.length} campaigns (ran {PIVOT} to {PIVOT_2}, kept for history)
                 </summary>
                 <div style={{ marginTop: 12 }}>
-                  <CampaignList items={archived} countsFor={countsFor} archived />
+                  <CampaignList items={marketing} countsFor={countsFor} archived />
+                </div>
+              </details>
+            )}
+            {recruiting.length > 0 && (
+              <details style={{ marginTop: 20 }}>
+                <summary className="mono" style={{ cursor: 'pointer', fontSize: 11, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: '.08em' }}>
+                  Archive &middot; recruiting/staffing era &middot; {recruiting.length} campaigns (retired {PIVOT}, kept for history)
+                </summary>
+                <div style={{ marginTop: 12 }}>
+                  <CampaignList items={recruiting} countsFor={countsFor} archived />
                 </div>
               </details>
             )}

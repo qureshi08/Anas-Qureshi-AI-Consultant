@@ -16,14 +16,18 @@ export const BENCH = {
   liReply:     { avg: 10.4, icp: 18.9, unit: '%', label: 'LinkedIn post-connection reply' },
 };
 
-// Recruiting/staffing (the prior ICP) benchmarked as the highest-replying
-// vertical measured (18.9% vs a 10.4% all-industry average), yet still
-// produced 3 real replies across 518+ touches, all negative, two rejecting
-// the specific AI-screening feature. Retired 2026-08-21, see goal.md and
-// failure-archaeology. No vertical-specific benchmark has been researched
-// yet for the current ICP (marketing/digital agencies), so this note is
-// honestly "no data" rather than reusing the old, no-longer-relevant number.
-export const ICP_NOTE = 'No vertical-specific reply-rate benchmark exists yet for marketing/digital agencies. Judge this ICP on its own numbers as they come in, not on the retired recruiting/staffing figure.';
+// Two prior ICPs, both retired. Recruiting/staffing benchmarked as the
+// highest-replying vertical measured (18.9% vs a 10.4% all-industry average),
+// yet still produced 3 real replies across 518+ touches, all negative, two
+// rejecting the specific AI-screening feature. Retired 2026-08-21. Marketing/
+// digital agencies then ran 2026-08-21 to 2026-08-27: 379 cold-email sends,
+// 2 replies, both negative -- diagnosed as an offer-economics failure, not
+// an ICP failure, per BusinessOS/protocols/hormozi-reframe-audit-2026-08-27.md.
+// See goal.md and failure-archaeology for both. No vertical-specific
+// benchmark has been researched yet for the current ICP (WhatsApp
+// receptionist, Gulf/Pakistan), so this note is honestly "no data" rather
+// than reusing either old, no-longer-relevant number.
+export const ICP_NOTE = 'No vertical-specific reply-rate benchmark exists yet for WhatsApp-native Gulf/Pakistan SMBs. Judge this ICP on its own numbers as they come in, not on either retired vertical\'s figure.';
 
 /**
  * With zero successes in n trials, the 95% upper bound on the true rate is

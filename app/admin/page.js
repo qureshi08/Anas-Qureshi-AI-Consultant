@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { createAdminClient } from '../../lib/supabase/admin';
 import { STAGES, STAGE_LABEL } from './stages';
-import { resolveEra, prospectDate, leadDate, inEra } from '../../lib/era';
+import { resolveEra, prospectDate, leadDate, inEra, campaignEra } from '../../lib/era';
 import EraTabs from '../components/EraTabs';
 
 export const dynamic = 'force-dynamic';
@@ -71,7 +71,8 @@ export default async function AdminOverviewPage({ searchParams }) {
   const era = resolveEra(searchParams?.era);
   const admin = createAdminClient();
   const { data: prospects } = await admin.from('prospects').select('status, notes, created_at');
-  const { data: allLeads } = await admin.from('leads').select('status, sent_at, created_at');
+  const { data: allLeads } = await admin.from('leads').select('status, sent_at, created_at, campaign_id');
+  const { data: campaigns } = await admin.from('campaigns').select('id, created_at');
   const { data: bookings } = await admin.from('bookings').select('status');
   const { data: inbound } = await admin.from('inbound_leads').select('id');
   const { data: conversations } = await admin.from('conversations').select('id, email');
@@ -79,17 +80,25 @@ export default async function AdminOverviewPage({ searchParams }) {
   const psAll = prospects || [];
   const leadsAll = allLeads || [];
   const ps = psAll.filter(p => inEra(era, prospectDate(p)));
-  const leads = leadsAll.filter(l => inEra(era, leadDate(l)));
+  // A lead's era is its own campaign's era, not send recency -- a campaign
+  // that straddles a pivot date must not leak leads into the wrong era. See
+  // lib/era.js and the map/page.js fix from 2026-08-25 for the bug this avoids.
+  const eraByCampaignId = new Map((campaigns || []).map(c => [c.id, campaignEra(c)]));
+  const leadEra = (l) => eraByCampaignId.get(l.campaign_id) ?? campaignEra({ created_at: leadDate(l) });
+  const leads = leadsAll.filter(l => era === 'all' || leadEra(l) === era);
   const stageCount = (s) => ps.filter(p => p.status === s).length;
   const requestedCalls = (bookings || []).filter(b => b.status === 'requested').length;
   const chatLeads = (conversations || []).filter(c => c.email).length;
 
   // ---- Goal strip: the actual thing that matters, per goal.md ----
   // The original Aug 15 deadline passed with $0 received (honesty clause,
-  // goal.md). The active window is now the 10-working-day marketing-agency
-  // test, 2026-08-24 to 2026-09-04, opened 2026-08-21.
-  const TEST_END = new Date('2026-09-04T23:59:59');
-  const daysLeft = Math.max(0, Math.ceil((TEST_END - new Date()) / (1000 * 60 * 60 * 24)));
+  // goal.md). The marketing-agency test that followed was closed early,
+  // 2026-08-27, by deliberate decision: 379 sends, 2 replies, both negative
+  // (see BusinessOS/protocols/hormozi-reframe-audit-2026-08-27.md). The
+  // current test (WhatsApp receptionist, Gulf/Pakistan) has no fixed
+  // calendar deadline, only touch/conversation stop rules in goal.md, so
+  // there is no countdown to show here -- a days-left number would be
+  // invented, not real.
   // Won is the goal itself, so it always counts lifetime across every era.
   const wonCount = psAll.filter(p => p.status === 'won').length; // LinkedIn 'won' is the only closed-deal status tracked today; email has no won/lost concept yet, see note below.
 
@@ -124,13 +133,13 @@ export default async function AdminOverviewPage({ searchParams }) {
     <>
       <EraTabs era={era} basePath="/admin" />
 
-      {/* Goal strip -- everything below exists to move these three numbers. */}
-      <div className="card" style={{ marginBottom: 24, borderColor: daysLeft <= 3 ? 'var(--brick)' : 'var(--ink)', boxShadow: `4px 4px 0 ${daysLeft <= 3 ? 'var(--brick)' : 'var(--ink)'}` }}>
+      {/* Goal strip -- everything below exists to move these two numbers. */}
+      <div className="card" style={{ marginBottom: 24, borderColor: 'var(--ink)', boxShadow: '4px 4px 0 var(--ink)' }}>
         <div className="tag">The goal · goal.md</div>
         <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginTop: 8 }}>
           <div>
-            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 32, color: daysLeft <= 3 ? 'var(--brick)' : 'var(--ink)' }}>{daysLeft} days left</div>
-            <div className="mono" style={{ fontSize: 10, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: '.08em' }}>marketing-agency test · to Sep 4, 2026</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 24, color: 'var(--brick)' }}>WhatsApp receptionist</div>
+            <div className="mono" style={{ fontSize: 10, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: '.08em' }}>current test &middot; Gulf + Pakistan &middot; since 2026-08-27, no fixed deadline</div>
           </div>
           <div>
             <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 32, color: wonCount >= 1 ? 'var(--forest)' : 'var(--ink)' }}>{wonCount} of 1</div>
@@ -138,7 +147,7 @@ export default async function AdminOverviewPage({ searchParams }) {
           </div>
         </div>
         <p style={{ fontSize: 12, color: 'var(--ink3)', marginTop: 8 }}>
-          Official touch count lives in <span className="mono">system/rep-counter.md</span>, not here -- the numbers below are pipeline state, not the daily rep log.
+          Official touch count lives in <span className="mono">system/rep-counter.md</span>, not here -- the numbers below are pipeline state, not the daily rep log. Full pivot reasoning: <span className="mono">BusinessOS/protocols/hormozi-reframe-audit-2026-08-27.md</span>.
         </p>
       </div>
 

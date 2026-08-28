@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { createAdminClient } from '../../../lib/supabase/admin';
 import ColdEmailNav from '../../components/ColdEmailNav';
 import SyncRepliesButton from '../../components/SyncRepliesButton';
-import { resolveEra, leadDate, inEra, campaignEra } from '../../../lib/era';
+import { resolveEra, leadDate, campaignEra } from '../../../lib/era';
 import EraTabs from '../../components/EraTabs';
 
 export const dynamic = 'force-dynamic';
@@ -13,13 +13,21 @@ export default async function ColdEmailDashboard({ searchParams }) {
   const { data: campaigns } = await admin.from('campaigns').select('*').order('created_at', { ascending: false });
   const { data: leads } = await admin.from('leads').select('campaign_id, status, sent_at, created_at');
 
-  const all = (leads || []).filter(l => inEra(era, leadDate(l)));
+  // A lead's era is decided by its own campaign's era, not by send recency —
+  // a campaign that straddles a pivot date (e.g. sending on both sides of it)
+  // must not leak leads into the wrong era. See lib/era.js and the map/page.js
+  // fix from 2026-08-25 for the bug this avoids.
+  const eraByCampaignId = new Map((campaigns || []).map(c => [c.id, campaignEra(c)]));
+  const leadEra = (l) => eraByCampaignId.get(l.campaign_id) ?? inEraFallback(leadDate(l));
+  function inEraFallback(d) { return campaignEra({ created_at: d }); }
+
+  const all = (leads || []).filter(l => era === 'all' || leadEra(l) === era);
   const sent = all.filter(l => l.sent_at).length;
   const replied = all.filter(l => l.status === 'replied' || l.status === 'booked').length;
   const booked = all.filter(l => l.status === 'booked').length;
   const pct = (n, d) => (d > 0 ? `${Math.round((n / d) * 100)}%` : '—');
 
-  const visibleCampaigns = (campaigns || []).filter(c => era === 'all' || campaignEra(c) === (era === 'current' ? 'current' : 'recruiting'));
+  const visibleCampaigns = (campaigns || []).filter(c => era === 'all' || campaignEra(c) === era);
 
   const stats = [
     ['Campaigns', visibleCampaigns.length, null],

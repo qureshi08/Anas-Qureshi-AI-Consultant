@@ -69,7 +69,8 @@ export default function MapView({ nodes, summary }) {
   }
 
   const ERA_TABS = [
-    { key: 'current', href: '/admin/map', label: 'CURRENT TEST · MARKETING AGENCIES', note: `since ${summary.pivot}` },
+    { key: 'current', href: '/admin/map', label: 'CURRENT TEST · WHATSAPP RECEPTIONIST', note: `since ${summary.pivot2}` },
+    { key: 'marketing', href: '/admin/map?era=marketing', label: 'ARCHIVE · MARKETING AGENCIES', note: `${summary.pivot} to ${summary.pivot2}` },
     { key: 'recruiting', href: '/admin/map?era=recruiting', label: 'ARCHIVE · RECRUITING/STAFFING', note: `retired ${summary.pivot}` },
     { key: 'all', href: '/admin/map?era=all', label: 'ALL TIME · BLENDED', note: 'every era combined' },
   ];
@@ -86,7 +87,7 @@ export default function MapView({ nodes, summary }) {
           return (
             <a key={t.key} href={t.href} style={{
               flex: '1 1 200px', padding: '10px 14px', textDecoration: 'none',
-              borderRight: i < 2 ? '2px solid rgba(26,18,5,.14)' : 'none',
+              borderRight: i < ERA_TABS.length - 1 ? '2px solid rgba(26,18,5,.14)' : 'none',
               background: active ? 'var(--ink)' : 'transparent',
             }}>
               <div className="mono" style={{
@@ -106,6 +107,8 @@ export default function MapView({ nodes, summary }) {
         }}>
           {summary.era === 'recruiting'
             ? 'Viewing the retired recruiting/staffing era. These numbers are history, not the live test. Nothing here should drive a decision about the current ICP.'
+            : summary.era === 'marketing'
+            ? 'Viewing the retired marketing/digital agencies era. These numbers are history, not the live test. Nothing here should drive a decision about the current ICP.'
             : 'Viewing every era blended together. Use the current-test view to judge the live ICP on its own numbers.'}
         </div>
       )}

@@ -5,13 +5,36 @@
 // - company: required unless "id" is given, used to find the row (case-insensitive exact match)
 // - contact_name: optional, narrows the match if company alone matches more than one row
 // - id: optional, exact row id, use this instead of company/contact_name when company+contact_name are ambiguous (e.g. deduping)
-// - status: optional, new | connected | replied | call | won | lost
-// - note: optional, APPENDED to existing notes with a dated separator (never overwrites history)
+// - status: optional, new | request_sent_no_note | request_sent_with_note | connected | dm_sent | dm_read | replied | call | won | lost (see Website/app/admin/stages.js)
+// - note: optional, APPENDED to the notes' activity-log section with a dated separator (never overwrites history)
+// - draft: optional, sets the DM Draft box (the ready-to-send message text), overwrites any prior draft
 // - role, website, linkedin, email, niche: optional, overwrite directly if given
+//
+// `prospects.notes` is ONE text column that the /admin UI splits into three logical
+// parts (plain notes, DM draft, activity log) via internal markers -- there is no
+// separate `draft_message` column (a migration file for one exists but was never run
+// and the UI doesn't read it anyway). Corrected 2026-08-18 after `note` was appended
+// as raw text and landed in the wrong place instead of the DM Draft box. See
+// Website/lib/prospectNotes.js for the real parsing logic, mirrored here.
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+
+const DRAFT_MARKER = '\n\n---DM DRAFT---\n';
+const LOG_MARKER = '\n\n---ACTIVITY LOG---\n';
+function parseNotes(raw) {
+  const text = raw || '';
+  const [beforeLog, log = ''] = text.split(LOG_MARKER);
+  const [notes = '', draft = ''] = beforeLog.split(DRAFT_MARKER);
+  return { notes: notes.trim(), draft: draft.trim(), log: log.trim() };
+}
+function combineNotes({ notes, draft, log }) {
+  let out = (notes || '').trim();
+  if (draft && draft.trim()) out += DRAFT_MARKER + draft.trim();
+  if (log && log.trim()) out += LOG_MARKER + log.trim();
+  return out;
+}
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const envPath = path.join(__dirname, '..', '.env.local');
@@ -95,13 +118,19 @@ const patch = {};
 for (const key of DIRECT_FIELDS) {
   if (input[key] !== undefined) patch[key] = input[key];
 }
-if (input.note) {
-  const dateTag = new Date().toISOString().slice(0, 10);
-  patch.notes = existing.notes ? `${existing.notes}\n\n[${dateTag}] ${input.note}` : `[${dateTag}] ${input.note}`;
+
+if (input.note || input.draft !== undefined) {
+  const parsed = parseNotes(existing.notes);
+  if (input.draft !== undefined) parsed.draft = input.draft;
+  if (input.note) {
+    const dateTag = new Date().toISOString().slice(0, 10);
+    parsed.log = parsed.log ? `${parsed.log}\n[${dateTag}] ${input.note}` : `[${dateTag}] ${input.note}`;
+  }
+  patch.notes = combineNotes(parsed);
 }
 
 if (Object.keys(patch).length === 0) {
-  console.error('Nothing to update: pass at least one of status, note, role, website, linkedin, email, niche, phone, address.');
+  console.error('Nothing to update: pass at least one of status, note, draft, role, website, linkedin, email, niche, phone, address.');
   process.exit(1);
 }
 

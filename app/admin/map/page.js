@@ -1,6 +1,6 @@
 import { createAdminClient } from '../../../lib/supabase/admin';
 import { BENCH, ICP_NOTE, zeroCeiling, pZeroAtBenchmark } from './benchmarks';
-import { PIVOT } from '../../../lib/era';
+import { PIVOT, PIVOT_2 } from '../../../lib/era';
 import MapView from './MapView';
 
 export const dynamic = 'force-dynamic';
@@ -18,12 +18,14 @@ const pct = (n, d) => (d ? (n / d) * 100 : 0);
 const r1 = (n) => Math.round(n * 10) / 10;
 const domainOf = (e) => ((e || '').split('@')[1] || '').toLowerCase();
 
-// The ICP switched on PIVOT (recruiting/staffing -> marketing agencies, see
-// goal.md 2026-08-21 and lib/era.js, the single source of truth). The default
-// view shows only the current era so a fresh test is judged on its own numbers.
-// Nothing is deleted -- ?era=recruiting and ?era=all show the full history, and
-// the lifetime counter below always stays blended.
-const ERAS = { current: 'current', recruiting: 'recruiting', all: 'all' };
+// The ICP has switched twice: recruiting/staffing -> marketing agencies on
+// PIVOT (goal.md 2026-08-21), then marketing agencies -> AI WhatsApp
+// receptionist (Gulf/Pakistan) on PIVOT_2 (goal.md 2026-08-27, see
+// lib/era.js, the single source of truth). The default view shows only the
+// current era so a fresh test is judged on its own numbers. Nothing is
+// deleted -- ?era=marketing, ?era=recruiting and ?era=all show the full
+// history, and the lifetime counter below always stays blended.
+const ERAS = { current: 'current', marketing: 'marketing', recruiting: 'recruiting', all: 'all' };
 
 export default async function MapPage({ searchParams }) {
   const era = ERAS[searchParams?.era] || 'current';
@@ -49,7 +51,7 @@ export default async function MapPage({ searchParams }) {
 
   // ---------------- era assignment ----------------
   // A prospect's era comes from its send date ([YYYY-MM-DD] tag in notes) when
-  // touched, else its created_at. Rows dated before PIVOT are the recruiting era.
+  // touched, else its created_at, bucketed into one of three eras by date.
   //
   // A lead's era is decided by its OWN campaign's ICP, not by send recency.
   // Campaign #2 (recruiting/staffing) kept its follow-up sequence (steps 2-4)
@@ -59,9 +61,10 @@ export default async function MapPage({ searchParams }) {
   // (confirmed 2026-08-25: 116 of the 230 "current era" email attempts were
   // actually campaign #2, not campaign #4). Campaign identity is stable and
   // doesn't drift the way a send timestamp does, so it takes priority; date
-  // is only the fallback for a lead whose campaign name doesn't match either
-  // regex (a future campaign this code doesn't know about yet).
+  // is only the fallback for a lead whose campaign name doesn't match any of
+  // the three regexes (a future campaign this code doesn't know about yet).
   const NOTE_DATE = /\[(\d{4}-\d{2}-\d{2})\]/;
+  const WHATSAPP_RE = /whatsapp|receptionist|\bgulf\b|\bpakistan\b|\buae\b/i;
   const MARKETING_RE = /marketing agenc|digital agenc|creative agenc|ad agenc/i;
   const RECRUIT_RE = /recruit|staffing|talent|headhunt|executive search|\brpo\b|\bhr\b/i;
   const campNameById = new Map(camps.map(c => [c.id, c.name || '']));
@@ -70,18 +73,23 @@ export default async function MapPage({ searchParams }) {
     return m ? m[1] : (p.created_at || '').slice(0, 10);
   };
   const lDate = (l) => ((l.sent_at || l.created_at || '').slice(0, 10));
-  const isCurrent = (d) => d >= PIVOT;
-  const inEra = (d) => era === 'all' || (era === 'current' ? isCurrent(d) : !isCurrent(d));
-  const leadIsCurrentByCampaign = (l) => {
-    const name = campNameById.get(l.campaign_id) || '';
-    if (MARKETING_RE.test(name)) return true;
-    if (RECRUIT_RE.test(name)) return false;
+  const dateEra = (d) => {
+    if (!d) return 'recruiting';
+    if (d >= PIVOT_2) return 'current';
+    if (d >= PIVOT) return 'marketing';
+    return 'recruiting';
+  };
+  const inEra = (d) => era === 'all' || dateEra(d) === era;
+  const campaignEraByName = (name) => {
+    if (WHATSAPP_RE.test(name)) return 'current';
+    if (MARKETING_RE.test(name)) return 'marketing';
+    if (RECRUIT_RE.test(name)) return 'recruiting';
     return null;
   };
   const inLeadEra = (l) => {
     if (era === 'all') return true;
-    const byCampaign = leadIsCurrentByCampaign(l);
-    if (byCampaign !== null) return era === 'current' ? byCampaign : !byCampaign;
+    const byCampaign = campaignEraByName(campNameById.get(l.campaign_id) || '');
+    if (byCampaign !== null) return byCampaign === era;
     return inEra(lDate(l));
   };
 
@@ -163,11 +171,12 @@ export default async function MapPage({ searchParams }) {
   const sourceRows = tally(ps, p => p.source);
   const validationRows = tally(ls, l => l.validation_status);
   const bouncedDomains = tally(ls.filter(l => l.status === 'bounced'), l => domainOf(l.email));
-  // ICP switched 2026-08-21: recruiting/staffing retired, marketing/digital agencies is current.
-  // The on-target test matches the era being viewed, so the historical view still
-  // grades old prospects against the ICP they were actually sourced for.
-  // (MARKETING_RE / RECRUIT_RE are defined above, reused here for the same purpose.)
-  const ICP_RE = era === 'recruiting' ? RECRUIT_RE : MARKETING_RE;
+  // ICP switched 2026-08-21 (recruiting/staffing -> marketing agencies), then
+  // again 2026-08-27 (marketing agencies -> AI WhatsApp receptionist, Gulf/
+  // Pakistan). The on-target test matches the era being viewed, so the
+  // historical view still grades old prospects against the ICP they were
+  // actually sourced for. (WHATSAPP_RE / MARKETING_RE / RECRUIT_RE defined above.)
+  const ICP_RE = era === 'recruiting' ? RECRUIT_RE : era === 'marketing' ? MARKETING_RE : WHATSAPP_RE;
   const onIcp = ps.filter(p => ICP_RE.test(p.niche || '')).length;
   const offIcp = ps.filter(p => p.niche && !ICP_RE.test(p.niche)).map(p => p.niche);
   const icpShare = Math.round(pct(onIcp, pTotal));
@@ -229,14 +238,15 @@ export default async function MapPage({ searchParams }) {
     }),
     N('icp', {
       phase: 1, row: 2, title: 'THE ICP', stat: `${icpShare}%`,
-      verdict: 'bet', sub: 'marketing/digital agencies (switched 2026-08-21)',
-      why: 'Strategy. Recruiting/staffing retired, this is a fresh, unvalidated test.',
+      verdict: 'bet', sub: 'WhatsApp-native SMBs, Gulf + Pakistan (switched 2026-08-27)',
+      why: 'Strategy. Marketing agencies retired, this is a fresh, unvalidated test.',
       detail: {
-        headline: `${onIcp} of ${pTotal} sourced prospects are genuinely in the marketing/digital-agency vertical.`,
+        headline: `${onIcp} of ${pTotal} sourced prospects are genuinely in the Gulf/Pakistan WhatsApp-receptionist vertical.`,
         bench: ICP_NOTE,
         bullets: [
-          'Recruiting/staffing was retired 2026-08-21 at 518+ combined touches, before the 1,000-try threshold, by a deliberate documented decision: 3 real replies, all negative, two rejecting the specific AI-screening feature. Full reasoning in goal.md.',
-          'This vertical has no track record here yet, on-ICP share reflects sourcing since the switch, prospects still tagged recruiting/staffing now correctly show as off-ICP.',
+          'Marketing/digital agencies was retired 2026-08-27 at 379 cold-email sends against the full sourced batch: 2 replies, both negative. Combined with the lifetime audit (~2,272 cold touches across 3 ICPs, 0 confirmed positive ever), the diagnosis was the offer economics, not the ICP -- see BusinessOS/protocols/hormozi-reframe-audit-2026-08-27.md.',
+          'Recruiting/staffing was retired earlier, 2026-08-21, at 518+ combined touches: 3 real replies, all negative, two rejecting the specific AI-screening feature. Full reasoning in goal.md.',
+          'This vertical has no track record here yet, on-ICP share reflects sourcing since the switch, prospects still tagged marketing-agency or recruiting/staffing now correctly show as off-ICP.',
           'The 1,000-try discipline still applies going forward: this ICP is not switched again on a whim, only by another deliberate documented call.',
         ],
         rows: [
@@ -384,7 +394,7 @@ export default async function MapPage({ searchParams }) {
             ? `With 95% confidence the true email reply rate is below ${r1(emailCeiling)}%, against a ${BENCH.emailReply.avg}% benchmark.`
             : '',
           `On LinkedIn only ${pDmSent} actual messages have gone out, so ${dmCeiling !== null ? `the ceiling there is a looser ${r1(dmCeiling)}%` : 'there is not enough volume yet'}. The DM lane is not yet judged, the email lane is.`,
-          'The prior ICP (recruiting/staffing) was retired 2026-08-21 after its own message-vs-audience read: replies specifically rejected the AI-screening feature, not just went silent. On the current ICP (marketing/digital agencies), judge copy fresh, this history is not a benchmark for the new vertical.',
+          'Two prior ICPs are now retired: recruiting/staffing (2026-08-21, replies specifically rejected the AI-screening feature) and marketing/digital agencies (2026-08-27, 379 sends and 2 negative replies, offer economics diagnosed as the real cause -- see the Hormozi reframe audit). On the current ICP (WhatsApp receptionist, Gulf/Pakistan), judge copy fresh, this history is not a benchmark for the new vertical.',
         ].filter(Boolean),
         rows: [
           ['Email attempted', String(eAttempted)],
@@ -504,12 +514,12 @@ export default async function MapPage({ searchParams }) {
       verdict: 'locked', sub: `${lifeTouches} of ${THRESHOLD} tries (lifetime, blended)`,
       why: 'A decision rule. Rules lock, but a documented override is not the same as ignoring one.',
       detail: {
-        headline: `2026-08-21: recruiting/staffing was retired at 518 touches, before this threshold, by deliberate decision, not drift.`,
+        headline: `Two deliberate overrides so far: recruiting/staffing retired 2026-08-21 at 518 touches, marketing agencies retired 2026-08-27 at 379 sends. Neither hit this threshold before switching.`,
         bench: 'Exists so a decision cannot be made by mood, not to force volume past the point the signal is already clear.',
         bullets: [
           'Message-level changes are deliberately NOT gated by this. Copy can change today, and on the evidence it should.',
-          'This counter is the lifetime blended total across every ICP ever tried, it does not reset at a switch or change with the era filter. The current ICP (marketing/digital agencies) is held to the same discipline: not switched again without an equally deliberate, documented call.',
-          'Full reasoning for the 2026-08-21 override: goal.md and failure-archaeology.',
+          'This counter is the lifetime blended total across every ICP ever tried, it does not reset at a switch or change with the era filter. The current ICP (WhatsApp receptionist, Gulf/Pakistan) is held to the same discipline: not switched again without an equally deliberate, documented call.',
+          'Full reasoning: goal.md, failure-archaeology, and BusinessOS/protocols/hormozi-reframe-audit-2026-08-27.md.',
         ],
         rows: [['Tries logged (lifetime)', String(lifeTouches)], ['Threshold', String(THRESHOLD)], ['Remaining', String(Math.max(0, THRESHOLD - lifeTouches))]],
       },
@@ -541,7 +551,7 @@ export default async function MapPage({ searchParams }) {
     emailPZero: emailPZero !== null ? r1(emailPZero * 100) : null,
     benchReply: BENCH.emailReply.avg,
     expectedReplies: Math.round(eAttempted * BENCH.emailReply.avg / 100),
-    era, pivot: PIVOT, lifeTouches,
+    era, pivot: PIVOT, pivot2: PIVOT_2, lifeTouches,
   };
 
   return <MapView nodes={nodes} summary={summary} />;
