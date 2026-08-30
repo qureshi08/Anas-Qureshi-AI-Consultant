@@ -207,7 +207,8 @@ export async function POST(req) {
         model: 'openai/gpt-oss-120b',
         messages: msgs,
         temperature: 0.7,
-        max_tokens: 450,
+        max_tokens: 1200,
+        reasoning_effort: 'low',
         ...(withTools ? { tools: TOOLS, tool_choice: 'auto' } : {}),
       }),
     });

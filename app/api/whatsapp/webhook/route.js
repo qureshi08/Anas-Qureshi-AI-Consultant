@@ -77,7 +77,8 @@ async function callGroq(msgs) {
         model: 'openai/gpt-oss-120b',
         messages: msgs,
         temperature: 0.7,
-        max_tokens: 300,
+        max_tokens: 1200,
+        reasoning_effort: 'low',
       }),
     });
     const data = await res.json();
@@ -85,7 +86,9 @@ async function callGroq(msgs) {
       console.error('Groq call failed:', res.status, JSON.stringify(data).slice(0, 500));
       return null;
     }
-    return data?.choices?.[0]?.message?.content || null;
+    const content = data?.choices?.[0]?.message?.content || null;
+    if (!content) console.error('Groq returned empty content:', JSON.stringify(data).slice(0, 500));
+    return content;
   } catch (e) {
     console.error('Groq call threw:', e?.message);
     return null;
