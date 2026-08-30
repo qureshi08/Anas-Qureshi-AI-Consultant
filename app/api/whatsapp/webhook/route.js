@@ -74,7 +74,7 @@ async function callGroq(msgs) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'openai/gpt-oss-120b',
         messages: msgs,
         temperature: 0.7,
         max_tokens: 300,
