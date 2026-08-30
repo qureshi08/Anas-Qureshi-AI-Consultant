@@ -81,9 +81,13 @@ async function callGroq(msgs) {
       }),
     });
     const data = await res.json();
+    if (!res.ok) {
+      console.error('Groq call failed:', res.status, JSON.stringify(data).slice(0, 500));
+      return null;
+    }
     return data?.choices?.[0]?.message?.content || null;
   } catch (e) {
-    console.error('Groq call failed:', e?.message);
+    console.error('Groq call threw:', e?.message);
     return null;
   }
 }
