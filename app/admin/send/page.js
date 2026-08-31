@@ -68,8 +68,18 @@ export default async function SendQueuePage({ searchParams }) {
     };
   });
 
+  // A lead can carry its own fully personalized copy in raw_data instead of
+  // relying on the campaign's one fixed template (see app/api/outbound/send-one).
+  const hasCustomCopy = leads.some(l => {
+    if (!l.raw_data) return false;
+    try {
+      const parsed = JSON.parse(l.raw_data);
+      return !!(parsed.custom_subject && parsed.custom_body);
+    } catch (_) { return false; }
+  });
+
   const noInbox = !accounts || accounts.length === 0;
-  const noTemplate = campaign && !campaign.body_template;
+  const noTemplate = campaign && !campaign.body_template && !hasCustomCopy;
 
   const SAFETY_OPTS = [
     ['SAFE_ONLY', 'Strict: safe only'],
@@ -202,7 +212,7 @@ export default async function SendQueuePage({ searchParams }) {
                 <strong style={{ fontFamily: 'var(--font-display)', fontSize: 19, color: 'var(--ink)' }}>{campaign.name}</strong><br />
                 Goal: {campaign.goal}{campaign.platform ? ` · Platform: ${campaign.platform}` : ''}<br />
                 Pending: {pending.length} · <strong>Eligible under this filter: {eligible.length}</strong><br />
-                Email: {campaign.subject_template ? 'ready' : 'not written yet'}
+                Email: {campaign.subject_template ? 'ready (shared template)' : hasCustomCopy ? 'ready (personalized per lead)' : 'not written yet'}
               </div>
             </div>
           )}

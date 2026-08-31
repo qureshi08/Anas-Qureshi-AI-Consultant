@@ -29,9 +29,6 @@ export async function POST(request) {
 
   const { data: campaign } = await admin.from('campaigns').select('*').eq('id', campaignId).single();
   if (!campaign) return NextResponse.json({ error: 'Campaign not found' }, { status: 404 });
-  if (!campaign.subject_template || !campaign.body_template) {
-    return NextResponse.json({ error: 'This campaign has no email written yet. Add step 1 first.' }, { status: 400 });
-  }
 
   // Pick the next eligible lead.
   let q = admin.from('leads').select('*').eq('campaign_id', campaignId).eq('status', 'pending');
@@ -97,6 +94,10 @@ export async function POST(request) {
       const parsed = JSON.parse(lead.raw_data);
       if (parsed.custom_subject && parsed.custom_body) custom = parsed;
     } catch (_) {}
+  }
+
+  if (!custom && (!campaign.subject_template || !campaign.body_template)) {
+    return NextResponse.json({ error: 'This campaign has no email written yet. Add step 1 first.' }, { status: 400 });
   }
 
   const variables = variablesFor(lead);
