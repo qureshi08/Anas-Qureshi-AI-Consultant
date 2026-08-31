@@ -3,15 +3,17 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-// Three distinct lead lanes (locked 2026-07-28), never blended:
-//   Cold DM   -> `prospects` table, sourced by hand on LinkedIn/Reddit
-//   Cold email -> `campaigns` + `leads` tables, scraped via Google Maps, run through OutboundOS
-//   Inbound   -> `inbound_leads` + `conversations`, from the site and the AI assistant
+// Distinct lead lanes (locked 2026-07-28, WhatsApp cold added 2026-08-31), never blended:
+//   Cold DM      -> `prospects` table, sourced by hand on LinkedIn/Reddit
+//   Cold email   -> `campaigns` + `leads` tables, scraped via Google Maps, run through OutboundOS
+//   WhatsApp cold -> `whatsapp_cold_leads` table, numbers from each business's own WhatsApp link
+//   Inbound      -> `inbound_leads` + `conversations`, from the site and the AI assistant
 const TABS = [
   { href: '/admin', label: 'Overview' },
   { href: '/admin/calls', label: 'Call requests' },
   { href: '/admin/outbound', label: 'Cold DM' },
   { href: '/admin/cold-email', label: 'Cold email' },
+  { href: '/admin/whatsapp-cold', label: 'WhatsApp cold' },
   { href: '/admin/inbound', label: 'Inbound' },
   { href: '/admin/chats', label: 'AI chats' },
   { href: '/admin/map', label: 'The map' },

@@ -137,6 +137,19 @@ export async function updateBooking(formData) {
   revalidatePath('/admin/calls');
 }
 
+export async function updateWhatsappLead(formData) {
+  await requireUser();
+  const id = formData.get('id');
+  if (!id) return;
+  const admin = createAdminClient();
+  await admin.from('whatsapp_cold_leads').update({
+    status: formData.get('status') || 'pending',
+    notes: formData.get('notes') || null,
+    updated_at: new Date().toISOString(),
+  }).eq('id', id);
+  revalidatePath('/admin/whatsapp-cold');
+}
+
 // Paste/CSV import — runs entirely on Vercel, no worker, no browser.
 export async function importProspects(formData) {
   await requireUser();
