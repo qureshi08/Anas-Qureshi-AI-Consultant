@@ -17,6 +17,8 @@ const TABS = [
   { href: '/admin/inbound', label: 'Inbound' },
   { href: '/admin/chats', label: 'AI chats' },
   { href: '/admin/map', label: 'The map' },
+  // Track C, the remote job stream (2026-09-03): `job_leads`, filled daily by /api/jobs/fetch.
+  { href: '/admin/jobs', label: 'Jobs' },
 ];
 
 // Everything in the cold email workspace lights up the Cold email tab.
