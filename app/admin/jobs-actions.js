@@ -83,6 +83,15 @@ export async function setStatus(formData) {
   revalidatePath('/admin/jobs');
 }
 
+export async function saveSettings(formData) {
+  await requireUser();
+  const admin = createAdminClient();
+  const keys = ['notice_period', 'relocate_gulf', 'relocate_pk', 'salary_usd', 'salary_pkr', 'salary_gulf', 'daily_goal'];
+  const rows = keys.map(k => ({ key: k, value: (formData.get(k) || '').toString().trim(), updated_at: new Date().toISOString() }));
+  await admin.from('job_settings').upsert(rows, { onConflict: 'key' });
+  revalidatePath('/admin/jobs');
+}
+
 export async function addJobByUrl(formData) {
   await requireUser();
   const url = (formData.get('url') || '').toString().trim();

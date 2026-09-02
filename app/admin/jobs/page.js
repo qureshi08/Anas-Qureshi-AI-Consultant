@@ -1,7 +1,8 @@
 import { createAdminClient } from '../../../lib/supabase/admin';
 import CopyButton from '../../components/CopyButton';
-import { RESUME_FILES, ANSWERS } from '../../../lib/jobs/resume';
-import { refreshJobs, draftJob, draftBatch, updateJob, markApplied, setStatus, addJobByUrl } from '../jobs-actions';
+import { RESUME_FILES } from '../../../lib/jobs/resume';
+import { getSettings, buildAnswers, hiddenLanes, SETTING_FIELDS, isSet } from '../../../lib/jobs/settings';
+import { refreshJobs, draftJob, draftBatch, updateJob, markApplied, setStatus, addJobByUrl, saveSettings } from '../jobs-actions';
 
 const HOW_TO_APPLY = [
   ['Open the posting', 'Click the role title. It opens the job in a new tab.'],
@@ -22,8 +23,6 @@ const STATUS_LABEL = { new: 'New', shortlisted: 'Drafted', applied: 'Applied', r
 const STATUS_COLOR = { new: 'var(--ink3)', shortlisted: 'var(--amber)', applied: 'var(--forest)', replied: 'var(--forest)', interview: 'var(--forest)', offer: 'var(--forest)', rejected: 'var(--ink3)', skipped: 'var(--ink3)' };
 const LANES = ['PK-ISB', 'PK', 'Gulf', 'World'];
 const LANE_LABEL = { 'PK-ISB': 'Islamabad', PK: 'Pakistan', Gulf: 'Gulf', World: 'World' };
-const DAILY_GOAL = 10;
-
 const chip = (active, color = 'var(--ink)') => ({
   fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', textDecoration: 'none',
   padding: '7px 14px', border: `2px solid ${color}`, borderRadius: 8,
@@ -34,8 +33,15 @@ const fmt = d => (d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', 
 
 export default async function JobsPage({ searchParams }) {
   const admin = createAdminClient();
-  const { data } = await admin.from('job_leads').select('*').order('score', { ascending: false }).order('posted_at', { ascending: false }).limit(600);
+  const [{ data }, settings] = await Promise.all([
+    admin.from('job_leads').select('*').order('score', { ascending: false }).order('posted_at', { ascending: false }).limit(600),
+    getSettings(),
+  ]);
   const all = data || [];
+  const answers = buildAnswers(settings);
+  const hidden = hiddenLanes(settings);
+  const DAILY_GOAL = Number(settings.daily_goal) || 10;
+  const settingsIncomplete = !isSet(settings.notice_period) || !isSet(settings.relocate_gulf) || !isSet(settings.relocate_pk);
 
   const view = searchParams?.status || 'work';
   const laneFilter = LANES.includes(searchParams?.lane) ? searchParams.lane : null;
@@ -50,6 +56,7 @@ export default async function JobsPage({ searchParams }) {
 
   let rows = view === 'all' ? all : view === 'work' ? all.filter(j => j.status === 'new' || j.status === 'shortlisted') : all.filter(j => j.status === view);
   if (laneFilter) rows = rows.filter(j => j.lane === laneFilter);
+  else if (view === 'work' && hidden.length) rows = rows.filter(j => !hidden.includes(j.lane));
   const laneQuery = laneFilter ? `&lane=${laneFilter}` : '';
 
   return (
@@ -93,6 +100,24 @@ export default async function JobsPage({ searchParams }) {
         </form>
       </div>
 
+      <details open={settingsIncomplete} style={{ border: `2px solid ${settingsIncomplete ? 'var(--brick)' : 'var(--ink)'}`, borderRadius: 10, padding: '10px 14px', marginBottom: 12, background: settingsIncomplete ? 'rgba(217,79,0,0.06)' : 'var(--paper)' }}>
+        <summary className="mono" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.08em', cursor: 'pointer', color: settingsIncomplete ? 'var(--brick)' : 'var(--ink)' }}>
+          Settings {settingsIncomplete ? '(3 answers missing, drafts and answers use them)' : ''}
+        </summary>
+        <form action={saveSettings} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 10, marginTop: 10 }}>
+          {SETTING_FIELDS.map(([key, label, hint]) => (
+            <label key={key} style={{ fontSize: 13 }}>
+              <div className="mono" style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--ink3)', marginBottom: 3 }}>{label}</div>
+              <input name={key} defaultValue={settings[key] || ''} placeholder={hint} style={{ ...small, width: '100%', borderColor: !isSet(settings[key]) && ['notice_period', 'relocate_gulf', 'relocate_pk'].includes(key) ? 'var(--brick)' : undefined }} />
+            </label>
+          ))}
+          <div style={{ alignSelf: 'end' }}><button className="btn" type="submit" style={small}>Save settings</button></div>
+        </form>
+        <p style={{ fontSize: 12, color: 'var(--ink3)', marginTop: 8 }}>
+          Relocation set to no hides that lane from To work (the lane chips still show it). Drafts, screening answers and the standard answers below read these values.
+        </p>
+      </details>
+
       <details style={{ border: '2px solid var(--ink)', borderRadius: 10, padding: '10px 14px', marginBottom: 12, background: 'var(--paper)' }}>
         <summary className="mono" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.08em', cursor: 'pointer' }}>How to apply, click by click (about 3 minutes per job)</summary>
         <ol style={{ fontSize: 13, lineHeight: 1.5, margin: '10px 0 4px 18px', padding: 0 }}>
@@ -108,11 +133,11 @@ export default async function JobsPage({ searchParams }) {
       <details style={{ border: '2px solid var(--ink)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, background: 'var(--paper)' }}>
         <summary className="mono" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.08em', cursor: 'pointer' }}>Standard form answers (copy, never retype)</summary>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 8, marginTop: 10 }}>
-          {ANSWERS.map(([label, value]) => (
+          {answers.map(([label, value]) => (
             <div key={label} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 13, borderBottom: '1px dashed rgba(26,18,5,0.15)', paddingBottom: 6 }}>
               <div style={{ flex: 1 }}>
                 <div className="mono" style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--ink3)' }}>{label}</div>
-                <div style={{ color: label.startsWith('Notice') ? 'var(--brick)' : 'var(--ink)' }}>{value}</div>
+                <div style={{ color: /NOT SET|not set/.test(value) ? 'var(--brick)' : 'var(--ink)' }}>{value}</div>
               </div>
               <CopyButton text={value} />
             </div>
