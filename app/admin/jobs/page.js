@@ -1,6 +1,18 @@
 import { createAdminClient } from '../../../lib/supabase/admin';
 import CopyButton from '../../components/CopyButton';
+import { RESUME_FILES, ANSWERS } from '../../../lib/jobs/resume';
 import { refreshJobs, draftJob, draftBatch, updateJob, markApplied, setStatus, addJobByUrl } from '../jobs-actions';
+
+const HOW_TO_APPLY = [
+  ['Open the posting', 'Click the role title. It opens the job in a new tab.'],
+  ['Find the apply button', 'LinkedIn shows either Easy Apply (a popup on LinkedIn) or Apply (jumps to the company site). Careers pages and Wellfound have their own form. Same routine either way.'],
+  ['Resume', 'Every form asks for a file. Click the resume link in the row (it downloads the right variant), then upload it. If a form wants pasted text instead, use the Short bio and the resume text from the Standard answers box above.'],
+  ['Contact fields', 'Name, email, phone, LinkedIn, portfolio, location: copy each from Standard answers. Never retype them.'],
+  ['Cover letter or message box', 'Copy note, paste. If there is no box, the note goes to the named contact as the message instead.'],
+  ['Screening questions', 'Why us, why you, first 30 days, relevant project, salary: the row has posting specific answers under Screening answers. Years of experience is 2. Notice period: your real one.'],
+  ['Submit, then message the person', 'Submit the form. Back on the job page, scroll to Meet the hiring team or Job poster, click the name, Message, paste the copied message, send. No contact shown: click the company name, People, find someone in engineering or talent, message them.'],
+  ['Click Applied', 'Back here, click Applied on the row. The day 5 follow up is set for you and shows at the top when due. Mismatch: click Skip.'],
+];
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -81,6 +93,33 @@ export default async function JobsPage({ searchParams }) {
         </form>
       </div>
 
+      <details style={{ border: '2px solid var(--ink)', borderRadius: 10, padding: '10px 14px', marginBottom: 12, background: 'var(--paper)' }}>
+        <summary className="mono" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.08em', cursor: 'pointer' }}>How to apply, click by click (about 3 minutes per job)</summary>
+        <ol style={{ fontSize: 13, lineHeight: 1.5, margin: '10px 0 4px 18px', padding: 0 }}>
+          {HOW_TO_APPLY.map(([t, d]) => <li key={t} style={{ marginBottom: 6 }}><strong>{t}.</strong> {d}</li>)}
+        </ol>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 8 }}>
+          {Object.entries(RESUME_FILES).map(([k, f]) => (
+            <a key={k} href={f.path} download className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--forest)', border: '1.5px solid var(--forest)', borderRadius: 5, padding: '4px 8px', textDecoration: 'none' }}>Download resume: {f.label} (PDF)</a>
+          ))}
+        </div>
+      </details>
+
+      <details style={{ border: '2px solid var(--ink)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, background: 'var(--paper)' }}>
+        <summary className="mono" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.08em', cursor: 'pointer' }}>Standard form answers (copy, never retype)</summary>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 8, marginTop: 10 }}>
+          {ANSWERS.map(([label, value]) => (
+            <div key={label} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 13, borderBottom: '1px dashed rgba(26,18,5,0.15)', paddingBottom: 6 }}>
+              <div style={{ flex: 1 }}>
+                <div className="mono" style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--ink3)' }}>{label}</div>
+                <div style={{ color: label.startsWith('Notice') ? 'var(--brick)' : 'var(--ink)' }}>{value}</div>
+              </div>
+              <CopyButton text={value} />
+            </div>
+          ))}
+        </div>
+      </details>
+
       {due.length > 0 && (
         <div style={{ border: '2px solid var(--brick)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, background: 'rgba(217,79,0,0.06)' }}>
           <div className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--brick)', marginBottom: 6 }}>Follow ups due</div>
@@ -159,6 +198,32 @@ export default async function JobsPage({ searchParams }) {
                             <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.45, marginBottom: 8 }}>{j.dm_text}</div>
                           </>
                         )}
+                        <div style={{ border: '1.5px solid var(--forest)', borderRadius: 8, padding: '8px 10px', marginBottom: 8, background: 'rgba(45,122,79,0.05)' }}>
+                          <div className="mono" style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--forest)', marginBottom: 6 }}>Application kit</div>
+                          <a href={RESUME_FILES[j.resume_variant === 'data' ? 'data' : 'ai'].path} download className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--forest)', border: '1.5px solid var(--forest)', borderRadius: 5, padding: '4px 8px', textDecoration: 'none', display: 'inline-block', marginBottom: 6 }}>
+                            Download resume: {RESUME_FILES[j.resume_variant === 'data' ? 'data' : 'ai'].label}
+                          </a>
+                          {j.answers ? (
+                            <details style={{ marginTop: 4 }}>
+                              <summary className="mono" style={{ fontSize: 10, textTransform: 'uppercase', cursor: 'pointer', color: 'var(--ink)' }}>Screening answers for this posting</summary>
+                              {j.answers.split('\n\n').map((block, i) => {
+                                const [q, ...rest] = block.split('\n');
+                                const a = rest.join('\n');
+                                return (
+                                  <div key={i} style={{ marginTop: 8 }}>
+                                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                      <span className="mono" style={{ fontSize: 10, color: 'var(--ink3)' }}>{q}</span>
+                                      <CopyButton text={a} label="Copy" />
+                                    </div>
+                                    <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.45, fontSize: 13 }}>{a}</div>
+                                  </div>
+                                );
+                              })}
+                            </details>
+                          ) : (
+                            <div className="mono" style={{ fontSize: 10, color: 'var(--ink3)' }}>Click Redraft to add screening answers (drafted before this feature).</div>
+                          )}
+                        </div>
                         <form action={draftJob}><input type="hidden" name="id" value={j.id} /><button type="submit" className="mono" style={{ fontSize: 10, textTransform: 'uppercase', padding: '5px 10px', border: '1.5px solid var(--ink3)', borderRadius: 5, background: 'transparent', color: 'var(--ink3)', cursor: 'pointer' }}>Redraft</button></form>
                       </>
                     ) : (
