@@ -155,6 +155,18 @@ export async function findContact(formData) {
   revalidatePath(`/admin/jobs/${id}`);
 }
 
+/** Anas pastes an address he found himself. */
+export async function saveContactEmail(formData) {
+  await requireUser();
+  const id = formData.get('id');
+  const email = (formData.get('contact_email') || '').toString().trim().toLowerCase();
+  if (!id) return;
+  const admin = createAdminClient();
+  await admin.from('job_leads').update({ contact_email: email || null, updated_at: new Date().toISOString() }).eq('id', id);
+  revalidatePath('/admin/jobs');
+  revalidatePath(`/admin/jobs/${id}`);
+}
+
 export async function saveSettings(formData) {
   await requireUser();
   const admin = createAdminClient();

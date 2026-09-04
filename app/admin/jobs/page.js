@@ -1,6 +1,6 @@
 import { createAdminClient } from '../../../lib/supabase/admin';
 import CopyButton from '../../components/CopyButton';
-import { advanceJob, prepareCurrentAction, prepareBatchAction, refreshJobs, findContact } from '../jobs-actions';
+import { advanceJob, prepareCurrentAction, prepareBatchAction, refreshJobs, findContact, saveContactEmail } from '../jobs-actions';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -155,12 +155,21 @@ export default async function JobsToday() {
                 <CopyButton text={job.email_body || ''} label="Copy email text" />
               </div>
             ) : (
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 8 }}>
-                <form action={findContact}>
-                  <input type="hidden" name="id" value={job.id} />
-                  <button type="submit" style={{ ...bigLink, cursor: 'pointer', border: '2px solid var(--ink)' }}>Find their email address</button>
-                </form>
-                <span style={{ fontSize: 12, color: 'var(--ink3)' }}>Reads their own website for a published address. Takes about 15 seconds.</span>
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <form action={findContact}>
+                    <input type="hidden" name="id" value={job.id} />
+                    <button type="submit" style={{ ...bigLink, cursor: 'pointer', border: '2px solid var(--ink)' }}>Find their email address</button>
+                  </form>
+                  <form action={saveContactEmail} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <input type="hidden" name="id" value={job.id} />
+                    <input name="contact_email" type="email" placeholder="or paste an address you found" style={{ fontSize: 13, padding: '8px 10px', minWidth: 240 }} />
+                    <button type="submit" style={{ ...plainLink, cursor: 'pointer' }}>Save</button>
+                  </form>
+                </div>
+                <p style={{ fontSize: 12, color: 'var(--ink3)', marginTop: 6 }}>
+                  The search reads the company's own site for a published address, about 15 seconds. It finds one roughly half the time and stays quiet rather than guessing, because a wrong address wastes the application. If it finds nothing, their contact page usually has one.
+                </p>
               </div>
             )}
             {job.email_body && (
