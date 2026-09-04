@@ -6,8 +6,8 @@ import { draftJob, updateJob, markApplied, setStatus, findContact } from '../../
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-const STATUSES = ['new', 'shortlisted', 'applied', 'replied', 'interview', 'offer', 'rejected', 'skipped'];
-const STATUS_LABEL = { new: 'New', shortlisted: 'Drafted', applied: 'Applied', replied: 'Replied', interview: 'Interview', offer: 'Offer', rejected: 'Rejected', skipped: 'Skipped' };
+const STATUSES = ['new', 'shortlisted', 'applied', 'replied', 'interview', 'offer', 'rejected', 'skipped', 'expired'];
+const STATUS_LABEL = { new: 'New', shortlisted: 'Drafted', applied: 'Applied', replied: 'Replied', interview: 'Interview', offer: 'Offer', rejected: 'Rejected', skipped: 'Skipped', expired: 'Expired' };
 const small = { fontSize: 13, padding: '7px 10px' };
 
 const card = { border: '2px solid var(--ink)', borderRadius: 10, padding: '14px 16px', marginBottom: 14, background: 'var(--paper)', boxShadow: '3px 3px 0 var(--ink)' };

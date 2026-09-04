@@ -25,7 +25,12 @@ export default async function JobsToday() {
   const all = data || [];
   const today = new Date().toISOString().slice(0, 10);
   const appliedToday = all.filter(j => j.applied_at && j.applied_at.slice(0, 10) === today).length;
-  const queue = all.filter(j => j.status === 'new' || j.status === 'shortlisted');
+  // Fresh beats old at the same fit: a posting loses a point of rank for every 3 days of age,
+  // otherwise one high scoring stale job sits at the top of the queue forever.
+  const ageDays = j => (j.posted_at ? (Date.now() - new Date(j.posted_at).getTime()) / 86400000 : 7);
+  const queue = all
+    .filter(j => j.status === 'new' || j.status === 'shortlisted')
+    .sort((a, b) => (b.score - ageDays(b) / 3) - (a.score - ageDays(a) / 3));
   const job = queue[0];
   const goal = 10;
   const failedLine = job && !job.cover_note && job.notes ? (job.notes.split('\n').reverse().find(l => l.includes('DRAFT FAILED')) || '') : '';
