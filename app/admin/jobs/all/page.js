@@ -2,7 +2,7 @@ import { createAdminClient } from '../../../../lib/supabase/admin';
 import CopyButton from '../../../components/CopyButton';
 import { RESUME_FILES } from '../../../../lib/jobs/resume';
 import { getSettings, buildAnswers, hiddenLanes, SETTING_FIELDS, isSet } from '../../../../lib/jobs/settings';
-import { refreshJobs, draftJob, draftBatch, updateJob, markApplied, setStatus, addJobByUrl, saveSettings } from '../../jobs-actions';
+import { refreshJobs, draftJob, draftBatch, markApplied, setStatus, addJobByUrl, saveSettings } from '../../jobs-actions';
 
 const HOW_TO_APPLY = [
   ['Open the posting', 'Click the role title. It opens the job in a new tab.'],
@@ -184,7 +184,6 @@ export default async function JobsPage({ searchParams }) {
           </thead>
           <tbody>
             {rows.map(j => {
-              const formId = `job-${j.id}`;
               return (
                 <tr key={j.id} style={{ borderBottom: '1px dashed rgba(26,18,5,0.15)', verticalAlign: 'top' }}>
                   <td style={{ padding: '12px 12px' }}>
@@ -262,20 +261,22 @@ export default async function JobsPage({ searchParams }) {
                       </>
                     )}
                   </td>
+                  {/* Read only on purpose: nothing on this page asks Anas to type. Edits live on
+                      the job's own page, and the daily flow at /admin/jobs needs neither. */}
                   <td style={{ padding: '12px 12px' }}>
-                    <input type="hidden" name="id" value={j.id} form={formId} />
-                    <input name="contact_name" placeholder="Contact name" defaultValue={j.contact_name || ''} style={{ ...small, width: '100%', marginBottom: 6 }} form={formId} />
-                    <input name="contact_url" placeholder="Contact LinkedIn URL" defaultValue={j.contact_url || ''} style={{ ...small, width: '100%', marginBottom: 6 }} form={formId} />
-                    <textarea name="notes" placeholder="Fit note, reply, next step..." defaultValue={j.notes || ''} style={{ ...small, width: '100%', minHeight: 64, resize: 'vertical', marginBottom: 6 }} form={formId} />
-                    <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-                      <select name="status" defaultValue={j.status} style={{ ...small, borderColor: STATUS_COLOR[j.status] }} form={formId}>
-                        {STATUSES.map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
-                      </select>
-                      <input type="date" name="next_followup" defaultValue={j.next_followup || ''} style={small} form={formId} title="Next follow up" />
-                      <button className="btn" type="submit" style={{ fontSize: 12, padding: '6px 12px' }} form={formId}>Save</button>
+                    <div className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.06em', color: STATUS_COLOR[j.status], border: `1.5px solid ${STATUS_COLOR[j.status]}`, borderRadius: 5, padding: '3px 8px', display: 'inline-block', marginBottom: 8 }}>
+                      {STATUS_LABEL[j.status]}
                     </div>
-                    {j.applied_at && <div className="mono" style={{ fontSize: 10, color: 'var(--ink3)', marginTop: 6 }}>applied {fmt(j.applied_at)}</div>}
-                    <form id={formId} action={updateJob} style={{ display: 'none' }} />
+                    {j.contact_name && (
+                      <div style={{ fontSize: 13, marginBottom: 6 }}>
+                        {j.contact_url
+                          ? <a href={j.contact_url} target="_blank" rel="noreferrer" style={{ color: 'var(--forest)' }}>{j.contact_name} &#8599;</a>
+                          : j.contact_name}
+                      </div>
+                    )}
+                    {j.notes && <div style={{ fontSize: 12, color: 'var(--ink3)', whiteSpace: 'pre-wrap', marginBottom: 6 }}>{j.notes.split('\n')[0]}</div>}
+                    {j.applied_at && <div className="mono" style={{ fontSize: 10, color: 'var(--ink3)' }}>applied {fmt(j.applied_at)}{j.next_followup ? `, follow up ${j.next_followup}` : ''}</div>}
+                    <a href={`/admin/jobs/${j.id}`} className="mono" style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--ink3)' }}>edit on the job page &rarr;</a>
                   </td>
                 </tr>
               );
