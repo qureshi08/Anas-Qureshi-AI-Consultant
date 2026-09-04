@@ -52,6 +52,19 @@ export default async function JobKit({ params }) {
         {job.notes && <div style={{ fontSize: 13, marginTop: 10, whiteSpace: 'pre-wrap', color: 'var(--ink)' }}>{job.notes}</div>}
       </div>
 
+      {/* Resume is ALWAYS available: it renders from real resume data with a sensible default
+          order even when this job has not been drafted yet. Anas hit a dead end here once. */}
+      <div style={card}>
+        <div className="mono" style={label}>2. Resume for this job</div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <a href={`/admin/jobs/${job.id}/resume`} target="_blank" rel="noreferrer" className="mono" style={{ ...linkBtn, background: 'var(--forest)', color: 'var(--paper)' }}>Open resume, save box opens by itself &#8599;</a>
+          <a href={`/resume/Muhammad_Anas_${job.resume_variant === 'data' ? 'Data_Analytics' : 'AI_Automation'}_Engineer.pdf`} download className="mono" style={linkBtn}>Download ready made PDF</a>
+        </div>
+        <p style={{ fontSize: 12, color: 'var(--ink3)', marginTop: 8 }}>
+          The first one is built for this posting and saves as a PDF from your browser. The second is the standard file, one click, use it when you are in a hurry.
+        </p>
+      </div>
+
       {!job.cover_note ? (
         <div style={{ ...card, borderColor: 'var(--brick)' }}>
           <div className="mono" style={{ ...label, color: 'var(--brick)' }}>Not drafted yet</div>
@@ -63,18 +76,6 @@ export default async function JobKit({ params }) {
         </div>
       ) : (
         <>
-          {/* 2. Resume */}
-          <div style={card}>
-            <div className="mono" style={label}>2. Resume, rebuilt for this job</div>
-            <p style={{ fontSize: 13, marginBottom: 8 }}>
-              Same real facts, reordered so what this employer asked for comes first, with a summary written for this posting. Open it, print, save as PDF, upload that file.
-            </p>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <a href={`/admin/jobs/${job.id}/resume`} target="_blank" rel="noreferrer" className="mono" style={{ ...linkBtn, background: 'var(--forest)', color: 'var(--paper)' }}>Open tailored resume &#8599;</a>
-              <a href={`/resume/Muhammad_Anas_${job.resume_variant === 'data' ? 'Data_Analytics' : 'AI_Automation'}_Engineer.pdf`} download className="mono" style={linkBtn}>Or download the standard PDF</a>
-            </div>
-          </div>
-
           {/* 3. Cover letter */}
           <div style={card}>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
