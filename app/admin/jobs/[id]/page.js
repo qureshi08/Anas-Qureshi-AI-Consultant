@@ -55,6 +55,10 @@ export default async function JobKit({ params }) {
       {!job.cover_note ? (
         <div style={{ ...card, borderColor: 'var(--brick)' }}>
           <div className="mono" style={{ ...label, color: 'var(--brick)' }}>Not drafted yet</div>
+          {(() => {
+            const line = (job.notes || '').split('\n').reverse().find(l => l.includes('DRAFT FAILED'));
+            return line ? <p style={{ fontSize: 13, color: 'var(--brick)', marginBottom: 10 }}>Last try failed: {line.replace(/^\[[^\]]*\]\s*DRAFT FAILED:\s*/, '').slice(0, 200)}</p> : null;
+          })()}
           <form action={draftJob}><input type="hidden" name="id" value={job.id} /><button className="btn" type="submit" style={small}>Draft everything for this job</button></form>
         </div>
       ) : (

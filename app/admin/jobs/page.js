@@ -28,6 +28,8 @@ export default async function JobsToday() {
   const queue = all.filter(j => j.status === 'new' || j.status === 'shortlisted');
   const job = queue[0];
   const goal = 10;
+  const failedLine = job && !job.cover_note && job.notes ? (job.notes.split('\n').reverse().find(l => l.includes('DRAFT FAILED')) || '') : '';
+  const failed = failedLine ? failedLine.replace(/^\[[^\]]*\]\s*DRAFT FAILED:\s*/, '').slice(0, 160) : null;
 
   return (
     <>
@@ -55,9 +57,21 @@ export default async function JobsToday() {
         <div style={{ ...step, textAlign: 'center', padding: '26px 20px' }}>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, marginBottom: 4 }}>{job.title}</div>
           <div style={{ fontSize: 14, color: 'var(--ink3)', marginBottom: 14 }}>{job.company} &middot; {job.location}</div>
-          <form action={prepareCurrentAction}>
-            <button className="btn" type="submit" style={{ fontSize: 15, padding: '12px 22px' }}>Write my application for this job</button>
-          </form>
+          {failed && (
+            <p style={{ fontSize: 13, color: 'var(--brick)', marginBottom: 12 }}>
+              Last try failed: {failed}. Press the button to try again, or skip this one.
+            </p>
+          )}
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <form action={prepareCurrentAction}>
+              <button className="btn" type="submit" style={{ fontSize: 15, padding: '12px 22px' }}>Write my application for this job</button>
+            </form>
+            <form action={advanceJob}>
+              <input type="hidden" name="id" value={job.id} />
+              <input type="hidden" name="action" value="skip" />
+              <button type="submit" style={{ ...plainLink, cursor: 'pointer' }}>Skip, show me another</button>
+            </form>
+          </div>
           <p style={{ fontSize: 12, color: 'var(--ink3)', marginTop: 10 }}>Takes about 10 seconds. Then the steps appear.</p>
         </div>
       )}

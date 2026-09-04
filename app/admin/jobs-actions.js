@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { createAdminClient } from '../../lib/supabase/admin';
 import { getAdminUser } from '../../lib/requireAdmin';
 import { fetchAndStoreJobs } from '../../lib/jobs/fetcher';
-import { draftForJob } from '../../lib/jobs/drafter';
+import { draftForJobSafe } from '../../lib/jobs/drafter';
 
 async function requireUser() {
   const user = await getAdminUser();
@@ -16,7 +16,7 @@ const plusDays = n => { const d = new Date(); d.setDate(d.getDate() + n); return
 
 export async function refreshJobs() {
   await requireUser();
-  await fetchAndStoreJobs({ days: 3, budgetMs: 45000 });
+  try { await fetchAndStoreJobs({ days: 3, budgetMs: 45000 }); } catch { /* keep the page alive; the counts just do not change */ }
   revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/all');
 }
 
@@ -24,7 +24,7 @@ export async function draftJob(formData) {
   await requireUser();
   const id = formData.get('id');
   if (!id) return;
-  await draftForJob(id);
+  await draftForJobSafe(id);
   revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/all');
   revalidatePath(`/admin/jobs/${id}`);
 }
@@ -39,7 +39,7 @@ export async function draftBatch(formData) {
   if (laneFilter) q = q.eq('lane', laneFilter);
   const { data } = await q;
   for (const row of data || []) {
-    try { await draftForJob(row.id); } catch { /* keep going, the row stays undrafted */ }
+    await draftForJobSafe(row.id);
   }
   revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/all');
 }
@@ -110,9 +110,7 @@ export async function prepareCurrent() {
   const admin = createAdminClient();
   const { data } = await admin.from('job_leads').select('id, cover_note').in('status', ['new', 'shortlisted']).order('score', { ascending: false }).limit(1);
   const next = (data || [])[0];
-  if (next && !next.cover_note) {
-    try { await draftForJob(next.id); } catch { /* the card shows a Prepare button if this failed */ }
-  }
+  if (next && !next.cover_note) await draftForJobSafe(next.id);
 }
 
 export async function prepareCurrentAction() {
@@ -146,6 +144,6 @@ export async function addJobByUrl(formData) {
     }).select('id').single();
     id = data?.id;
   }
-  if (id) { try { await draftForJob(id); } catch { /* shows undrafted, Draft button retries */ } }
+  if (id) await draftForJobSafe(id);
   revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/all');
 }
