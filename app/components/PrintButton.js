@@ -1,6 +1,16 @@
 'use client';
 
-export default function PrintButton({ label = 'Print / Save as PDF' }) {
+import { useEffect } from 'react';
+
+export default function PrintButton({ label = 'Print / Save as PDF', auto = false }) {
+  // Opening the tailored resume should put the save dialog straight in front of Anas:
+  // one click on the job card, then Save as PDF. The button stays for a second copy.
+  useEffect(() => {
+    if (!auto) return;
+    const t = setTimeout(() => { try { window.print(); } catch { /* user can press the button */ } }, 600);
+    return () => clearTimeout(t);
+  }, [auto]);
+
   return (
     <button
       type="button"
