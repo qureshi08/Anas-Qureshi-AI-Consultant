@@ -26,6 +26,7 @@ export async function draftJob(formData) {
   if (!id) return;
   await draftForJob(id);
   revalidatePath('/admin/jobs');
+  revalidatePath(`/admin/jobs/${id}`);
 }
 
 // Drafts the highest scoring undrafted rows, a few at a time, so one click prepares a batch.
@@ -57,6 +58,7 @@ export async function updateJob(formData) {
     updated_at: new Date().toISOString(),
   }).eq('id', id);
   revalidatePath('/admin/jobs');
+  revalidatePath(`/admin/jobs/${id}`);
 }
 
 export async function markApplied(formData) {
@@ -68,6 +70,7 @@ export async function markApplied(formData) {
     status: 'applied', applied_at: new Date().toISOString(), next_followup: plusDays(5), updated_at: new Date().toISOString(),
   }).eq('id', id);
   revalidatePath('/admin/jobs');
+  revalidatePath(`/admin/jobs/${id}`);
 }
 
 export async function setStatus(formData) {

@@ -188,8 +188,12 @@ export default async function JobsPage({ searchParams }) {
               return (
                 <tr key={j.id} style={{ borderBottom: '1px dashed rgba(26,18,5,0.15)', verticalAlign: 'top' }}>
                   <td style={{ padding: '12px 12px' }}>
-                    <a href={j.url} target="_blank" rel="noreferrer" style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 17, color: 'var(--ink)', textDecoration: 'none' }}>{j.title} &#8599;</a>
+                    <a href={`/admin/jobs/${j.id}`} style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 17, color: 'var(--ink)', textDecoration: 'none' }}>{j.title}</a>
                     <div style={{ fontSize: 13, marginTop: 2 }}>{j.company}</div>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                      <a href={`/admin/jobs/${j.id}`} className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--paper)', background: 'var(--brick)', border: '1.5px solid var(--ink)', borderRadius: 5, padding: '4px 9px', textDecoration: 'none' }}>Open kit</a>
+                      <a href={j.url} target="_blank" rel="noreferrer" className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--ink3)', border: '1.5px solid var(--ink3)', borderRadius: 5, padding: '4px 9px', textDecoration: 'none' }}>Posting &#8599;</a>
+                    </div>
                     <div className="mono" style={{ fontSize: 10, color: 'var(--ink3)', marginTop: 4 }}>{j.location || 'location not stated'}</div>
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
                       <span className="mono" style={{ fontSize: 10, padding: '2px 7px', border: '1.5px solid var(--forest)', borderRadius: 5, color: 'var(--forest)' }}>{LANE_LABEL[j.lane] || j.lane}</span>
