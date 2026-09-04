@@ -5,6 +5,7 @@ import { createAdminClient } from '../../lib/supabase/admin';
 import { getAdminUser } from '../../lib/requireAdmin';
 import { fetchAndStoreJobs } from '../../lib/jobs/fetcher';
 import { draftForJobSafe } from '../../lib/jobs/drafter';
+import { findContactEmail } from '../../lib/jobs/contactFinder';
 
 async function requireUser() {
   const user = await getAdminUser();
@@ -105,18 +106,53 @@ export async function advanceJob(formData) {
   revalidatePath('/admin/jobs/all');
 }
 
-/** Draft the job that will be shown next, if it has no copy yet. Safe to call any time. */
-export async function prepareCurrent() {
+/**
+ * Keep a few jobs drafted ahead of Anas, not just the one on screen, so the next several
+ * cards are ready the moment he presses the green button.
+ */
+export async function prepareCurrent(lookahead = 3) {
   const admin = createAdminClient();
-  const { data } = await admin.from('job_leads').select('id, cover_note').in('status', ['new', 'shortlisted']).order('score', { ascending: false }).limit(1);
-  const next = (data || [])[0];
-  if (next && !next.cover_note) await draftForJobSafe(next.id);
+  const { data } = await admin.from('job_leads').select('id, cover_note')
+    .in('status', ['new', 'shortlisted']).is('cover_note', null)
+    .order('score', { ascending: false }).limit(lookahead);
+  for (const row of data || []) await draftForJobSafe(row.id);
 }
 
 export async function prepareCurrentAction() {
   await requireUser();
-  await prepareCurrent();
+  await prepareCurrent(3);
   revalidatePath('/admin/jobs');
+}
+
+/** Draft the next 10 in one go, for a fresh day or after a model outage. */
+export async function prepareBatchAction() {
+  await requireUser();
+  await prepareCurrent(10);
+  revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/all');
+}
+
+/** Looks for a real published email at the company, saves it on the job. */
+export async function findContact(formData) {
+  await requireUser();
+  const id = formData.get('id');
+  if (!id) return;
+  const admin = createAdminClient();
+  const { data: job } = await admin.from('job_leads').select('company, url, notes').eq('id', id).single();
+  if (!job) return;
+  let patch = { updated_at: new Date().toISOString() };
+  try {
+    const { email, website, note } = await findContactEmail(job);
+    patch.contact_email = email || null;
+    const line = email
+      ? `[${new Date().toISOString().slice(0, 10)}] email found: ${email}${note ? ` (${note})` : ''}`
+      : `[${new Date().toISOString().slice(0, 10)}] no email found: ${note}${website ? ` (${website})` : ''}`;
+    patch.notes = [job.notes, line].filter(Boolean).join('\n');
+  } catch (e) {
+    patch.notes = [job.notes, `[${new Date().toISOString().slice(0, 10)}] email search failed: ${(e.message || '').slice(0, 120)}`].filter(Boolean).join('\n');
+  }
+  await admin.from('job_leads').update(patch).eq('id', id);
+  revalidatePath('/admin/jobs');
+  revalidatePath(`/admin/jobs/${id}`);
 }
 
 export async function saveSettings(formData) {

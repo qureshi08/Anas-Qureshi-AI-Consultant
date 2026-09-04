@@ -1,7 +1,7 @@
 import { createAdminClient } from '../../../../lib/supabase/admin';
 import CopyButton from '../../../components/CopyButton';
 import { getSettings, buildAnswers } from '../../../../lib/jobs/settings';
-import { draftJob, updateJob, markApplied, setStatus } from '../../jobs-actions';
+import { draftJob, updateJob, markApplied, setStatus, findContact } from '../../jobs-actions';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -106,7 +106,9 @@ export default async function JobKit({ params }) {
                   <span className="mono" style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--ink3)' }}>Email version</span>
                   <CopyButton text={job.email_subject || ''} label="Copy subject" />
                   <CopyButton text={emailBody} label="Copy body" />
-                  {mailto && <a href={mailto} className="mono" style={linkBtn}>Open in mail app &#8599;</a>}
+                  {mailto
+                    ? <a href={mailto} className="mono" style={{ ...linkBtn, background: 'var(--forest)', color: 'var(--paper)' }}>Write to {job.contact_email} &#8599;</a>
+                    : <form action={findContact} style={{ display: 'inline' }}><input type="hidden" name="id" value={job.id} /><button type="submit" className="mono" style={{ ...linkBtn, cursor: 'pointer', background: 'transparent' }}>Find their email address</button></form>}
                 </div>
                 <div style={{ fontSize: 13, color: 'var(--ink3)' }}>Subject: {job.email_subject}</div>
                 <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.5, fontSize: 14 }}>{emailBody}</div>

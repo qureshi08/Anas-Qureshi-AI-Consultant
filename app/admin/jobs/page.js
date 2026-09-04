@@ -1,6 +1,6 @@
 import { createAdminClient } from '../../../lib/supabase/admin';
 import CopyButton from '../../components/CopyButton';
-import { advanceJob, prepareCurrentAction, refreshJobs } from '../jobs-actions';
+import { advanceJob, prepareCurrentAction, prepareBatchAction, refreshJobs, findContact } from '../jobs-actions';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -43,7 +43,7 @@ export default async function JobsToday() {
         <a href="/admin/jobs/all" className="mono" style={{ fontSize: 11, color: 'var(--ink3)', marginLeft: 'auto' }}>See all jobs and settings &rarr;</a>
       </div>
       <p style={{ fontSize: 14, color: 'var(--ink3)', marginBottom: 18 }}>
-        One job at a time. Do the four steps, press the green button, the next job appears.
+        One job at a time. Apply, message a person, email them, press the green button, the next job appears.
       </p>
 
       {!job && (
@@ -64,7 +64,10 @@ export default async function JobsToday() {
           )}
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
             <form action={prepareCurrentAction}>
-              <button className="btn" type="submit" style={{ fontSize: 15, padding: '12px 22px' }}>Write my application for this job</button>
+              <button className="btn" type="submit" style={{ fontSize: 15, padding: '12px 22px' }}>Write this one and the next two</button>
+            </form>
+            <form action={prepareBatchAction}>
+              <button type="submit" style={{ ...plainLink, cursor: 'pointer' }}>Write the next 10 (about a minute)</button>
             </form>
             <form action={advanceJob}>
               <input type="hidden" name="id" value={job.id} />
@@ -134,16 +137,32 @@ export default async function JobsToday() {
               <CopyButton text={job.dm_text || ''} label="Copy the message" />
             </div>
             <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.5, fontSize: 14, background: 'rgba(26,18,5,0.03)', padding: '10px 12px', borderRadius: 8 }}>{job.dm_text}</div>
+          </div>
+
+          <div style={step}>
+            <div style={{ fontSize: 15, marginBottom: 8 }}><span style={stepNum}>5</span><strong>Email them too.</strong> A second touch on a different channel, and it takes 20 seconds.</div>
+            {job.contact_email ? (
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 8 }}>
+                <a href={`mailto:${job.contact_email}?subject=${encodeURIComponent(job.email_subject || `Application: ${job.title}`)}&body=${encodeURIComponent(job.email_body || '')}`} style={bigLink}>
+                  Write to {job.contact_email} &#8599;
+                </a>
+                <CopyButton text={job.contact_email} label="Copy address" />
+                <CopyButton text={job.email_body || ''} label="Copy email text" />
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 8 }}>
+                <form action={findContact}>
+                  <input type="hidden" name="id" value={job.id} />
+                  <button type="submit" style={{ ...bigLink, cursor: 'pointer', border: '2px solid var(--ink)' }}>Find their email address</button>
+                </form>
+                <span style={{ fontSize: 12, color: 'var(--ink3)' }}>Reads their own website for a published address. Takes about 15 seconds.</span>
+              </div>
+            )}
             {job.email_body && (
-              <details style={{ marginTop: 10 }}>
-                <summary className="mono" style={{ fontSize: 11, cursor: 'pointer', color: 'var(--ink3)' }}>If you have their email instead, open this</summary>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center', margin: '8px 0 4px' }}>
-                  <CopyButton text={job.email_subject || ''} label="Copy subject" />
-                  <CopyButton text={job.email_body} label="Copy email" />
-                </div>
-                <div style={{ fontSize: 13, color: 'var(--ink3)' }}>Subject: {job.email_subject}</div>
-                <div style={{ whiteSpace: 'pre-wrap', fontSize: 13, lineHeight: 1.45 }}>{job.email_body}</div>
-              </details>
+              <>
+                <div style={{ fontSize: 13, color: 'var(--ink3)', marginBottom: 2 }}>Subject: {job.email_subject}</div>
+                <div style={{ whiteSpace: 'pre-wrap', fontSize: 13, lineHeight: 1.45, background: 'rgba(26,18,5,0.03)', padding: '10px 12px', borderRadius: 8 }}>{job.email_body}</div>
+              </>
             )}
           </div>
 
