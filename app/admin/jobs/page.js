@@ -91,10 +91,10 @@ export default async function JobsToday() {
           </div>
 
           <div style={step}>
-            <div style={{ fontSize: 15, marginBottom: 6 }}><span style={stepNum}>2</span><strong>Get your resume for this job.</strong> It opens and the save box appears by itself: choose Save as PDF, then upload that file to the form.</div>
+            <div style={{ fontSize: 15, marginBottom: 6 }}><span style={stepNum}>2</span><strong>Download your resume for this job</strong>, then upload that file to the form. It is a finished PDF, nothing to print.</div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-              <a href={`/admin/jobs/${job.id}/resume`} target="_blank" rel="noreferrer" style={bigLink}>Open my resume for this job &#8599;</a>
-              <a href={`/resume/Muhammad_Anas_${job.resume_variant === 'data' ? 'Data_Analytics' : 'AI_Automation'}_Engineer.pdf`} download style={plainLink}>In a hurry: download the ready made PDF</a>
+              <a href={`/api/jobs/resume?id=${job.id}`} style={bigLink}>Download resume PDF</a>
+              <a href={`/admin/jobs/${job.id}/resume`} target="_blank" rel="noreferrer" style={plainLink}>Read it first</a>
             </div>
           </div>
 

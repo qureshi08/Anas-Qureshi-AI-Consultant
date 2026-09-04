@@ -57,11 +57,11 @@ export default async function JobKit({ params }) {
       <div style={card}>
         <div className="mono" style={label}>2. Resume for this job</div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <a href={`/admin/jobs/${job.id}/resume`} target="_blank" rel="noreferrer" className="mono" style={{ ...linkBtn, background: 'var(--forest)', color: 'var(--paper)' }}>Open resume, save box opens by itself &#8599;</a>
-          <a href={`/resume/Muhammad_Anas_${job.resume_variant === 'data' ? 'Data_Analytics' : 'AI_Automation'}_Engineer.pdf`} download className="mono" style={linkBtn}>Download ready made PDF</a>
+          <a href={`/api/jobs/resume?id=${job.id}`} className="mono" style={{ ...linkBtn, background: 'var(--forest)', color: 'var(--paper)' }}>Download resume PDF</a>
+          <a href={`/admin/jobs/${job.id}/resume`} target="_blank" rel="noreferrer" className="mono" style={linkBtn}>Read it on screen first</a>
         </div>
         <p style={{ fontSize: 12, color: 'var(--ink3)', marginTop: 8 }}>
-          The first one is built for this posting and saves as a PDF from your browser. The second is the standard file, one click, use it when you are in a hurry.
+          Built for this posting: the projects reordered for what they asked for, the summary written for them. One click, a finished PDF file, upload it as it is.
         </p>
       </div>
 
