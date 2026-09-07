@@ -27,10 +27,11 @@ const SENT_STATES = ['sent', 'bounced', 'replied', 'booked'];
 const DM_REPLIED = ['replied', 'call', 'won'];
 const SENT_DATE = /\[(\d{4}-\d{2}-\d{2})\]/;
 
-const [{ data: ps }, { data: ls }, { data: logs }] = await Promise.all([
+const [{ data: ps }, { data: ls }, { data: logs }, { data: was }] = await Promise.all([
   db.from('prospects').select('status, notes, created_at'),
   db.from('leads').select('status, sent_at'),
   db.from('email_logs').select('status'),
+  db.from('whatsapp_cold_leads').select('status, updated_at'),
 ]);
 
 const pTouched = ps.filter(p => p.status !== 'new').length;
@@ -39,9 +40,16 @@ const eAttempted = ls.filter(l => SENT_STATES.includes(l.status)).length;
 const eBounced = ls.filter(l => l.status === 'bounced').length;
 const eReplied = ls.filter(l => ['replied', 'booked'].includes(l.status)).length;
 const autoReplies = logs.filter(l => l.status === 'auto_reply').length;
+// WhatsApp cold lane (added 2026-09-07). A row that left 'pending' was sent by hand
+// from the phone; the table has no sent_at, so the day comes from updated_at,
+// which is the moment Anas flipped the status on /admin/whatsapp-cold. A row
+// marked dead before it was ever sent (filtered out on review) is not a touch.
+const wa = was || [];
+const wTouched = wa.filter(w => ['sent', 'replied', 'booked'].includes(w.status)).length;
+const wReplied = wa.filter(w => ['replied', 'booked'].includes(w.status)).length;
 
-const touches = pTouched + eAttempted;
-const replies = pReplied + eReplied;
+const touches = pTouched + eAttempted + wTouched;
+const replies = pReplied + eReplied + wReplied;
 
 // Per-day counts. DM send dates live in each prospect's notes as [YYYY-MM-DD];
 // fall back to created_at for the connect-request batches that never got a
@@ -49,7 +57,7 @@ const replies = pReplied + eReplied;
 const byDay = {};
 const bump = (day, lane) => {
   if (!day) return;
-  byDay[day] = byDay[day] || { dm: 0, email: 0 };
+  byDay[day] = byDay[day] || { dm: 0, email: 0, wa: 0 };
   byDay[day][lane]++;
 };
 for (const p of ps) {
@@ -58,14 +66,15 @@ for (const p of ps) {
   bump(m ? m[1] : (p.created_at || '').slice(0, 10), 'dm');
 }
 for (const l of ls) if (l.sent_at) bump(l.sent_at.slice(0, 10), 'email');
+for (const w of wa) if (['sent', 'replied', 'booked'].includes(w.status) && w.updated_at) bump(w.updated_at.slice(0, 10), 'wa');
 
 const days = Object.keys(byDay).sort();
 let running = 0;
 const rows = days.map(d => {
-  const { dm, email } = byDay[d];
-  running += dm + email;
+  const { dm, email, wa } = byDay[d];
+  running += dm + email + wa;
   const dow = new Date(d + 'T12:00:00Z').toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' });
-  return `| ${d} | ${dow} | ${dm} | ${email} | ${dm + email} | ${running} |`;
+  return `| ${d} | ${dow} | ${dm} | ${email} | ${wa} | ${dm + email + wa} | ${running} |`;
 });
 
 const stamp = new Date().toISOString().slice(0, 16).replace('T', ' ');
@@ -77,7 +86,8 @@ a query result, so this file cannot drift from the database the way the hand-log
 version did.
 
 **A touch is a sent thing:** a connection request, a first DM, a follow-up DM, a reply
-to inbound, or a cold email that actually went out. Sourcing a profile is not a touch.
+to inbound, a cold email that actually went out, or a cold WhatsApp message sent from the
+phone and marked sent on /admin/whatsapp-cold. Sourcing a profile is not a touch.
 Drafting is not a touch.
 
 ## Where it stands
@@ -87,6 +97,7 @@ Drafting is not a touch.
 | **Combined touches** | **${touches}** |
 | Cold DM (LinkedIn) | ${pTouched} |
 | Cold email (attempted) | ${eAttempted}, of which ${eBounced} bounced |
+| Cold WhatsApp (sent by hand) | ${wTouched} |
 | **Real replies** | **${replies}** (${touches ? (replies / touches * 100).toFixed(1) : 0}%) |
 | Auto-replies (excluded) | ${autoReplies} |
 | Progress to the ICP call | ${touches} / ${THRESHOLD} (${(touches / THRESHOLD * 100).toFixed(1)}%) |
@@ -100,8 +111,8 @@ recruiting/staffing ICP is reconsidered. ${THRESHOLD - touches} to go.
 
 ## By day
 
-| Date | Day | DM | Email | Total | Running |
-|---|---|---|---|---|---|
+| Date | Day | DM | Email | WhatsApp | Total | Running |
+|---|---|---|---|---|---|---|
 ${rows.join('\n')}
 
 ---
