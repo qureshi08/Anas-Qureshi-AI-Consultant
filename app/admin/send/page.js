@@ -78,6 +78,16 @@ export default async function SendQueuePage({ searchParams }) {
     } catch (_) { return false; }
   });
 
+  // Hand written follow-ups waiting on this campaign (raw_data.followup_*),
+  // sent by /api/outbound/send-followups on the original thread.
+  const draftedFollowups = leads.filter(l => {
+    if (l.status !== 'sent' || !l.last_message_id || !l.raw_data) return false;
+    try {
+      const parsed = JSON.parse(l.raw_data);
+      return !!(parsed.followup_subject && parsed.followup_body && !parsed.followup_sent_at);
+    } catch (_) { return false; }
+  }).length;
+
   const noInbox = !accounts || accounts.length === 0;
   const noTemplate = campaign && !campaign.body_template && !hasCustomCopy;
 
@@ -105,6 +115,15 @@ export default async function SendQueuePage({ searchParams }) {
             label="Process follow-ups"
             busyLabel="Processing…"
           />
+          {draftedFollowups > 0 && (
+            <OutboundActionButton
+              endpoint="/api/outbound/send-followups"
+              payload={{ campaignId }}
+              label={`Send drafted follow-ups (${draftedFollowups})`}
+              busyLabel="Sending…"
+              variant="primary"
+            />
+          )}
         </div>
       </div>
 
