@@ -27,11 +27,24 @@ const SENT_STATES = ['sent', 'bounced', 'replied', 'booked'];
 const DM_REPLIED = ['replied', 'call', 'won'];
 const SENT_DATE = /\[(\d{4}-\d{2}-\d{2})\]/;
 
-const [{ data: ps }, { data: ls }, { data: logs }, { data: was }] = await Promise.all([
-  db.from('prospects').select('status, notes, created_at'),
-  db.from('leads').select('status, sent_at'),
-  db.from('email_logs').select('status'),
-  db.from('whatsapp_cold_leads').select('status, updated_at'),
+// Supabase caps a single select at 1,000 rows. The leads table passed that on
+// 2026-09-08 and the counter silently dropped 30 touches, so every table is
+// read in pages now.
+async function all(table, columns) {
+  const out = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await db.from(table).select(columns).range(from, from + 999);
+    if (error) throw new Error(`${table}: ${error.message}`);
+    out.push(...(data || []));
+    if (!data || data.length < 1000) break;
+  }
+  return out;
+}
+const [ps, ls, logs, was] = await Promise.all([
+  all('prospects', 'status, notes, created_at'),
+  all('leads', 'status, sent_at'),
+  all('email_logs', 'status'),
+  all('whatsapp_cold_leads', 'status, updated_at'),
 ]);
 
 const pTouched = ps.filter(p => p.status !== 'new').length;
