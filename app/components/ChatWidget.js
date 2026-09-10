@@ -3,8 +3,8 @@
 import { useState, useRef, useEffect } from 'react';
 
 const STORAGE_KEY = 'anas_chat_v1';
-const GREETING = { role: 'assistant', content: "Hey, I'm Anas's AI assistant. He built me, and I'm the kind of system he builds for businesses. What brings you here today?" };
-const STARTERS = ['What do you build?', 'What does it cost?', 'I have a task to automate'];
+const GREETING = { role: 'assistant', content: "Hey, I'm Anas's AI assistant. He built me, and I'm the kind of system he builds for businesses. Ask me about any project on this page, or tell me a task you're sick of doing by hand." };
+const STARTERS = ['Tell me about one of your projects', 'What does it cost?', 'I have a task to automate'];
 
 function Linkified({ text }) {
   const parts = String(text).split(/(https?:\/\/[^\s]+)/g);

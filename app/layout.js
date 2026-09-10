@@ -2,7 +2,7 @@ import './globals.css';
 
 export const metadata = {
   title: 'Anas Qureshi · AI Consultant',
-  description: 'I build AI systems that do the repetitive work businesses do by hand: AI assistants, automations, internal tools. The first small build is free.',
+  description: 'Portfolio: AI systems I have built across retail, regulated finance, banking compliance, hiring, and AI receptionists for local service businesses. Real problems, real outcomes.',
 };
 
 export default function RootLayout({ children }) {
