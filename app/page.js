@@ -2,12 +2,12 @@ import ChatWidget from './components/ChatWidget';
 
 const CASES = [
   {
-    industry: 'Retail · Enterprise Data',
-    title: 'A manual monthly report that now runs itself',
-    metric: '80 min → 40 sec',
-    metricLabel: 'SKU mapping, per 100 SKUs',
+    industry: 'FMCG · Retail Analytics, UAE & KSA',
+    title: 'A monthly reporting pipeline that used to take a week',
+    metric: '7 days → 2 hours',
+    metricLabel: 'full monthly refresh, UAE & KSA retail data',
     color: 'brick',
-    desc: 'Monthly retail reporting was a manual marathon. I built one end to end pipeline: data ingested, SKUs auto mapped, dashboards built, numbers validated, AI analysis delivered. Mapping dropped from about 80 minutes to seconds, accuracy rose to 95%, and validation went from 3 days to 1.',
+    desc: 'Every month, raw SKU-level data poured in from retailers across the UAE and KSA, sales, quantity, volume, raw cases, manufacturer and competitor detail, broken down by region, store, and location. I built the whole pipeline end to end on one role based platform: data harmonized and validated automatically, pushed into a central database, Tableau dashboards and Excel reports refreshed on trigger, AI doing the matching and analysis work inside it. What took the team a week before anyone could make a decision now refreshes in about 2 hours.',
     stack: ['Python', 'Gemini', 'Tableau', 'Docker'],
   },
   {
