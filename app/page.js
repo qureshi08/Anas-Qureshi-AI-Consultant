@@ -128,12 +128,13 @@ export default function Home() {
             // Portfolio · AI Consultant
           </div>
           <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 48, color: 'var(--paper)', lineHeight: 1.12, marginBottom: 20 }}>
-            I build AI systems that solve real problems for real businesses.
+            Every unanswered WhatsApp message is a customer walking to your competitor.
           </h1>
           <p style={{ fontSize: 20, color: 'rgba(255,253,245,0.82)', maxWidth: 680, lineHeight: 1.5, marginBottom: 26 }}>
-            Retail, regulated finance, banking compliance, hiring, and now AI receptionists for local
-            service businesses. Different industries, one repeating story: manual work, replaced with
-            something that runs on its own.
+            I build the AI receptionist that answers in 5 seconds, day or night, and books the
+            appointment itself. Same discipline behind it as the retail, finance, and banking systems
+            below: manual work, replaced with something that runs on its own. If it doesn&apos;t handle
+            8 of 10 real inquiries correctly in 14 days, you pay nothing.
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 30 }}>
             {['Retail', 'Regulated Finance', 'Banking & Compliance', 'HR Tech', 'Home & Local Services', 'Sales Ops'].map((t) => (
