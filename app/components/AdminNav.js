@@ -15,6 +15,7 @@ const TABS = [
   { href: '/admin/cold-email', label: 'Cold email' },
   { href: '/admin/whatsapp-cold', label: 'WhatsApp cold' },
   { href: '/admin/inbound', label: 'Inbound' },
+  { href: '/admin/playbook', label: 'Playbook' },
   { href: '/admin/chats', label: 'AI chats' },
   { href: '/admin/map', label: 'The map' },
   // Track C, the remote job stream (2026-09-03): `job_leads`, filled daily by /api/jobs/fetch.
