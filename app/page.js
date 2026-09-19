@@ -131,10 +131,11 @@ export default function Home() {
             Every unanswered WhatsApp message is a customer walking to your competitor.
           </h1>
           <p style={{ fontSize: 20, color: 'rgba(255,253,245,0.82)', maxWidth: 680, lineHeight: 1.5, marginBottom: 26 }}>
-            I build the AI receptionist that answers in 5 seconds, day or night, and books the
-            appointment itself. Same discipline behind it as the retail, finance, and banking systems
-            below: manual work, replaced with something that runs on its own. If it doesn&apos;t handle
-            8 of 10 real inquiries correctly in 14 days, you pay nothing.
+            Every customer who messages you gets an answer in seconds, day or night, and the booking
+            stays with you. I measure your reply time and WhatsApp bookings before and after 14 days,
+            so you see the difference in your own numbers. Built with the same discipline as the retail,
+            finance, and banking systems below. If it doesn&apos;t handle 8 of 10 real inquiries
+            correctly in that time, you pay nothing.
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 30 }}>
             {['Retail', 'Regulated Finance', 'Banking & Compliance', 'HR Tech', 'Home & Local Services', 'Sales Ops'].map((t) => (

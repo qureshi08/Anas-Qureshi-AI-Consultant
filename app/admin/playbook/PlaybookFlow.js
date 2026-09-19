@@ -40,7 +40,7 @@ const NODES = [
   { id: 'probe', ...box(2, 0), stage: 'flow', label: 'Problem confirmed?', sub: 'push for a specific answer', detail: 'A vague "yeah kind of" is not confirmation. Ask one more specific question (what made you think of this now, what would it need to look like) before deciding which branch you\'re in.' },
   { id: 'deadSilent', ...box(2, 3), label: 'Still nothing', outcome: 'dead', detail: 'Not gone for good, a fresh angle or a different channel later is fine. Don\'t re-send the same message.' },
 
-  { id: 'msg2', ...box(3, 0), stage: 'flow', label: 'Message 2: the offer', sub: 'money framing + offer + guarantee', detail: 'Money framing tied to what they told you, the offer in one line, the guarantee if there\'s room, one tiny CTA. Never the full price stack yet. Never end on a flat statement.' },
+  { id: 'msg2', ...box(3, 0), stage: 'flow', label: 'Message 2: the offer', sub: 'money framing + offer + guarantee', detail: 'Money framing tied to what they told you, then the RESULT in one line (the booking stays with them, measured before and after over 14 days), the guarantee if there\'s room, one tiny CTA. The receptionist is only the how, mention it if they ask. Never the full price stack yet. Never end on a flat statement.' },
   { id: 'ladder', ...box(3, 2), stage: 'risk', label: 'Escalation ladder', sub: '3 rungs before you disengage', detail: '1. Book the demo, the default ask.\n2. Declined: ask permission to check back in a couple months.\n3. Declined too: "who do you know who\'d actually want this?"\nOnly stop after all three.' },
 
   { id: 'response', ...box(4, 0), stage: 'flow', label: 'Their response', sub: 'yes / objection / silence', detail: 'Read what actually came back before picking a branch.' },
