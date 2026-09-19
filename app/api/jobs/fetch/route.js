@@ -4,6 +4,7 @@
  */
 import { NextResponse } from 'next/server';
 import { fetchAndStoreJobs, expireOldJobs } from '../../../../lib/jobs/fetcher';
+import { fetchAndStoreTraining } from '../../../../lib/jobs/trainingFetcher';
 import { createAdminClient } from '../../../../lib/supabase/admin';
 import { draftForJobSafe } from '../../../../lib/jobs/drafter';
 
@@ -11,11 +12,13 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 
 /** Draft the best undrafted jobs so the flow page is never waiting on a model. */
-async function draftTop(n, deadline) {
+async function draftTop(n, deadline, training = false) {
   const admin = createAdminClient();
-  const { data } = await admin.from('job_leads').select('id')
+  let q = admin.from('job_leads').select('id')
     .in('status', ['new', 'shortlisted']).is('cover_note', null)
     .order('score', { ascending: false }).limit(n);
+  q = training ? q.eq('lane', 'Training') : q.neq('lane', 'Training');
+  const { data } = await q;
   let done = 0, failed = 0;
   for (const row of data || []) {
     if (Date.now() > deadline) break;
@@ -36,8 +39,11 @@ export async function GET(request) {
     const toDraft = params.has('draft') ? Number(params.get('draft')) : 12;
     const aged = await expireOldJobs();
     const result = await fetchAndStoreJobs({ days, budgetMs: 50000 });
-    const drafts = toDraft > 0 ? await draftTop(toDraft, Date.now() + 200000) : {};
-    return NextResponse.json({ ...result, ...aged, ...drafts });
+    let training = {};
+    try { training = { training: await fetchAndStoreTraining({ budgetMs: 40000 }) }; } catch (e) { training = { training: { ok: false, message: e.message } }; }
+    const drafts = toDraft > 0 ? await draftTop(toDraft, Date.now() + 130000) : {};
+    const trainDrafts = toDraft > 0 ? await draftTop(6, Date.now() + 60000, true) : {};
+    return NextResponse.json({ ...result, ...aged, ...drafts, ...training, trainingDrafted: trainDrafts.drafted });
   } catch (err) {
     return NextResponse.json({ ok: false, message: err.message }, { status: 500 });
   }

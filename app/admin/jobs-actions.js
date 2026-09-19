@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { createAdminClient } from '../../lib/supabase/admin';
 import { getAdminUser } from '../../lib/requireAdmin';
 import { fetchAndStoreJobs } from '../../lib/jobs/fetcher';
+import { fetchAndStoreTraining } from '../../lib/jobs/trainingFetcher';
 import { draftForJobSafe } from '../../lib/jobs/drafter';
 import { findContactEmail } from '../../lib/jobs/contactFinder';
 
@@ -15,10 +16,11 @@ async function requireUser() {
 
 const plusDays = n => { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
 
-export async function refreshJobs() {
+export async function refreshJobs(formData) {
   await requireUser();
-  try { await fetchAndStoreJobs({ days: 3, budgetMs: 45000 }); } catch { /* keep the page alive; the counts just do not change */ }
-  revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/all');
+  const training = formData && formData.get && formData.get('training');
+  try { if (training) await fetchAndStoreTraining({ budgetMs: 45000 }); else await fetchAndStoreJobs({ days: 3, budgetMs: 45000 }); } catch { /* keep the page alive; the counts just do not change */ }
+  revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/all'); revalidatePath('/admin/jobs/training');
 }
 
 export async function draftJob(formData) {
@@ -101,8 +103,9 @@ export async function advanceJob(formData) {
   } else if (id && action === 'skip') {
     await admin.from('job_leads').update({ status: 'skipped', next_followup: null, updated_at: new Date().toISOString() }).eq('id', id);
   }
-  await prepareCurrent();
+  await prepareCurrent(3, !!formData.get('training'));
   revalidatePath('/admin/jobs');
+  revalidatePath('/admin/jobs/training');
   revalidatePath('/admin/jobs/all');
 }
 
@@ -110,25 +113,27 @@ export async function advanceJob(formData) {
  * Keep a few jobs drafted ahead of Anas, not just the one on screen, so the next several
  * cards are ready the moment he presses the green button.
  */
-export async function prepareCurrent(lookahead = 3) {
+export async function prepareCurrent(lookahead = 3, training = false) {
   const admin = createAdminClient();
-  const { data } = await admin.from('job_leads').select('id, cover_note')
+  let q = admin.from('job_leads').select('id, cover_note')
     .in('status', ['new', 'shortlisted']).is('cover_note', null)
     .order('score', { ascending: false }).limit(lookahead);
+  q = training ? q.eq('lane', 'Training') : q.neq('lane', 'Training');
+  const { data } = await q;
   for (const row of data || []) await draftForJobSafe(row.id);
 }
 
-export async function prepareCurrentAction() {
+export async function prepareCurrentAction(formData) {
   await requireUser();
-  await prepareCurrent(3);
-  revalidatePath('/admin/jobs');
+  await prepareCurrent(3, !!formData.get('training'));
+  revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/training');
 }
 
 /** Draft the next 10 in one go, for a fresh day or after a model outage. */
-export async function prepareBatchAction() {
+export async function prepareBatchAction(formData) {
   await requireUser();
-  await prepareCurrent(10);
-  revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/all');
+  await prepareCurrent(10, !!formData.get('training'));
+  revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/training'); revalidatePath('/admin/jobs/all');
 }
 
 /** Looks for a real published email at the company, saves it on the job. */
