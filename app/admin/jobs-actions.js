@@ -93,14 +93,34 @@ export async function sendEmailNow(formData) {
   const id = formData.get('id');
   if (!id) return;
   const admin = createAdminClient();
-  const { data: job } = await admin.from('job_leads').select('contact_email, email_subject, email_body, title, company, lane, notes').eq('id', id).single();
+  const { data: job } = await admin.from('job_leads').select('contact_email, email_subject, email_body, title, company, lane, notes, key').eq('id', id).single();
   if (!job) return;
   if (!job.contact_email) return;
+
+  const stamp = new Date().toISOString().slice(0, 16).replace('T', ' ');
+
+  // For Startups rows, job.key is the company's real website (from Y Combinator's own data).
+  // If the address to send to is on a completely different domain, something went wrong
+  // upstream (a real incident: an email-finder guess landed on an unrelated company's site and
+  // handed back its contact address instead). Refuse to send rather than mail a stranger, the
+  // same "wrong is worse than none" rule contactFinder.js already applies when finding one.
+  if (job.lane === 'Startups' && job.key && !job.key.startsWith('yc:')) {
+    const emailDomain = (job.contact_email.split('@')[1] || '').toLowerCase();
+    const knownDomain = job.key.replace(/^www\./, '').toLowerCase();
+    if (emailDomain && emailDomain !== knownDomain && !emailDomain.endsWith(`.${knownDomain}`)) {
+      await admin.from('job_leads').update({
+        notes: [job.notes, `[${stamp}] SEND BLOCKED: ${job.contact_email} is on ${emailDomain}, not ${knownDomain} (${job.company}'s known site). This looks like a wrong address, not sent. Verify manually or paste a corrected address.`].filter(Boolean).join('\n'),
+        updated_at: new Date().toISOString(),
+      }).eq('id', id);
+      revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/all'); revalidatePath('/admin/jobs/startups');
+      revalidatePath(`/admin/jobs/${id}`);
+      return;
+    }
+  }
 
   const subject = job.email_subject || (job.lane === 'Startups' ? `Quick idea for ${job.company}` : `Application: ${job.title}`);
   const result = await sendJobEmail({ to: job.contact_email, subject, body: job.email_body || '' });
 
-  const stamp = new Date().toISOString().slice(0, 16).replace('T', ' ');
   if (result.success) {
     await admin.from('job_leads').update({
       status: 'applied', applied_at: new Date().toISOString(), next_followup: plusDays(5),
@@ -185,11 +205,15 @@ export async function findContact(formData) {
   const id = formData.get('id');
   if (!id) return;
   const admin = createAdminClient();
-  const { data: job } = await admin.from('job_leads').select('company, url, notes').eq('id', id).single();
+  const { data: job } = await admin.from('job_leads').select('company, url, notes, key, lane').eq('id', id).single();
   if (!job) return;
   let patch = { updated_at: new Date().toISOString() };
   try {
-    const { email, website, note } = await findContactEmail(job);
+    // For Startups rows, job.key is the company's real website, read straight from Y
+    // Combinator's own data when the row was created, not a guess. Skip the risky
+    // search-by-company-name path entirely when we already have that ground truth.
+    const knownWebsite = job.lane === 'Startups' && job.key && !job.key.startsWith('yc:') ? job.key : undefined;
+    const { email, website, note } = await findContactEmail({ ...job, knownWebsite });
     patch.contact_email = email || null;
     const line = email
       ? `[${new Date().toISOString().slice(0, 10)}] email found: ${email}${note ? ` (${note})` : ''}`
