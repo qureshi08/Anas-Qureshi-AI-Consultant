@@ -16,10 +16,16 @@ function peopleSearch(company, role) {
   return `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(`${company || ''} ${role || ''}`.trim())}`;
 }
 
-export default async function JobsQueue({ training = false }) {
+const LANE_NAV = {
+  '': { label: 'Applied today', jobsWord: 'jobs', other: [['Training', '/admin/jobs/training', 'AI training work'], ['Startups', '/admin/jobs/startups', 'Startup pitches']] },
+  Training: { label: 'AI training applied today', jobsWord: 'training listings', other: [['', '/admin/jobs', 'Back to job applications'], ['Startups', '/admin/jobs/startups', 'Startup pitches']] },
+  Startups: { label: 'Startup pitches sent today', jobsWord: 'startups to pitch', other: [['', '/admin/jobs', 'Back to job applications'], ['Training', '/admin/jobs/training', 'AI training work']] },
+};
+
+export default async function JobsQueue({ lane = '' }) {
   const admin = createAdminClient();
   const { data } = await admin.from('job_leads').select('*').order('score', { ascending: false }).order('posted_at', { ascending: false }).limit(400);
-  const all = (data || []).filter(j => (j.lane === 'Training') === training);
+  const all = (data || []).filter(j => (lane ? j.lane === lane : !['Training', 'Startups'].includes(j.lane)));
   const today = new Date().toISOString().slice(0, 10);
   const appliedToday = all.filter(j => j.applied_at && j.applied_at.slice(0, 10) === today).length;
   // Fresh beats old at the same fit: a posting loses a point of rank for every 3 days of age,
@@ -29,8 +35,9 @@ export default async function JobsQueue({ training = false }) {
     .filter(j => j.status === 'new' || j.status === 'shortlisted')
     .sort((a, b) => (b.score - ageDays(b) / 3) - (a.score - ageDays(a) / 3));
   const job = queue[0];
-  const goal = training ? 4 : 10;
-  const laneField = <input type="hidden" name="training" value={training ? '1' : ''} />;
+  const goal = lane === 'Training' ? 4 : lane === 'Startups' ? 3 : 10;
+  const laneField = <input type="hidden" name="lane" value={lane} />;
+  const nav = LANE_NAV[lane] || LANE_NAV[''];
   const failedLine = job && !job.cover_note && job.notes ? (job.notes.split('\n').reverse().find(l => l.includes('DRAFT FAILED')) || '') : '';
   const failed = failedLine ? failedLine.replace(/^\[[^\]]*\]\s*DRAFT FAILED:\s*/, '').slice(0, 160) : null;
 
@@ -38,22 +45,26 @@ export default async function JobsQueue({ training = false }) {
     <>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap', marginBottom: 4 }}>
         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 32, color: 'var(--ink)', margin: 0 }}>
-          {training ? 'AI training applied today' : 'Applied today'}: {appliedToday} of {goal}
+          {nav.label}: {appliedToday} of {goal}
         </h2>
         <span className="mono" style={{ fontSize: 11, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: '.08em' }}>
-          {queue.length} jobs waiting
+          {queue.length} {nav.jobsWord} waiting
         </span>
-        <a href={training ? '/admin/jobs' : '/admin/jobs/training'} className="mono" style={{ fontSize: 11, color: 'var(--brick)', marginLeft: 'auto' }}>{training ? 'Back to job applications' : 'AI training work \u2192'}</a>
+        <div style={{ display: 'flex', gap: 10, marginLeft: 'auto' }}>
+          {nav.other.map(([, href, label]) => <a key={href} href={href} className="mono" style={{ fontSize: 11, color: 'var(--brick)' }}>{label} &rarr;</a>)}
+        </div>
         <a href="/admin/jobs/all" className="mono" style={{ fontSize: 11, color: 'var(--ink3)' }}>All jobs and settings &rarr;</a>
       </div>
       <p style={{ fontSize: 14, color: 'var(--ink3)', marginBottom: 18 }}>
-        One job at a time. Apply, message a person, email them, press the green button, the next job appears.
+        {lane === 'Startups'
+          ? 'One company at a time. Read what they do, DM the founder, email them too, press the green button, the next one appears.'
+          : 'One job at a time. Apply, message a person, email them, press the green button, the next job appears.'}
       </p>
 
       {!job && (
         <div style={{ ...step, textAlign: 'center', padding: '30px 20px' }}>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, marginBottom: 10 }}>Nothing in the queue.</div>
-          <form action={refreshJobs}>{laneField}<button className="btn" type="submit">Get new jobs</button></form>
+          <form action={refreshJobs}>{laneField}<button className="btn" type="submit">Get new {lane === 'Startups' ? 'startups' : 'jobs'}</button></form>
         </div>
       )}
 
@@ -101,8 +112,8 @@ export default async function JobsQueue({ training = false }) {
           </div>
 
           <div style={step}>
-            <div style={{ fontSize: 15, marginBottom: 10 }}><span style={stepNum}>1</span><strong>{training ? 'Open the listing or sign up page.' : 'Open the job and start the application.'}</strong></div>
-            <a href={job.url} target="_blank" rel="noreferrer" style={bigLink}>Open the job page &#8599;</a>
+            <div style={{ fontSize: 15, marginBottom: 10 }}><span style={stepNum}>1</span><strong>{lane === 'Training' ? 'Open the listing or sign up page.' : lane === 'Startups' ? 'Open their YC page, skim what they actually do.' : 'Open the job and start the application.'}</strong></div>
+            <a href={job.url} target="_blank" rel="noreferrer" style={bigLink}>{lane === 'Startups' ? 'Open the company page' : 'Open the job page'} &#8599;</a>
           </div>
 
           <div style={step}>
@@ -114,10 +125,10 @@ export default async function JobsQueue({ training = false }) {
           </div>
 
           <div style={step}>
-            <div style={{ fontSize: 15, marginBottom: 8 }}><span style={stepNum}>3</span><strong>{training ? 'Paste this as your proposal or application answer.' : 'Paste this where the form asks why you are applying.'}</strong></div>
+            <div style={{ fontSize: 15, marginBottom: 8 }}><span style={stepNum}>3</span><strong>{lane === 'Training' ? 'Paste this as your proposal or application answer.' : lane === 'Startups' ? 'Your pitch script. Read it, then use steps 4 and 5 to actually send it.' : 'Paste this where the form asks why you are applying.'}</strong></div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
               <CopyButton text={job.cover_note} label="Copy this text" />
-              <span className="mono" style={{ fontSize: 10, color: 'var(--ink3)' }}>cover letter</span>
+              <span className="mono" style={{ fontSize: 10, color: 'var(--ink3)' }}>{lane === 'Startups' ? 'pitch script' : 'cover letter'}</span>
             </div>
             <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.5, fontSize: 14, background: 'rgba(26,18,5,0.03)', padding: '10px 12px', borderRadius: 8 }}>{job.cover_note}</div>
             {job.answers && (
@@ -140,14 +151,14 @@ export default async function JobsQueue({ training = false }) {
             )}
           </div>
 
-          {!training && (
+          {lane !== 'Training' && (
             <>
           <div style={step}>
-            <div style={{ fontSize: 15, marginBottom: 8 }}><span style={stepNum}>4</span><strong>Message one person there.</strong> This doubles your chances, do not skip it.</div>
+            <div style={{ fontSize: 15, marginBottom: 8 }}><span style={stepNum}>4</span><strong>{lane === 'Startups' ? 'DM the founder.' : 'Message one person there.'}</strong> {lane === 'Startups' ? 'This is the actual pitch, the part that matters.' : 'This doubles your chances, do not skip it.'}</div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
               {job.contact_url
                 ? <a href={job.contact_url} target="_blank" rel="noreferrer" style={bigLink}>Open {job.contact_name || 'the contact'} &#8599;</a>
-                : <a href={peopleSearch(job.company, job.contact_role || 'hiring manager')} target="_blank" rel="noreferrer" style={bigLink}>Find someone at {job.company} &#8599;</a>}
+                : <a href={peopleSearch(job.company, job.contact_role || (lane === 'Startups' ? 'founder' : 'hiring manager'))} target="_blank" rel="noreferrer" style={bigLink}>Find someone at {job.company} &#8599;</a>}
               <CopyButton text={job.dm_text || ''} label="Copy the message" />
             </div>
             <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.5, fontSize: 14, background: 'rgba(26,18,5,0.03)', padding: '10px 12px', borderRadius: 8 }}>{job.dm_text}</div>
@@ -157,7 +168,7 @@ export default async function JobsQueue({ training = false }) {
             <div style={{ fontSize: 15, marginBottom: 8 }}><span style={stepNum}>5</span><strong>Email them too.</strong> A second touch on a different channel, and it takes 20 seconds.</div>
             {job.contact_email ? (
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 8 }}>
-                <a href={`mailto:${job.contact_email}?subject=${encodeURIComponent(job.email_subject || `Application: ${job.title}`)}&body=${encodeURIComponent(job.email_body || '')}`} style={bigLink}>
+                <a href={`mailto:${job.contact_email}?subject=${encodeURIComponent(job.email_subject || (lane === 'Startups' ? `Quick idea for ${job.company}` : `Application: ${job.title}`))}&body=${encodeURIComponent(job.email_body || '')}`} style={bigLink}>
                   Write to {job.contact_email} &#8599;
                 </a>
                 <CopyButton text={job.contact_email} label="Copy address" />
