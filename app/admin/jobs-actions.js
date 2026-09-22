@@ -213,12 +213,15 @@ export async function findContact(formData) {
     // Combinator's own data when the row was created, not a guess. Skip the risky
     // search-by-company-name path entirely when we already have that ground truth.
     const knownWebsite = job.lane === 'Startups' && job.key && !job.key.startsWith('yc:') ? job.key : undefined;
-    const { email, website, note } = await findContactEmail({ ...job, knownWebsite });
+    const { email, website, note, otherEmails } = await findContactEmail({ ...job, knownWebsite });
     patch.contact_email = email || null;
     const line = email
       ? `[${new Date().toISOString().slice(0, 10)}] email found: ${email}${note ? ` (${note})` : ''}`
       : `[${new Date().toISOString().slice(0, 10)}] no email found: ${note}${website ? ` (${website})` : ''}`;
-    patch.notes = [job.notes, line].filter(Boolean).join('\n');
+    // Other real addresses found on the same site are alternates for when the picked one
+    // bounces, never silently discarded (see feedback_no_domain_validation_before_send).
+    const altLine = otherEmails && otherEmails.length ? `Other addresses found on their site, try if this one bounces: ${otherEmails.join(', ')}` : null;
+    patch.notes = [job.notes, line, altLine].filter(Boolean).join('\n');
   } catch (e) {
     patch.notes = [job.notes, `[${new Date().toISOString().slice(0, 10)}] email search failed: ${(e.message || '').slice(0, 120)}`].filter(Boolean).join('\n');
   }
