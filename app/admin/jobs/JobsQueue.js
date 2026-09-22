@@ -1,6 +1,6 @@
 import { createAdminClient } from '../../../lib/supabase/admin';
 import CopyButton from '../../components/CopyButton';
-import { advanceJob, prepareCurrentAction, prepareBatchAction, refreshJobs, findContact, saveContactEmail } from '../jobs-actions';
+import { advanceJob, prepareCurrentAction, prepareBatchAction, refreshJobs, findContact, saveContactEmail, sendEmailNow } from '../jobs-actions';
 
 /**
  * ONE JOB AT A TIME. This page shows the next job to apply to and nothing else: four steps,
@@ -167,8 +167,14 @@ export default async function JobsQueue({ lane = '' }) {
             <div style={{ fontSize: 15, marginBottom: 8 }}><span style={stepNum}>4</span><strong>{lane === 'Startups' ? 'Email the founder.' : 'Email them.'}</strong> {lane === 'Startups' ? 'This is the actual pitch, the part that matters.' : 'A real second touch, and it takes 20 seconds.'}</div>
             {job.contact_email ? (
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 8 }}>
-                <a href={gmailCompose(job.contact_email, job.email_subject || (lane === 'Startups' ? `Quick idea for ${job.company}` : `Application: ${job.title}`), job.email_body)} target="_blank" rel="noreferrer" style={bigLink}>
-                  Write to {job.contact_email} in Gmail &#8599;
+                <form action={sendEmailNow}>
+                  <input type="hidden" name="id" value={job.id} />
+                  <button type="submit" style={{ fontSize: 16, fontWeight: 700, padding: '14px 26px', border: '2px solid var(--ink)', borderRadius: 10, background: 'var(--forest)', color: 'var(--paper)', boxShadow: '4px 4px 0 var(--ink)', cursor: 'pointer' }}>
+                    Send email now &rarr;
+                  </button>
+                </form>
+                <a href={gmailCompose(job.contact_email, job.email_subject || (lane === 'Startups' ? `Quick idea for ${job.company}` : `Application: ${job.title}`), job.email_body)} target="_blank" rel="noreferrer" style={plainLink}>
+                  Or open in Gmail to edit first &#8599;
                 </a>
                 <CopyButton text={job.contact_email} label="Copy address" />
                 <CopyButton text={job.email_body || ''} label="Copy email text" />

@@ -2,7 +2,7 @@ import { createAdminClient } from '../../../../lib/supabase/admin';
 import CopyButton from '../../../components/CopyButton';
 import { RESUME_FILES } from '../../../../lib/jobs/resume';
 import { getSettings, buildAnswers, hiddenLanes, SETTING_FIELDS, isSet } from '../../../../lib/jobs/settings';
-import { refreshJobs, draftJob, draftBatch, markApplied, setStatus, addJobByUrl, saveSettings } from '../../jobs-actions';
+import { refreshJobs, draftJob, draftBatch, markApplied, setStatus, addJobByUrl, saveSettings, sendEmailNow } from '../../jobs-actions';
 
 const HOW_TO_APPLY = [
   ['Open the posting', 'Click the role title. It opens the job in a new tab.'],
@@ -225,6 +225,18 @@ export default async function JobsPage({ searchParams }) {
                               <CopyButton text={j.dm_text} label="Copy note" />
                             </div>
                             <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.45, marginBottom: 8 }}>{j.dm_text}</div>
+                          </>
+                        )}
+                        {j.email_body && (
+                          <>
+                            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
+                              <span className="mono" style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--ink3)' }}>Email {j.contact_email ? `to ${j.contact_email}` : ''}</span>
+                              <CopyButton text={j.email_body} label="Copy email" />
+                              {j.contact_email && (
+                                <form action={sendEmailNow}><input type="hidden" name="id" value={j.id} /><button type="submit" className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--paper)', background: 'var(--forest)', border: 'none', borderRadius: 5, padding: '4px 9px', cursor: 'pointer' }}>Send now</button></form>
+                              )}
+                            </div>
+                            <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.45, marginBottom: 8 }}>{j.email_body}</div>
                           </>
                         )}
                         <div style={{ border: '1.5px solid var(--forest)', borderRadius: 8, padding: '8px 10px', marginBottom: 8, background: 'rgba(45,122,79,0.05)' }}>

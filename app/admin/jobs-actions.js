@@ -8,6 +8,7 @@ import { fetchAndStoreTraining } from '../../lib/jobs/trainingFetcher';
 import { fetchAndStoreStartups } from '../../lib/jobs/startupFetcher';
 import { draftForJobSafe } from '../../lib/jobs/drafter';
 import { findContactEmail } from '../../lib/jobs/contactFinder';
+import { sendJobEmail } from '../../lib/jobs/mailSender';
 
 async function requireUser() {
   const user = await getAdminUser();
@@ -78,6 +79,41 @@ export async function markApplied(formData) {
     status: 'applied', applied_at: new Date().toISOString(), next_followup: plusDays(5), updated_at: new Date().toISOString(),
   }).eq('id', id);
   revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/all');
+  revalidatePath(`/admin/jobs/${id}`);
+}
+
+/**
+ * One click, real send: no compose window, no default mail app. Sends through Anas's own
+ * connected Gmail inbox and, only on success, marks the row applied the same way the
+ * Applied button does (sets the day 5 follow up). A failed send never marks it applied,
+ * the error is written to notes so it is visible on the row instead of silently lost.
+ */
+export async function sendEmailNow(formData) {
+  await requireUser();
+  const id = formData.get('id');
+  if (!id) return;
+  const admin = createAdminClient();
+  const { data: job } = await admin.from('job_leads').select('contact_email, email_subject, email_body, title, company, lane, notes').eq('id', id).single();
+  if (!job) return;
+  if (!job.contact_email) return;
+
+  const subject = job.email_subject || (job.lane === 'Startups' ? `Quick idea for ${job.company}` : `Application: ${job.title}`);
+  const result = await sendJobEmail({ to: job.contact_email, subject, body: job.email_body || '' });
+
+  const stamp = new Date().toISOString().slice(0, 16).replace('T', ' ');
+  if (result.success) {
+    await admin.from('job_leads').update({
+      status: 'applied', applied_at: new Date().toISOString(), next_followup: plusDays(5),
+      notes: [job.notes, `[${stamp}] Emailed ${job.contact_email} from ${result.from}`].filter(Boolean).join('\n'),
+      updated_at: new Date().toISOString(),
+    }).eq('id', id);
+  } else {
+    await admin.from('job_leads').update({
+      notes: [job.notes, `[${stamp}] SEND FAILED: ${(result.error || '').slice(0, 200)}`].filter(Boolean).join('\n'),
+      updated_at: new Date().toISOString(),
+    }).eq('id', id);
+  }
+  revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/all'); revalidatePath('/admin/jobs/training'); revalidatePath('/admin/jobs/startups');
   revalidatePath(`/admin/jobs/${id}`);
 }
 

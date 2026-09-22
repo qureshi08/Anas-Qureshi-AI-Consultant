@@ -1,7 +1,7 @@
 import { createAdminClient } from '../../../../lib/supabase/admin';
 import CopyButton from '../../../components/CopyButton';
 import { getSettings, buildAnswers } from '../../../../lib/jobs/settings';
-import { draftJob, updateJob, markApplied, setStatus, findContact } from '../../jobs-actions';
+import { draftJob, updateJob, markApplied, setStatus, findContact, sendEmailNow } from '../../jobs-actions';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -30,7 +30,6 @@ export default async function JobKit({ params }) {
   const answers = buildAnswers(settings);
   const contactFirst = (job.contact_name || '').split(' ')[0];
   const emailBody = job.email_body || '';
-  const mailto = job.contact_email ? `mailto:${job.contact_email}?subject=${encodeURIComponent(job.email_subject || `Application: ${job.title}`)}&body=${encodeURIComponent(emailBody)}` : null;
 
   return (
     <>
@@ -94,26 +93,26 @@ export default async function JobKit({ params }) {
               <a href={peopleSearch(job.company, 'talent acquisition recruiter')} target="_blank" rel="noreferrer" className="mono" style={linkBtn}>Find a recruiter &#8599;</a>
               {job.company && <a href={`https://www.linkedin.com/search/results/companies/?keywords=${encodeURIComponent(job.company)}`} target="_blank" rel="noreferrer" className="mono" style={linkBtn}>Company page &#8599;</a>}
             </div>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
-              <span className="mono" style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--ink3)' }}>LinkedIn message{contactFirst ? ` to ${contactFirst}` : ''}</span>
-              <CopyButton text={job.dm_text || ''} label="Copy message" />
-            </div>
-            <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.5, fontSize: 14, marginBottom: 12 }}>{job.dm_text}</div>
-
             {(job.email_subject || emailBody) && (
               <>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
                   <span className="mono" style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--ink3)' }}>Email version</span>
                   <CopyButton text={job.email_subject || ''} label="Copy subject" />
                   <CopyButton text={emailBody} label="Copy body" />
-                  {mailto
-                    ? <a href={mailto} className="mono" style={{ ...linkBtn, background: 'var(--forest)', color: 'var(--paper)' }}>Write to {job.contact_email} &#8599;</a>
+                  {job.contact_email
+                    ? <form action={sendEmailNow} style={{ display: 'inline' }}><input type="hidden" name="id" value={job.id} /><button type="submit" className="mono" style={{ ...linkBtn, cursor: 'pointer', background: 'var(--forest)', color: 'var(--paper)', border: 'none' }}>Send email now to {job.contact_email}</button></form>
                     : <form action={findContact} style={{ display: 'inline' }}><input type="hidden" name="id" value={job.id} /><button type="submit" className="mono" style={{ ...linkBtn, cursor: 'pointer', background: 'transparent' }}>Find their email address</button></form>}
                 </div>
                 <div style={{ fontSize: 13, color: 'var(--ink3)' }}>Subject: {job.email_subject}</div>
-                <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.5, fontSize: 14 }}>{emailBody}</div>
+                <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.5, fontSize: 14, marginBottom: 12 }}>{emailBody}</div>
               </>
             )}
+
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
+              <span className="mono" style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--ink3)' }}>LinkedIn connection note{contactFirst ? ` to ${contactFirst}` : ''} (no Premium, connect first, not a real message until accepted)</span>
+              <CopyButton text={job.dm_text || ''} label="Copy note" />
+            </div>
+            <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.5, fontSize: 14 }}>{job.dm_text}</div>
           </div>
 
           {/* 5. Form answers */}
