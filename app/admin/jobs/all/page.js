@@ -9,9 +9,9 @@ const HOW_TO_APPLY = [
   ['Find the apply button', 'LinkedIn shows either Easy Apply (a popup on LinkedIn) or Apply (jumps to the company site). Careers pages and Wellfound have their own form. Same routine either way.'],
   ['Resume', 'Every form asks for a file. Click the resume link in the row (it downloads the right variant), then upload it. If a form wants pasted text instead, use the Short bio and the resume text from the Standard answers box above.'],
   ['Contact fields', 'Name, email, phone, LinkedIn, portfolio, location: copy each from Standard answers. Never retype them.'],
-  ['Cover letter or message box', 'Copy note, paste. If there is no box, the note goes to the named contact as the message instead.'],
+  ['Cover letter or message box', 'Copy note, paste. If there is no box, email the named contact the email text instead, that is the real second channel.'],
   ['Screening questions', 'Why us, why you, first 30 days, relevant project, salary: the row has posting specific answers under Screening answers. Years of experience is 2. Notice period: your real one.'],
-  ['Submit, then message the person', 'Submit the form. Back on the job page, scroll to Meet the hiring team or Job poster, click the name, Message, paste the copied message, send. No contact shown: click the company name, People, find someone in engineering or talent, message them.'],
+  ['Submit, then reach the person', 'Submit the form. Then email the named contact directly if an address was found (the strongest second touch). No LinkedIn Premium means no direct message to someone outside your network, only a connection request with a short note attached, capped at 300 characters, so send that too but treat it as a slower, secondary channel, not a real message until they accept.'],
   ['Click Applied', 'Back here, click Applied on the row. The day 5 follow up is set for you and shows at the top when due. Mismatch: click Skip.'],
 ];
 
@@ -221,8 +221,8 @@ export default async function JobsPage({ searchParams }) {
                         {j.dm_text && (
                           <>
                             <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
-                              <span className="mono" style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--ink3)' }}>Message to {j.contact_name || 'hiring team'}</span>
-                              <CopyButton text={j.dm_text} label="Copy message" />
+                              <span className="mono" style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--ink3)' }}>LinkedIn connection note to {j.contact_name || 'hiring team'} (no Premium, connect first)</span>
+                              <CopyButton text={j.dm_text} label="Copy note" />
                             </div>
                             <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.45, marginBottom: 8 }}>{j.dm_text}</div>
                           </>
