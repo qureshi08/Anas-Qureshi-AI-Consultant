@@ -16,6 +16,16 @@ function peopleSearch(company, role) {
   return `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(`${company || ''} ${role || ''}`.trim())}`;
 }
 
+/**
+ * Gmail's own compose window, not a mailto: link. mailto: is a Windows-level default and opens
+ * whatever mail app is registered there (his work Outlook), ignoring which Google account is
+ * actually logged into the browser (his personal Gmail). This opens straight into Gmail compose
+ * in the browser itself, using whichever Google account is active there.
+ */
+function gmailCompose(to, subject, body) {
+  return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to || '')}&su=${encodeURIComponent(subject || '')}&body=${encodeURIComponent(body || '')}`;
+}
+
 const LANE_NAV = {
   '': { label: 'Applied today', jobsWord: 'jobs', other: [['Training', '/admin/jobs/training', 'AI training work'], ['Startups', '/admin/jobs/startups', 'Startup pitches']] },
   Training: { label: 'AI training applied today', jobsWord: 'training listings', other: [['', '/admin/jobs', 'Back to job applications'], ['Startups', '/admin/jobs/startups', 'Startup pitches']] },
@@ -157,8 +167,8 @@ export default async function JobsQueue({ lane = '' }) {
             <div style={{ fontSize: 15, marginBottom: 8 }}><span style={stepNum}>4</span><strong>{lane === 'Startups' ? 'Email the founder.' : 'Email them.'}</strong> {lane === 'Startups' ? 'This is the actual pitch, the part that matters.' : 'A real second touch, and it takes 20 seconds.'}</div>
             {job.contact_email ? (
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 8 }}>
-                <a href={`mailto:${job.contact_email}?subject=${encodeURIComponent(job.email_subject || (lane === 'Startups' ? `Quick idea for ${job.company}` : `Application: ${job.title}`))}&body=${encodeURIComponent(job.email_body || '')}`} style={bigLink}>
-                  Write to {job.contact_email} &#8599;
+                <a href={gmailCompose(job.contact_email, job.email_subject || (lane === 'Startups' ? `Quick idea for ${job.company}` : `Application: ${job.title}`), job.email_body)} target="_blank" rel="noreferrer" style={bigLink}>
+                  Write to {job.contact_email} in Gmail &#8599;
                 </a>
                 <CopyButton text={job.contact_email} label="Copy address" />
                 <CopyButton text={job.email_body || ''} label="Copy email text" />
