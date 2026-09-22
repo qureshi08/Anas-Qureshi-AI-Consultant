@@ -197,6 +197,7 @@ export default async function JobsPage({ searchParams }) {
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
                       <span className="mono" style={{ fontSize: 10, padding: '2px 7px', border: '1.5px solid var(--forest)', borderRadius: 5, color: 'var(--forest)' }}>{LANE_LABEL[j.lane] || j.lane}</span>
                       <span className="mono" style={{ fontSize: 10, padding: '2px 7px', border: '1.5px solid var(--ink3)', borderRadius: 5, color: 'var(--ink3)' }}>score {j.score}</span>
+                      {Number.isFinite(j.applicants) && <span className="mono" style={{ fontSize: 10, padding: '2px 7px', border: `1.5px solid ${j.applicants < 20 ? 'var(--forest)' : 'var(--ink3)'}`, borderRadius: 5, color: j.applicants < 20 ? 'var(--forest)' : 'var(--ink3)' }}>{j.applicants} applicants</span>}
                       <span className="mono" style={{ fontSize: 10, padding: '2px 7px', border: '1.5px solid var(--ink3)', borderRadius: 5, color: 'var(--ink3)' }}>{j.source}</span>
                       <span className="mono" style={{ fontSize: 10, padding: '2px 7px', border: '1.5px solid var(--ink3)', borderRadius: 5, color: 'var(--ink3)' }}>{fmt(j.posted_at)}</span>
                       {j.salary_label && j.salary_label !== 'unknown' && <span className="mono" style={{ fontSize: 10, padding: '2px 7px', border: '1.5px solid var(--amber)', borderRadius: 5, color: 'var(--amber)' }}>{j.salary_label}</span>}

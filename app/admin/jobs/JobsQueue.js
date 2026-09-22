@@ -92,6 +92,11 @@ export default async function JobsQueue({ training = false }) {
             <div style={{ fontFamily: 'var(--font-display)', fontSize: 26, color: 'var(--ink)', lineHeight: 1.15 }}>{job.title}</div>
             <div style={{ fontSize: 15, marginTop: 2 }}>{job.company}</div>
             <div className="mono" style={{ fontSize: 11, color: 'var(--ink3)', marginTop: 4 }}>{job.location || 'location not stated'}</div>
+            {Number.isFinite(job.applicants) && (
+              <div className="mono" style={{ fontSize: 11, marginTop: 4, color: job.applicants < 20 ? 'var(--forest)' : 'var(--ink3)' }}>
+                {job.applicants} applicants so far{job.applicants < 20 ? ' — good odds' : ''}
+              </div>
+            )}
             {job.notes && <div style={{ fontSize: 13, color: 'var(--ink3)', marginTop: 8, whiteSpace: 'pre-wrap' }}>{job.notes.split('\n')[0]}</div>}
           </div>
 
