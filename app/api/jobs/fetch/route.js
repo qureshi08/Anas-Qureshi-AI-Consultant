@@ -43,8 +43,8 @@ export async function GET(request) {
     let training = {};
     try { training = { training: await fetchAndStoreTraining({ budgetMs: 30000 }) }; } catch (e) { training = { training: { ok: false, message: e.message } }; }
     let startups = {};
-    try { startups = { startups: await fetchAndStoreStartups({ budgetMs: 30000 }) }; } catch (e) { startups = { startups: { ok: false, message: e.message } }; }
-    const drafts = toDraft > 0 ? await draftTop(toDraft, Date.now() + 110000) : {};
+    try { startups = { startups: await fetchAndStoreStartups({ budgetMs: 60000 }) }; } catch (e) { startups = { startups: { ok: false, message: e.message } }; }
+    const drafts = toDraft > 0 ? await draftTop(toDraft, Date.now() + 90000) : {};
     const trainDrafts = toDraft > 0 ? await draftTop(6, Date.now() + 40000, 'Training') : {};
     const startupDrafts = toDraft > 0 ? await draftTop(6, Date.now() + 30000, 'Startups') : {};
     return NextResponse.json({ ...result, ...aged, ...drafts, ...training, ...startups, trainingDrafted: trainDrafts.drafted, startupsDrafted: startupDrafts.drafted });
