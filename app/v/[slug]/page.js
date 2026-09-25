@@ -45,7 +45,7 @@ export default async function PitchVideo({ params }) {
     <main style={{ minHeight: '100vh', background: '#111', color: '#f5f5f5', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '28px 16px', fontFamily: 'Inter, system-ui, sans-serif' }}>
       <div style={{ fontSize: 13, letterSpacing: '.12em', textTransform: 'uppercase', opacity: .6, marginBottom: 8 }}>Made for {p.company}</div>
       <h1 style={{ fontSize: 24, fontWeight: 700, margin: '0 0 18px', textAlign: 'center', maxWidth: 520 }}>
-        {first ? `${first}, ` : ''}here is a 60 second explainer of {p.company}, built from your own website.
+        {first ? `${first}, ` : ''}here is a one minute explainer of {p.company}, built from your own website.
       </h1>
       <video src={p.video_url} poster={p.poster_url || undefined} controls playsInline preload="metadata"
         style={{ width: '100%', maxWidth: 380, aspectRatio: '9 / 16', borderRadius: 18, background: '#000', boxShadow: '0 20px 60px rgba(0,0,0,.5)' }} />
