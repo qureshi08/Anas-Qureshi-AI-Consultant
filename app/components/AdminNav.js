@@ -7,7 +7,8 @@ import { usePathname } from 'next/navigation';
 // Small-business outreach pages are hidden under Archive with all data kept.
 const TABS = [
   { href: '/admin/jobs', label: 'Jobs' },
-  { href: '/admin/jobs/startups', label: 'Founder pitches' },
+  { href: '/admin/pitches', label: 'Founder videos' },
+  { href: '/admin/jobs/startups', label: 'Startup pitches' },
   { href: '/admin/inbound', label: 'Inbound' },
   { href: '/admin/chats', label: 'AI chats' },
   { href: '/admin/calls', label: 'Call requests' },
