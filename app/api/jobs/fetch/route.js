@@ -3,7 +3,7 @@
  * button on /admin/jobs. Fills job_leads with fresh postings; never touches existing rows.
  */
 import { NextResponse } from 'next/server';
-import { fetchAndStoreJobs, expireOldJobs } from '../../../../lib/jobs/fetcher';
+import { fetchAndStoreJobs, expireOldJobs, purgeOffTarget } from '../../../../lib/jobs/fetcher';
 import { fetchAndStoreTraining } from '../../../../lib/jobs/trainingFetcher';
 import { fetchAndStoreStartups } from '../../../../lib/jobs/startupFetcher';
 import { createAdminClient } from '../../../../lib/supabase/admin';
@@ -20,12 +20,15 @@ async function draftTop(n, deadline, lane = null) {
     .order('score', { ascending: false }).limit(n);
   q = lane ? q.eq('lane', lane) : q.not('lane', 'in', '(Training,Startups)');
   const { data } = await q;
-  let done = 0, failed = 0;
-  for (const row of data || []) {
-    if (Date.now() > deadline) break;
-    const r = await draftForJobSafe(row.id);
-    if (r.ok) done++; else failed++;
-  }
+  let done = 0, failed = 0, i = 0;
+  const rows = data || [];
+  // 3 in parallel: the 50 a day board needs a full day of drafts ready before 8am PKT.
+  await Promise.all(Array.from({ length: 3 }, async () => {
+    while (i < rows.length && Date.now() < deadline) {
+      const r = await draftForJobSafe(rows[i++].id);
+      if (r.ok) done++; else failed++;
+    }
+  }));
   return { drafted: done, failedDrafts: failed };
 }
 
@@ -37,17 +40,18 @@ export async function GET(request) {
   try {
     const params = new URL(request.url).searchParams;
     const days = Number(params.get('days')) || 3;
-    const toDraft = params.has('draft') ? Number(params.get('draft')) : 12;
+    const toDraft = params.has('draft') ? Number(params.get('draft')) : 60;
     const aged = await expireOldJobs();
-    const result = await fetchAndStoreJobs({ days, budgetMs: 45000 });
+    const purged = await purgeOffTarget();
+    const result = await fetchAndStoreJobs({ days, budgetMs: 80000 });
     let training = {};
-    try { training = { training: await fetchAndStoreTraining({ budgetMs: 30000 }) }; } catch (e) { training = { training: { ok: false, message: e.message } }; }
+    try { training = { training: await fetchAndStoreTraining({ budgetMs: 15000 }) }; } catch (e) { training = { training: { ok: false, message: e.message } }; }
     let startups = {};
-    try { startups = { startups: await fetchAndStoreStartups({ budgetMs: 60000 }) }; } catch (e) { startups = { startups: { ok: false, message: e.message } }; }
-    const drafts = toDraft > 0 ? await draftTop(toDraft, Date.now() + 90000) : {};
-    const trainDrafts = toDraft > 0 ? await draftTop(6, Date.now() + 40000, 'Training') : {};
-    const startupDrafts = toDraft > 0 ? await draftTop(6, Date.now() + 30000, 'Startups') : {};
-    return NextResponse.json({ ...result, ...aged, ...drafts, ...training, ...startups, trainingDrafted: trainDrafts.drafted, startupsDrafted: startupDrafts.drafted });
+    try { startups = { startups: await fetchAndStoreStartups({ budgetMs: 40000 }) }; } catch (e) { startups = { startups: { ok: false, message: e.message } }; }
+    const drafts = toDraft > 0 ? await draftTop(toDraft, Date.now() + 120000) : {};
+    const trainDrafts = {};
+    const startupDrafts = toDraft > 0 ? await draftTop(6, Date.now() + 20000, 'Startups') : {};
+    return NextResponse.json({ ...result, ...aged, ...purged, ...drafts, ...training, ...startups, trainingDrafted: trainDrafts.drafted, startupsDrafted: startupDrafts.drafted });
   } catch (err) {
     return NextResponse.json({ ok: false, message: err.message }, { status: 500 });
   }

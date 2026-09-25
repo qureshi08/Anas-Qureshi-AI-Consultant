@@ -14,7 +14,7 @@ export default async function TailoredResume({ params }) {
   const { data: job } = await admin.from('job_leads').select('*').eq('id', params.id).single();
   if (!job) return <p style={{ padding: 24 }}>Job not found.</p>;
 
-  const variant = job.resume_variant === 'data' ? 'data' : 'ai';
+  const variant = ['se', 'ai', 'data'].includes(job.resume_variant) ? job.resume_variant : 'se';
   const plan = job.resume_plan || {};
   const order = Array.isArray(plan.project_order) && plan.project_order.length ? plan.project_order : DEFAULT_ORDER[variant];
   const projects = order.map(projectById).filter(Boolean).slice(0, 6);

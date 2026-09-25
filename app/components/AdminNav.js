@@ -3,37 +3,30 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-// Distinct lead lanes (locked 2026-07-28, WhatsApp cold added 2026-08-31), never blended:
-//   Cold DM      -> `prospects` table, sourced by hand on LinkedIn/Reddit
-//   Cold email   -> `campaigns` + `leads` tables, scraped via Google Maps, run through OutboundOS
-//   WhatsApp cold -> `whatsapp_cold_leads` table, numbers from each business's own WhatsApp link
-//   Inbound      -> `inbound_leads` + `conversations`, from the site and the AI assistant
+// Menu relocked 2026-09-25: remote job first, then founder pitches (tech companies only).
+// Small-business outreach pages are hidden under Archive with all data kept.
 const TABS = [
-  { href: '/admin', label: 'Overview' },
-  { href: '/admin/calls', label: 'Call requests' },
-  { href: '/admin/outbound', label: 'Cold DM' },
-  { href: '/admin/cold-email', label: 'Cold email' },
-  { href: '/admin/whatsapp-cold', label: 'WhatsApp cold' },
-  { href: '/admin/inbound', label: 'Inbound' },
-  { href: '/admin/playbook', label: 'Playbook' },
-  { href: '/admin/chats', label: 'AI chats' },
-  { href: '/admin/map', label: 'The map' },
-  // Track C, the remote job stream (2026-09-03): `job_leads`, filled daily by /api/jobs/fetch.
   { href: '/admin/jobs', label: 'Jobs' },
+  { href: '/admin/jobs/startups', label: 'Founder pitches' },
+  { href: '/admin/inbound', label: 'Inbound' },
+  { href: '/admin/chats', label: 'AI chats' },
+  { href: '/admin/calls', label: 'Call requests' },
+  { href: '/admin/inboxes', label: 'Inboxes' },
+  { href: '/admin/archive', label: 'Archive' },
 ];
 
-// Everything in the cold email workspace lights up the Cold email tab.
-const COLD_EMAIL_PATHS = ['/admin/cold-email', '/admin/campaigns', '/admin/compose', '/admin/leads', '/admin/send', '/admin/validator', '/admin/inboxes'];
+// Archived tools light up the Archive tab while one of them is open.
+const ARCHIVE_PATHS = ['/admin/archive', '/admin/overview', '/admin/outbound', '/admin/cold-email', '/admin/campaigns', '/admin/compose', '/admin/leads', '/admin/send', '/admin/validator', '/admin/whatsapp-cold', '/admin/playbook', '/admin/map'];
 
 export default function AdminNav() {
   const pathname = usePathname();
   return (
     <nav style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 24 }}>
       {TABS.map(tab => {
-        const active = tab.href === '/admin'
-          ? pathname === '/admin'
-          : tab.href === '/admin/cold-email'
-            ? COLD_EMAIL_PATHS.some(p => pathname.startsWith(p))
+        const active = tab.href === '/admin/archive'
+          ? ARCHIVE_PATHS.some(p => pathname.startsWith(p))
+          : tab.href === '/admin/jobs'
+            ? pathname.startsWith('/admin/jobs') && !pathname.startsWith('/admin/jobs/startups')
             : pathname.startsWith(tab.href);
         return (
           <Link

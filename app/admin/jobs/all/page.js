@@ -1,6 +1,7 @@
 import { createAdminClient } from '../../../../lib/supabase/admin';
 import CopyButton from '../../../components/CopyButton';
 import { RESUME_FILES } from '../../../../lib/jobs/resume';
+import { DAILY_GOAL_MIN } from '../../../../lib/jobs/targets';
 import { getSettings, buildAnswers, hiddenLanes, SETTING_FIELDS, isSet } from '../../../../lib/jobs/settings';
 import { refreshJobs, draftJob, draftBatch, markApplied, setStatus, addJobByUrl, saveSettings, sendEmailNow } from '../../jobs-actions';
 
@@ -21,7 +22,7 @@ export const maxDuration = 60;
 const STATUSES = ['new', 'shortlisted', 'applied', 'replied', 'interview', 'offer', 'rejected', 'skipped', 'expired'];
 const STATUS_LABEL = { new: 'New', shortlisted: 'Drafted', applied: 'Applied', replied: 'Replied', interview: 'Interview', offer: 'Offer', rejected: 'Rejected', skipped: 'Skipped', expired: 'Expired' };
 const STATUS_COLOR = { new: 'var(--ink3)', shortlisted: 'var(--amber)', applied: 'var(--forest)', replied: 'var(--forest)', interview: 'var(--forest)', offer: 'var(--forest)', rejected: 'var(--ink3)', skipped: 'var(--ink3)', expired: 'var(--ink3)' };
-const LANES = ['PK-ISB', 'PK', 'Gulf', 'World', 'Startups'];
+const LANES = ['US', 'World', 'Gulf', 'PK', 'PK-ISB', 'Startups'];
 const LANE_LABEL = { 'PK-ISB': 'Islamabad', PK: 'Pakistan', Gulf: 'Gulf', World: 'World', Startups: 'Startups (reverse pitch)' };
 const chip = (active, color = 'var(--ink)') => ({
   fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', textDecoration: 'none',
@@ -40,7 +41,7 @@ export default async function JobsPage({ searchParams }) {
   const all = data || [];
   const answers = buildAnswers(settings);
   const hidden = hiddenLanes(settings);
-  const DAILY_GOAL = Number(settings.daily_goal) || 10;
+  const DAILY_GOAL = Math.max(DAILY_GOAL_MIN, Number(settings.daily_goal) || 0);
   const settingsIncomplete = !isSet(settings.notice_period) || !isSet(settings.relocate_gulf) || !isSet(settings.relocate_pk);
 
   const view = searchParams?.status || 'work';
@@ -63,7 +64,7 @@ export default async function JobsPage({ searchParams }) {
     <>
       <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 30, color: 'var(--ink)', marginBottom: 2 }}>Jobs</h2>
       <p className="mono" style={{ fontSize: 11, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 6 }}>
-        Track C &middot; AI Automation Engineer &middot; floor $1,500/mo &middot; fetched daily 08:00 PKT
+        AI / Solutions Engineer &middot; remote, US, Canada, UAE, KSA, Pakistan &middot; floor $1,500/mo &middot; fetched daily 08:00 PKT
       </p>
       <p style={{ fontSize: 14, color: 'var(--ink3)', marginBottom: 18 }}>
         Fetched from 9 public sources plus every known company board. Draft writes the cover note and the message to the named person from the posting text and the resume only. You copy, apply, click Applied. Nothing here is sent for you.
@@ -214,7 +215,7 @@ export default async function JobsPage({ searchParams }) {
                     {j.cover_note ? (
                       <>
                         <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
-                          <span className="mono" style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--ink3)' }}>Cover note &middot; resume: {j.resume_variant === 'data' ? 'Data Analytics' : 'AI Automation'}</span>
+                          <span className="mono" style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--ink3)' }}>Cover note &middot; resume: {j.resume_variant === 'data' ? 'Data Analytics' : j.resume_variant === 'ai' ? 'AI Automation' : 'AI Solutions Engineer'}</span>
                           <CopyButton text={j.cover_note} label="Copy note" />
                         </div>
                         <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.45, marginBottom: 10 }}>{j.cover_note}</div>
@@ -241,8 +242,8 @@ export default async function JobsPage({ searchParams }) {
                         )}
                         <div style={{ border: '1.5px solid var(--forest)', borderRadius: 8, padding: '8px 10px', marginBottom: 8, background: 'rgba(45,122,79,0.05)' }}>
                           <div className="mono" style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--forest)', marginBottom: 6 }}>Application kit</div>
-                          <a href={RESUME_FILES[j.resume_variant === 'data' ? 'data' : 'ai'].path} download className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--forest)', border: '1.5px solid var(--forest)', borderRadius: 5, padding: '4px 8px', textDecoration: 'none', display: 'inline-block', marginBottom: 6 }}>
-                            Download resume: {RESUME_FILES[j.resume_variant === 'data' ? 'data' : 'ai'].label}
+                          <a href={`/api/jobs/resume?id=${j.id}`} className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--forest)', border: '1.5px solid var(--forest)', borderRadius: 5, padding: '4px 8px', textDecoration: 'none', display: 'inline-block', marginBottom: 6 }}>
+                            Download tailored resume PDF
                           </a>
                           {j.answers ? (
                             <details style={{ marginTop: 4 }}>

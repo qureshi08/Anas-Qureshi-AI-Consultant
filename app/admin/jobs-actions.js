@@ -3,12 +3,13 @@
 import { revalidatePath } from 'next/cache';
 import { createAdminClient } from '../../lib/supabase/admin';
 import { getAdminUser } from '../../lib/requireAdmin';
-import { fetchAndStoreJobs } from '../../lib/jobs/fetcher';
+import { fetchAndStoreJobs, purgeOffTarget } from '../../lib/jobs/fetcher';
 import { fetchAndStoreTraining } from '../../lib/jobs/trainingFetcher';
 import { fetchAndStoreStartups } from '../../lib/jobs/startupFetcher';
 import { draftForJobSafe } from '../../lib/jobs/drafter';
 import { findContactEmail } from '../../lib/jobs/contactFinder';
 import { sendJobEmail } from '../../lib/jobs/mailSender';
+import { buildResumePdf, resumeFileName } from '../../lib/jobs/resumePdf';
 
 async function requireUser() {
   const user = await getAdminUser();
@@ -24,7 +25,7 @@ export async function refreshJobs(formData) {
   try {
     if (lane === 'Training') await fetchAndStoreTraining({ budgetMs: 45000 });
     else if (lane === 'Startups') await fetchAndStoreStartups({ budgetMs: 45000 });
-    else await fetchAndStoreJobs({ days: 3, budgetMs: 45000 });
+    else { await purgeOffTarget(); await fetchAndStoreJobs({ days: 3, budgetMs: 45000 }); }
   } catch { /* keep the page alive; the counts just do not change */ }
   revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/all'); revalidatePath('/admin/jobs/training'); revalidatePath('/admin/jobs/startups');
 }
@@ -93,7 +94,7 @@ export async function sendEmailNow(formData) {
   const id = formData.get('id');
   if (!id) return;
   const admin = createAdminClient();
-  const { data: job } = await admin.from('job_leads').select('contact_email, email_subject, email_body, title, company, lane, notes, key').eq('id', id).single();
+  const { data: job } = await admin.from('job_leads').select('contact_email, email_subject, email_body, title, company, lane, notes, key, resume_variant, resume_plan').eq('id', id).single();
   if (!job) return;
   if (!job.contact_email) return;
 
@@ -119,7 +120,16 @@ export async function sendEmailNow(formData) {
   }
 
   const subject = job.email_subject || (job.lane === 'Startups' ? `Quick idea for ${job.company}` : `Application: ${job.title}`);
-  const result = await sendJobEmail({ to: job.contact_email, subject, body: job.email_body || '' });
+  // Job applications carry the tailored resume PDF (the email says "Resume attached.").
+  // Startups pitches are not applications and go without it.
+  let attachment = null;
+  if (job.lane !== 'Startups') {
+    try {
+      const bytes = await buildResumePdf(job);
+      attachment = { filename: resumeFileName(job), content: Buffer.from(bytes), mimeType: 'application/pdf' };
+    } catch { /* a resume build failure should not block the email */ }
+  }
+  const result = await sendJobEmail({ to: job.contact_email, subject, body: job.email_body || '', attachment });
 
   if (result.success) {
     await admin.from('job_leads').update({
@@ -204,6 +214,12 @@ export async function findContact(formData) {
   await requireUser();
   const id = formData.get('id');
   if (!id) return;
+  await findContactFor(id);
+  revalidatePath('/admin/jobs');
+  revalidatePath(`/admin/jobs/${id}`);
+}
+
+async function findContactFor(id) {
   const admin = createAdminClient();
   const { data: job } = await admin.from('job_leads').select('company, url, notes, key, lane').eq('id', id).single();
   if (!job) return;
@@ -226,8 +242,42 @@ export async function findContact(formData) {
     patch.notes = [job.notes, `[${new Date().toISOString().slice(0, 10)}] email search failed: ${(e.message || '').slice(0, 120)}`].filter(Boolean).join('\n');
   }
   await admin.from('job_leads').update(patch).eq('id', id);
+}
+
+/** Run fn over items, a few at a time, so a batch fits inside one server action. */
+async function pool(items, n, fn) {
+  let i = 0;
+  await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => {
+    while (i < items.length) { const it = items[i++]; await fn(it); }
+  }));
+}
+
+/**
+ * The 50 a day board: write the next 10 applications at once, 3 in parallel, so a full day's
+ * list is ready in a few presses (the daily cron also writes a batch before 8am PKT).
+ */
+export async function prepareMoreAction() {
+  await requireUser();
+  const admin = createAdminClient();
+  const { data } = await admin.from('job_leads').select('id')
+    .in('status', ['new', 'shortlisted']).is('cover_note', null)
+    .not('lane', 'in', '(Training,Startups)')
+    .order('score', { ascending: false }).limit(10);
+  await pool(data || [], 3, row => draftForJobSafe(row.id));
+  revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/all');
+}
+
+/** Look for published addresses on the next 10 ready jobs that have none yet, 5 at a time. */
+export async function findEmailsBatchAction() {
+  await requireUser();
+  const admin = createAdminClient();
+  const { data } = await admin.from('job_leads').select('id, notes')
+    .eq('status', 'shortlisted').not('cover_note', 'is', null).is('contact_email', null)
+    .not('lane', 'in', '(Training,Startups)')
+    .order('score', { ascending: false }).limit(40);
+  const todo = (data || []).filter(j => !/email found|no email found|email search failed/.test(j.notes || '')).slice(0, 10);
+  await pool(todo, 5, j => findContactFor(j.id).catch(() => {}));
   revalidatePath('/admin/jobs');
-  revalidatePath(`/admin/jobs/${id}`);
 }
 
 /** Anas pastes an address he found himself. */
