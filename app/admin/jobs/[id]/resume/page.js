@@ -45,7 +45,7 @@ export default async function TailoredResume({ params }) {
 
       <div className="noprint">
         <PrintButton auto />
-        <span>The save box opens by itself. Choose <strong>Save as PDF</strong>, name it <strong>Muhammad_Anas_{(job.company || 'Resume').replace(/[^A-Za-z0-9]+/g, '_').slice(0, 30)}.pdf</strong>, then upload that file. Did not open? Press the button.</span>
+        <span>The save box opens by itself. Choose <strong>Save as PDF</strong>, name it <strong>Anas_Qureshi_{(job.company || 'Resume').replace(/[^A-Za-z0-9]+/g, '_').slice(0, 30)}.pdf</strong>, then upload that file. Did not open? Press the button.</span>
         <a href="/admin/jobs" style={{ marginLeft: 'auto', color: '#0a5' }}>Back to jobs</a>
       </div>
 
