@@ -37,13 +37,13 @@ export default async function Pitches() {
         </span>
       </div>
       <p style={{ fontSize: 14, color: 'var(--ink3)', margin: '0 0 16px' }}>
-        Each video is rendered on your computer (Animations/_founder, run daily.mjs) and appears here when ready. Watch it first, then send. The email links to your page /v/company, which records when they watch.
+        Claude builds each video with you (script, your review, Matt's voice, export), then stages it here as ready. Watch it, check the email, press Send: it goes from your Gmail and links to /v/company, which records when they watch. Replies from that page land in Inbound. Opening the page from here never counts as a view.
       </p>
 
       {!ready.length && (
         <div style={{ ...card, textAlign: 'center' }}>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: 22 }}>No videos ready.</div>
-          <div style={{ fontSize: 14, color: 'var(--ink3)' }}>Ask Claude to "run the founder videos" to render today's 5.</div>
+          <div style={{ fontSize: 14, color: 'var(--ink3)' }}>Ask Claude for today's founder video. It shows up here once you have approved it.</div>
         </div>
       )}
 
@@ -66,7 +66,7 @@ export default async function Pitches() {
                 {p.contact_email
                   ? <form action={sendPitchNow}><input type="hidden" name="id" value={p.id} /><button type="submit" style={go}>Send email now &rarr;</button></form>
                   : <form action={savePitchEmail} style={{ display: 'flex', gap: 6 }}><input type="hidden" name="id" value={p.id} /><input name="contact_email" type="email" placeholder="paste founder email" style={{ fontSize: 13, padding: '6px 8px' }} /><button type="submit" style={btn}>Save</button></form>}
-                <a href={`${SITE}/v/${p.slug}`} target="_blank" rel="noreferrer" style={btn}>Open their page &#8599;</a>
+                <a href={`${SITE}/v/${p.slug}?preview=1`} target="_blank" rel="noreferrer" style={btn}>Open their page &#8599;</a>
                 <CopyButton text={`${SITE}/v/${p.slug}`} label="Copy link" />
                 {p.dm_text && <CopyButton text={p.dm_text} label="Copy LinkedIn note" />}
                 {(p.founders || [])[0]?.linkedin && <a href={p.founders[0].linkedin} target="_blank" rel="noreferrer" style={btn}>Founder LinkedIn &#8599;</a>}

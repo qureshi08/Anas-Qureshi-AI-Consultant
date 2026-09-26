@@ -23,13 +23,14 @@ export async function generateMetadata({ params }) {
   };
 }
 
-export default async function PitchVideo({ params }) {
+export default async function PitchVideo({ params, searchParams }) {
   const admin = createAdminClient();
   const { data: p } = await admin.from('video_pitches').select('id, company, website, video_url, poster_url, contact_name, status, views, first_viewed_at').eq('slug', params.slug).maybeSingle();
   if (!p || !p.video_url) notFound();
 
   const ua = headers().get('user-agent') || '';
-  if (!BOT.test(ua)) {
+  // ?preview=1 is how /admin opens the page: Anas checking it must not look like the founder watching.
+  if (!BOT.test(ua) && searchParams?.preview !== '1') {
     const now = new Date().toISOString();
     await admin.from('video_pitches').update({
       views: (p.views || 0) + 1,
