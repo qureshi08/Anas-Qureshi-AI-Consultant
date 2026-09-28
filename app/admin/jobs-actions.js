@@ -7,8 +7,8 @@ import { fetchAndStoreJobs, purgeOffTarget } from '../../lib/jobs/fetcher';
 import { fetchAndStoreTraining } from '../../lib/jobs/trainingFetcher';
 import { fetchAndStoreStartups } from '../../lib/jobs/startupFetcher';
 import { draftForJobSafe } from '../../lib/jobs/drafter';
-import { findContactEmail } from '../../lib/jobs/contactFinder';
-import { sendJobEmail } from '../../lib/jobs/mailSender';
+import { findContactEmail, WRONG_LOCAL } from '../../lib/jobs/contactFinder';
+import { sendJobEmail, emailBodyFromCoverNote } from '../../lib/jobs/mailSender';
 import { buildResumePdf, resumeFileName } from '../../lib/jobs/resumePdf';
 
 async function requireUser() {
@@ -119,6 +119,18 @@ export async function sendEmailNow(formData) {
     }
   }
 
+  // Rows found before WRONG_LOCAL existed can still hold a press or legal inbox. Block those
+  // the same way as a wrong domain: noted on the row, not sent.
+  if (WRONG_LOCAL.test(job.contact_email.split('@')[0])) {
+    await admin.from('job_leads').update({
+      notes: [job.notes, `[${stamp}] SEND BLOCKED: ${job.contact_email} is a press, legal or billing inbox, not one that reads applications. Paste a careers, HR or hiring manager address instead.`].filter(Boolean).join('\n'),
+      updated_at: new Date().toISOString(),
+    }).eq('id', id);
+    revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/all'); revalidatePath('/admin/jobs/startups');
+    revalidatePath(`/admin/jobs/${id}`);
+    return;
+  }
+
   const subject = job.email_subject || (job.lane === 'Startups' ? `Quick idea for ${job.company}` : `Application: ${job.title}`);
   // Job applications carry the tailored resume PDF (the email says "Resume attached.").
   // Startups pitches are not applications and go without it.
@@ -129,7 +141,8 @@ export async function sendEmailNow(formData) {
       attachment = { filename: resumeFileName(job), content: Buffer.from(bytes), mimeType: 'application/pdf' };
     } catch { /* a resume build failure should not block the email */ }
   }
-  const result = await sendJobEmail({ to: job.contact_email, subject, body: job.email_body || '', attachment });
+  const body = job.email_body || emailBodyFromCoverNote(job.cover_note, { resumeAttached: !!attachment });
+  const result = await sendJobEmail({ to: job.contact_email, subject, body, attachment });
 
   if (result.success) {
     await admin.from('job_leads').update({
