@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { createAdminClient } from '../../lib/supabase/admin';
 import { getAdminUser } from '../../lib/requireAdmin';
-import { fetchAndStoreJobs, purgeOffTarget } from '../../lib/jobs/fetcher';
+import { fetchAndStoreJobs, purgeOffTarget, purgeNonGulf } from '../../lib/jobs/fetcher';
 import { fetchAndStoreTraining } from '../../lib/jobs/trainingFetcher';
 import { fetchAndStoreStartups } from '../../lib/jobs/startupFetcher';
 import { draftForJobSafe } from '../../lib/jobs/drafter';
@@ -25,7 +25,7 @@ export async function refreshJobs(formData) {
   try {
     if (lane === 'Training') await fetchAndStoreTraining({ budgetMs: 45000 });
     else if (lane === 'Startups') await fetchAndStoreStartups({ budgetMs: 45000 });
-    else { await purgeOffTarget(); await fetchAndStoreJobs({ days: 3, budgetMs: 45000 }); }
+    else { await purgeOffTarget(); await purgeNonGulf(); await fetchAndStoreJobs({ days: 3, budgetMs: 45000 }); }
   } catch { /* keep the page alive; the counts just do not change */ }
   revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/all'); revalidatePath('/admin/jobs/training'); revalidatePath('/admin/jobs/startups');
 }

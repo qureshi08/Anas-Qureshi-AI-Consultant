@@ -3,7 +3,7 @@
  * button on /admin/jobs. Fills job_leads with fresh postings; never touches existing rows.
  */
 import { NextResponse } from 'next/server';
-import { fetchAndStoreJobs, expireOldJobs, purgeOffTarget } from '../../../../lib/jobs/fetcher';
+import { fetchAndStoreJobs, expireOldJobs, purgeOffTarget, purgeNonGulf } from '../../../../lib/jobs/fetcher';
 import { fetchAndStoreTraining } from '../../../../lib/jobs/trainingFetcher';
 import { fetchAndStoreStartups } from '../../../../lib/jobs/startupFetcher';
 import { createAdminClient } from '../../../../lib/supabase/admin';
@@ -43,6 +43,7 @@ export async function GET(request) {
     const toDraft = params.has('draft') ? Number(params.get('draft')) : 60;
     const aged = await expireOldJobs();
     const purged = await purgeOffTarget();
+    const purgedGulf = await purgeNonGulf();
     const result = await fetchAndStoreJobs({ days, budgetMs: 80000 });
     let training = {};
     try { training = { training: await fetchAndStoreTraining({ budgetMs: 15000 }) }; } catch (e) { training = { training: { ok: false, message: e.message } }; }
@@ -51,7 +52,7 @@ export async function GET(request) {
     const drafts = toDraft > 0 ? await draftTop(toDraft, Date.now() + 120000) : {};
     const trainDrafts = {};
     const startupDrafts = toDraft > 0 ? await draftTop(6, Date.now() + 20000, 'Startups') : {};
-    return NextResponse.json({ ...result, ...aged, ...purged, ...drafts, ...training, ...startups, trainingDrafted: trainDrafts.drafted, startupsDrafted: startupDrafts.drafted });
+    return NextResponse.json({ ...result, ...aged, ...purged, ...purgedGulf, ...drafts, ...training, ...startups, trainingDrafted: trainDrafts.drafted, startupsDrafted: startupDrafts.drafted });
   } catch (err) {
     return NextResponse.json({ ok: false, message: err.message }, { status: 500 });
   }
