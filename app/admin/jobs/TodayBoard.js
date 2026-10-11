@@ -9,7 +9,7 @@ import { markApplied, setStatus, sendEmailNow, findContact, prepareMoreAction, f
  * so this page is a list, not one card at a time: every ready application on one screen, each
  * with its whole kit. Email applications go out with one click (tailored resume attached);
  * portal applications are open, upload, paste, press Applied.
- * The one-at-a-time flow still runs the Training and Startups lanes (JobsQueue.js).
+ * The one-at-a-time flow still runs the Training lane (JobsQueue.js); Startups has its own list board (StartupBoard.js).
  */
 const card = { border: '2px solid var(--ink)', borderRadius: 10, padding: '10px 12px', marginBottom: 10, background: 'var(--paper)' };
 const btn = { fontSize: 12, fontWeight: 700, padding: '7px 12px', border: '2px solid var(--ink)', borderRadius: 7, background: 'var(--paper)', color: 'var(--ink)', textDecoration: 'none', cursor: 'pointer', display: 'inline-block' };
@@ -45,7 +45,7 @@ export default async function TodayBoard() {
           {ready.length} ready &middot; {withEmail} by email &middot; {waiting} still to write
         </span>
         <div style={{ display: 'flex', gap: 10, marginLeft: 'auto' }}>
-          <a href="/admin/jobs/startups" className="mono" style={{ fontSize: 11, color: 'var(--brick)' }}>Founder pitches &rarr;</a>
+          <a href="/admin/jobs/startups" className="mono" style={{ fontSize: 11, color: 'var(--brick)' }}>Startup roles via founders &rarr;</a>
           <a href="/admin/jobs/all" className="mono" style={{ fontSize: 11, color: 'var(--ink3)' }}>All jobs and settings &rarr;</a>
         </div>
       </div>

@@ -27,7 +27,7 @@ export async function refreshJobs(formData) {
     else if (lane === 'Startups') { await fetchAndStoreHnStartups({ budgetMs: 15000 }); await fetchAndStoreStartups({ budgetMs: 35000 }); }
     else { await purgeOffTarget(); await purgeNonGulf(); await fetchAndStoreJobs({ days: 3, budgetMs: 45000 }); }
   } catch { /* keep the page alive; the counts just do not change */ }
-  revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/all'); revalidatePath('/admin/jobs/training'); revalidatePath('/admin/jobs/startups');
+  revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/startups'); revalidatePath('/admin/jobs/all'); revalidatePath('/admin/jobs/training'); revalidatePath('/admin/jobs/startups');
 }
 
 export async function draftJob(formData) {
@@ -35,7 +35,7 @@ export async function draftJob(formData) {
   const id = formData.get('id');
   if (!id) return;
   await draftForJobSafe(id);
-  revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/all');
+  revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/startups'); revalidatePath('/admin/jobs/all');
   revalidatePath(`/admin/jobs/${id}`);
 }
 
@@ -51,7 +51,7 @@ export async function draftBatch(formData) {
   for (const row of data || []) {
     await draftForJobSafe(row.id);
   }
-  revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/all');
+  revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/startups'); revalidatePath('/admin/jobs/all');
 }
 
 export async function updateJob(formData) {
@@ -67,7 +67,7 @@ export async function updateJob(formData) {
     next_followup: formData.get('next_followup') || null,
     updated_at: new Date().toISOString(),
   }).eq('id', id);
-  revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/all');
+  revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/startups'); revalidatePath('/admin/jobs/all');
   revalidatePath(`/admin/jobs/${id}`);
 }
 
@@ -79,7 +79,7 @@ export async function markApplied(formData) {
   await admin.from('job_leads').update({
     status: 'applied', applied_at: new Date().toISOString(), next_followup: plusDays(5), updated_at: new Date().toISOString(),
   }).eq('id', id);
-  revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/all');
+  revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/startups'); revalidatePath('/admin/jobs/all');
   revalidatePath(`/admin/jobs/${id}`);
 }
 
@@ -157,7 +157,7 @@ export async function sendEmailNow(formData) {
       updated_at: new Date().toISOString(),
     }).eq('id', id);
   }
-  revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/all'); revalidatePath('/admin/jobs/training'); revalidatePath('/admin/jobs/startups');
+  revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/startups'); revalidatePath('/admin/jobs/all'); revalidatePath('/admin/jobs/training'); revalidatePath('/admin/jobs/startups');
   revalidatePath(`/admin/jobs/${id}`);
 }
 
@@ -171,7 +171,7 @@ export async function setStatus(formData) {
   if (status === 'applied') { patch.applied_at = new Date().toISOString(); patch.next_followup = plusDays(5); }
   if (['rejected', 'skipped', 'offer'].includes(status)) patch.next_followup = null;
   await admin.from('job_leads').update(patch).eq('id', id);
-  revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/all');
+  revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/startups'); revalidatePath('/admin/jobs/all');
 }
 
 /**
@@ -189,7 +189,7 @@ export async function advanceJob(formData) {
     await admin.from('job_leads').update({ status: 'skipped', next_followup: null, updated_at: new Date().toISOString() }).eq('id', id);
   }
   await prepareCurrent(3, formData.get('lane') || '');
-  revalidatePath('/admin/jobs');
+  revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/startups');
   revalidatePath('/admin/jobs/training');
   revalidatePath('/admin/jobs/startups');
   revalidatePath('/admin/jobs/all');
@@ -229,7 +229,7 @@ export async function findContact(formData) {
   const id = formData.get('id');
   if (!id) return;
   await findContactFor(id);
-  revalidatePath('/admin/jobs');
+  revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/startups');
   revalidatePath(`/admin/jobs/${id}`);
 }
 
@@ -270,28 +270,35 @@ async function pool(items, n, fn) {
  * The 50 a day board: write the next 10 applications at once, 3 in parallel, so a full day's
  * list is ready in a few presses (the daily cron also writes a batch before 8am PKT).
  */
-export async function prepareMoreAction() {
+export async function prepareMoreAction(formData) {
   await requireUser();
+  const lane = formData && formData.get ? formData.get('lane') : null;
   const admin = createAdminClient();
-  const { data } = await admin.from('job_leads').select('id')
+  let q = admin.from('job_leads').select('id')
     .in('status', ['new', 'shortlisted']).is('cover_note', null)
-    .not('lane', 'in', '(Training,Startups)')
     .order('score', { ascending: false }).limit(10);
+  q = lane === 'Startups' ? q.eq('lane', 'Startups') : q.not('lane', 'in', '(Training,Startups)');
+  const { data } = await q;
   await pool(data || [], 3, row => draftForJobSafe(row.id));
-  revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/all');
+  revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/all'); revalidatePath('/admin/jobs/startups');
 }
 
 /** Look for published addresses on the next 10 ready jobs that have none yet, 5 at a time. */
-export async function findEmailsBatchAction() {
+export async function findEmailsBatchAction(formData) {
   await requireUser();
+  const lane = formData && formData.get ? formData.get('lane') : null;
   const admin = createAdminClient();
-  const { data } = await admin.from('job_leads').select('id, notes')
-    .eq('status', 'shortlisted').not('cover_note', 'is', null).is('contact_email', null)
-    .not('lane', 'in', '(Training,Startups)')
+  // Startups rows are worth a search before they are written too: the founder email decides
+  // whether the role is a one click send.
+  let q = admin.from('job_leads').select('id, notes').is('contact_email', null)
     .order('score', { ascending: false }).limit(40);
+  q = lane === 'Startups'
+    ? q.eq('lane', 'Startups').in('status', ['new', 'shortlisted'])
+    : q.eq('status', 'shortlisted').not('cover_note', 'is', null).not('lane', 'in', '(Training,Startups)');
+  const { data } = await q;
   const todo = (data || []).filter(j => !/email found|no email found|email search failed/.test(j.notes || '')).slice(0, 10);
   await pool(todo, 5, j => findContactFor(j.id).catch(() => {}));
-  revalidatePath('/admin/jobs');
+  revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/startups');
 }
 
 /** Anas pastes an address he found himself. */
@@ -302,7 +309,7 @@ export async function saveContactEmail(formData) {
   if (!id) return;
   const admin = createAdminClient();
   await admin.from('job_leads').update({ contact_email: email || null, updated_at: new Date().toISOString() }).eq('id', id);
-  revalidatePath('/admin/jobs');
+  revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/startups');
   revalidatePath(`/admin/jobs/${id}`);
 }
 
@@ -312,7 +319,7 @@ export async function saveSettings(formData) {
   const keys = ['notice_period', 'relocate_gulf', 'relocate_pk', 'salary_usd', 'salary_pkr', 'salary_gulf', 'daily_goal'];
   const rows = keys.map(k => ({ key: k, value: (formData.get(k) || '').toString().trim(), updated_at: new Date().toISOString() }));
   await admin.from('job_settings').upsert(rows, { onConflict: 'key' });
-  revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/all');
+  revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/startups'); revalidatePath('/admin/jobs/all');
 }
 
 export async function addJobByUrl(formData) {
@@ -332,7 +339,7 @@ export async function addJobByUrl(formData) {
     id = data?.id;
   }
   if (id) await draftForJobSafe(id);
-  revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/all');
+  revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/startups'); revalidatePath('/admin/jobs/all');
 }
 
 /**

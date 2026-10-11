@@ -8,7 +8,7 @@ import { usePathname } from 'next/navigation';
 const TABS = [
   { href: '/admin/jobs', label: 'Jobs' },
   { href: '/admin/pitches', label: 'Founder videos' },
-  { href: '/admin/jobs/startups', label: 'Startup pitches' },
+  { href: '/admin/jobs/startups', label: 'Startup roles' },
   { href: '/admin/inbound', label: 'Inbound' },
   { href: '/admin/chats', label: 'AI chats' },
   { href: '/admin/calls', label: 'Call requests' },

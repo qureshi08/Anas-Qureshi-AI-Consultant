@@ -29,7 +29,7 @@ function gmailCompose(to, subject, body) {
 const LANE_NAV = {
   '': { label: 'Applied today', jobsWord: 'jobs', other: [['Training', '/admin/jobs/training', 'AI training work'], ['Startups', '/admin/jobs/startups', 'Startup roles via founders']] },
   Training: { label: 'AI training applied today', jobsWord: 'training listings', other: [['', '/admin/jobs', 'Back to job applications'], ['Startups', '/admin/jobs/startups', 'Startup roles via founders']] },
-  Startups: { label: 'Founder applications sent today', jobsWord: 'startup roles waiting', other: [['', '/admin/jobs', 'Back to job applications'], ['Training', '/admin/jobs/training', 'AI training work']] },
+  Startups: { label: 'Founder applications sent today', jobsWord: 'startup roles', other: [['', '/admin/jobs', 'Back to job applications'], ['Training', '/admin/jobs/training', 'AI training work']] },
 };
 
 export default async function JobsQueue({ lane = '' }) {
@@ -45,7 +45,7 @@ export default async function JobsQueue({ lane = '' }) {
     .filter(j => j.status === 'new' || j.status === 'shortlisted')
     .sort((a, b) => (b.score - ageDays(b) / 3) - (a.score - ageDays(a) / 3));
   const job = queue[0];
-  const goal = lane === 'Training' ? 4 : lane === 'Startups' ? 3 : 10;
+  const goal = lane === 'Training' ? 4 : 10;
   const laneField = <input type="hidden" name="lane" value={lane} />;
   const nav = LANE_NAV[lane] || LANE_NAV[''];
   const failedLine = job && !job.cover_note && job.notes ? (job.notes.split('\n').reverse().find(l => l.includes('DRAFT FAILED')) || '') : '';
