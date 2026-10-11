@@ -1,6 +1,6 @@
 import { createAdminClient } from '../../../lib/supabase/admin';
 import CopyButton from '../../components/CopyButton';
-import { advanceJob, prepareCurrentAction, prepareBatchAction, refreshJobs, findContact, saveContactEmail, sendEmailNow } from '../jobs-actions';
+import { advanceJob, prepareCurrentAction, prepareBatchAction, refreshJobs, findContact, saveContactEmail, sendEmailNow, addStartupRole } from '../jobs-actions';
 
 /**
  * ONE JOB AT A TIME. This page shows the next job to apply to and nothing else: four steps,
@@ -27,9 +27,9 @@ function gmailCompose(to, subject, body) {
 }
 
 const LANE_NAV = {
-  '': { label: 'Applied today', jobsWord: 'jobs', other: [['Training', '/admin/jobs/training', 'AI training work'], ['Startups', '/admin/jobs/startups', 'Startup pitches']] },
-  Training: { label: 'AI training applied today', jobsWord: 'training listings', other: [['', '/admin/jobs', 'Back to job applications'], ['Startups', '/admin/jobs/startups', 'Startup pitches']] },
-  Startups: { label: 'Startup pitches sent today', jobsWord: 'startups to pitch', other: [['', '/admin/jobs', 'Back to job applications'], ['Training', '/admin/jobs/training', 'AI training work']] },
+  '': { label: 'Applied today', jobsWord: 'jobs', other: [['Training', '/admin/jobs/training', 'AI training work'], ['Startups', '/admin/jobs/startups', 'Startup roles via founders']] },
+  Training: { label: 'AI training applied today', jobsWord: 'training listings', other: [['', '/admin/jobs', 'Back to job applications'], ['Startups', '/admin/jobs/startups', 'Startup roles via founders']] },
+  Startups: { label: 'Founder applications sent today', jobsWord: 'startup roles waiting', other: [['', '/admin/jobs', 'Back to job applications'], ['Training', '/admin/jobs/training', 'AI training work']] },
 };
 
 export default async function JobsQueue({ lane = '' }) {
@@ -67,9 +67,26 @@ export default async function JobsQueue({ lane = '' }) {
       </div>
       <p style={{ fontSize: 14, color: 'var(--ink3)', marginBottom: 18 }}>
         {lane === 'Startups'
-          ? 'One company at a time. Read what they do, email the founder, send a connection request too, press the green button, the next one appears.'
+          ? 'One startup role at a time. Check the role is still open, email the founder with the tailored resume attached, send a connection request too, press the green button, the next one appears.'
           : 'One job at a time. Apply, email a person there, send a connection request too, press the green button, the next job appears.'}
       </p>
+
+      {lane === 'Startups' && (
+        <details style={{ ...step, padding: '10px 14px' }}>
+          <summary style={{ cursor: 'pointer', fontSize: 14 }}><strong>Found a startup role yourself?</strong> Paste it here (Wellfound, LinkedIn, X, a VC job board, a founder's post). It gets a tailored resume, cover letter and founder email right away.</summary>
+          <form action={addStartupRole} style={{ display: 'grid', gap: 8, marginTop: 10, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+            <input name="url" type="url" required placeholder="Link to the posting (required)" style={{ fontSize: 13, padding: '8px 10px' }} />
+            <input name="company" placeholder="Company" style={{ fontSize: 13, padding: '8px 10px' }} />
+            <input name="role" placeholder="Role, as they wrote it" style={{ fontSize: 13, padding: '8px 10px' }} />
+            <input name="location" placeholder="Location (Remote, Dubai, SF onsite)" style={{ fontSize: 13, padding: '8px 10px' }} />
+            <input name="founder" placeholder="Founder's name (if known)" style={{ fontSize: 13, padding: '8px 10px' }} />
+            <input name="email" type="email" placeholder="Founder's email (if known)" style={{ fontSize: 13, padding: '8px 10px' }} />
+            <input name="linkedin" type="url" placeholder="Founder's LinkedIn (if known)" style={{ fontSize: 13, padding: '8px 10px' }} />
+            <textarea name="text" rows={4} placeholder="Paste the posting text too if the page needs a login (LinkedIn, Wellfound often do)" style={{ fontSize: 13, padding: '8px 10px', gridColumn: '1 / -1' }} />
+            <button className="btn" type="submit" style={{ justifySelf: 'start' }}>Add and write it (about 15 seconds)</button>
+          </form>
+        </details>
+      )}
 
       {!job && (
         <div style={{ ...step, textAlign: 'center', padding: '30px 20px' }}>
@@ -119,11 +136,17 @@ export default async function JobsQueue({ lane = '' }) {
               </div>
             )}
             {job.notes && <div style={{ fontSize: 13, color: 'var(--ink3)', marginTop: 8, whiteSpace: 'pre-wrap' }}>{job.notes.split('\n')[0]}</div>}
+            {lane === 'Startups' && job.notes && job.notes.includes('\n') && (
+              <details style={{ marginTop: 6 }}>
+                <summary className="mono" style={{ fontSize: 11, cursor: 'pointer', color: 'var(--ink3)' }}>Fit check, source and other founders or emails to try</summary>
+                <div style={{ fontSize: 12, color: 'var(--ink3)', whiteSpace: 'pre-wrap', marginTop: 4 }}>{job.notes.split('\n').slice(1).join('\n')}</div>
+              </details>
+            )}
           </div>
 
           <div style={step}>
-            <div style={{ fontSize: 15, marginBottom: 10 }}><span style={stepNum}>1</span><strong>{lane === 'Training' ? 'Open the listing or sign up page.' : lane === 'Startups' ? 'Open their YC page, skim what they actually do.' : 'Open the job and start the application.'}</strong></div>
-            <a href={job.url} target="_blank" rel="noreferrer" style={bigLink}>{lane === 'Startups' ? 'Open the company page' : 'Open the job page'} &#8599;</a>
+            <div style={{ fontSize: 15, marginBottom: 10 }}><span style={stepNum}>1</span><strong>{lane === 'Training' ? 'Open the listing or sign up page.' : lane === 'Startups' ? 'Open the role, check it is still open and skim what they build.' : 'Open the job and start the application.'}</strong></div>
+            <a href={job.url} target="_blank" rel="noreferrer" style={bigLink}>{lane === 'Startups' ? (job.source === 'hn_startup' ? 'Open the founder post' : 'Open the role') : 'Open the job page'} &#8599;</a>
           </div>
 
           <div style={step}>
@@ -135,10 +158,10 @@ export default async function JobsQueue({ lane = '' }) {
           </div>
 
           <div style={step}>
-            <div style={{ fontSize: 15, marginBottom: 8 }}><span style={stepNum}>3</span><strong>{lane === 'Training' ? 'Paste this as your proposal or application answer.' : lane === 'Startups' ? 'Your pitch script. Read it, then use steps 4 and 5 to actually send it.' : 'Paste this where the form asks why you are applying.'}</strong></div>
+            <div style={{ fontSize: 15, marginBottom: 8 }}><span style={stepNum}>3</span><strong>{lane === 'Training' ? 'Paste this as your proposal or application answer.' : lane === 'Startups' ? 'Your cover letter for this role. Read it; paste it if the founder points you to a form.' : 'Paste this where the form asks why you are applying.'}</strong></div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
               <CopyButton text={job.cover_note} label="Copy this text" />
-              <span className="mono" style={{ fontSize: 10, color: 'var(--ink3)' }}>{lane === 'Startups' ? 'pitch script' : 'cover letter'}</span>
+              <span className="mono" style={{ fontSize: 10, color: 'var(--ink3)' }}>cover letter</span>
             </div>
             <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.5, fontSize: 14, background: 'rgba(26,18,5,0.03)', padding: '10px 12px', borderRadius: 8 }}>{job.cover_note}</div>
             {job.answers && (
@@ -164,7 +187,7 @@ export default async function JobsQueue({ lane = '' }) {
           {lane !== 'Training' && (
             <>
           <div style={step}>
-            <div style={{ fontSize: 15, marginBottom: 8 }}><span style={stepNum}>4</span><strong>{lane === 'Startups' ? 'Email the founder.' : 'Email them.'}</strong> {lane === 'Startups' ? 'This is the actual pitch, the part that matters.' : 'A real second touch, and it takes 20 seconds.'}</div>
+            <div style={{ fontSize: 15, marginBottom: 8 }}><span style={stepNum}>4</span><strong>{lane === 'Startups' ? 'Email the founder.' : 'Email them.'}</strong> {lane === 'Startups' ? 'This is the application itself, the tailored resume goes attached.' : 'A real second touch, and it takes 20 seconds.'}</div>
             {job.contact_email ? (
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 8 }}>
                 <form action={sendEmailNow}>
@@ -173,7 +196,7 @@ export default async function JobsQueue({ lane = '' }) {
                     Send email now &rarr;
                   </button>
                 </form>
-                <a href={gmailCompose(job.contact_email, job.email_subject || (lane === 'Startups' ? `Quick idea for ${job.company}` : `Application: ${job.title}`), job.email_body)} target="_blank" rel="noreferrer" style={plainLink}>
+                <a href={gmailCompose(job.contact_email, job.email_subject || `Application: ${job.title}`, job.email_body)} target="_blank" rel="noreferrer" style={plainLink}>
                   Or open in Gmail to edit first &#8599;
                 </a>
                 <CopyButton text={job.contact_email} label="Copy address" />

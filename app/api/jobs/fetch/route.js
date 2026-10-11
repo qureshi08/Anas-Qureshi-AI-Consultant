@@ -5,7 +5,7 @@
 import { NextResponse } from 'next/server';
 import { fetchAndStoreJobs, expireOldJobs, purgeOffTarget, purgeNonGulf } from '../../../../lib/jobs/fetcher';
 import { fetchAndStoreTraining } from '../../../../lib/jobs/trainingFetcher';
-import { fetchAndStoreStartups } from '../../../../lib/jobs/startupFetcher';
+import { fetchAndStoreStartups, fetchAndStoreHnStartups } from '../../../../lib/jobs/startupFetcher';
 import { createAdminClient } from '../../../../lib/supabase/admin';
 import { draftForJobSafe } from '../../../../lib/jobs/drafter';
 
@@ -48,10 +48,11 @@ export async function GET(request) {
     let training = {};
     try { training = { training: await fetchAndStoreTraining({ budgetMs: 15000 }) }; } catch (e) { training = { training: { ok: false, message: e.message } }; }
     let startups = {};
-    try { startups = { startups: await fetchAndStoreStartups({ budgetMs: 40000 }) }; } catch (e) { startups = { startups: { ok: false, message: e.message } }; }
+    try { startups = { startups: await fetchAndStoreStartups({ budgetMs: 30000 }) }; } catch (e) { startups = { startups: { ok: false, message: e.message } }; }
+    try { startups.hnStartups = await fetchAndStoreHnStartups({ budgetMs: 15000 }); } catch (e) { startups.hnStartups = { ok: false, message: e.message }; }
     const drafts = toDraft > 0 ? await draftTop(toDraft, Date.now() + 120000) : {};
     const trainDrafts = {};
-    const startupDrafts = toDraft > 0 ? await draftTop(6, Date.now() + 20000, 'Startups') : {};
+    const startupDrafts = toDraft > 0 ? await draftTop(8, Date.now() + 25000, 'Startups') : {};
     return NextResponse.json({ ...result, ...aged, ...purged, ...purgedGulf, ...drafts, ...training, ...startups, trainingDrafted: trainDrafts.drafted, startupsDrafted: startupDrafts.drafted });
   } catch (err) {
     return NextResponse.json({ ok: false, message: err.message }, { status: 500 });

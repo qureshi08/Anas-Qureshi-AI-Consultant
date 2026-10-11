@@ -1,5 +1,5 @@
 import { createAdminClient } from '../../../../../lib/supabase/admin';
-import { CONTACT, HEADLINES, SKILLS, EXPERIENCE, EDUCATION, projectById, DEFAULT_ORDER } from '../../../../../lib/jobs/resumeData';
+import { CONTACT, HEADLINES, SKILLS, EXPERIENCE, EDUCATION, projectById, DEFAULT_ORDER, DEFAULT_SUMMARY } from '../../../../../lib/jobs/resumeData';
 import PrintButton from '../../../../components/PrintButton';
 
 export const dynamic = 'force-dynamic';
@@ -19,7 +19,7 @@ export default async function TailoredResume({ params }) {
   const order = Array.isArray(plan.project_order) && plan.project_order.length ? plan.project_order : DEFAULT_ORDER[variant];
   const projects = order.map(projectById).filter(Boolean).slice(0, 6);
   const lead = Array.isArray(plan.skills_lead) ? plan.skills_lead : [];
-  const summary = plan.summary || 'AI Consultant at Convergent Business Technologies since 2024, building automation and AI systems that remove manual work from finance, compliance and recruiting workflows using Python, SQL, n8n and LLMs. Shipped a production recruitment portal on Next.js and Supabase, and an LLM assisted SKU mapping pipeline that cut mapping time from 80 minutes to 40 seconds per 100 SKUs.';
+  const summary = plan.summary || DEFAULT_SUMMARY;
 
   // Leading skills first, then the rest of each group, nothing invented.
   const groups = Object.entries(SKILLS).map(([g, items]) => {
@@ -51,7 +51,7 @@ export default async function TailoredResume({ params }) {
 
       <div className="sheet">
         <h1>{CONTACT.name}</h1>
-        <div style={{ fontWeight: 600, marginBottom: 3 }}>{HEADLINES[variant]}</div>
+        <div style={{ fontWeight: 600, marginBottom: 3 }}>{plan.headline || HEADLINES[variant]}</div>
         <div className="muted" style={{ fontSize: '9.5pt' }}>
           {CONTACT.email} | {CONTACT.phone} | {CONTACT.linkedin} | {CONTACT.site} | {CONTACT.location}
         </div>

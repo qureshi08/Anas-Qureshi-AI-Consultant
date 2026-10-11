@@ -5,8 +5,8 @@ import { createAdminClient } from '../../lib/supabase/admin';
 import { getAdminUser } from '../../lib/requireAdmin';
 import { fetchAndStoreJobs, purgeOffTarget, purgeNonGulf } from '../../lib/jobs/fetcher';
 import { fetchAndStoreTraining } from '../../lib/jobs/trainingFetcher';
-import { fetchAndStoreStartups } from '../../lib/jobs/startupFetcher';
-import { draftForJobSafe } from '../../lib/jobs/drafter';
+import { fetchAndStoreStartups, fetchAndStoreHnStartups } from '../../lib/jobs/startupFetcher';
+import { draftForJobSafe, fetchPostingText } from '../../lib/jobs/drafter';
 import { findContactEmail, WRONG_LOCAL } from '../../lib/jobs/contactFinder';
 import { sendJobEmail, emailBodyFromCoverNote } from '../../lib/jobs/mailSender';
 import { buildResumePdf, resumeFileName } from '../../lib/jobs/resumePdf';
@@ -24,7 +24,7 @@ export async function refreshJobs(formData) {
   const lane = formData && formData.get && formData.get('lane');
   try {
     if (lane === 'Training') await fetchAndStoreTraining({ budgetMs: 45000 });
-    else if (lane === 'Startups') await fetchAndStoreStartups({ budgetMs: 45000 });
+    else if (lane === 'Startups') { await fetchAndStoreHnStartups({ budgetMs: 15000 }); await fetchAndStoreStartups({ budgetMs: 35000 }); }
     else { await purgeOffTarget(); await purgeNonGulf(); await fetchAndStoreJobs({ days: 3, budgetMs: 45000 }); }
   } catch { /* keep the page alive; the counts just do not change */ }
   revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/all'); revalidatePath('/admin/jobs/training'); revalidatePath('/admin/jobs/startups');
@@ -100,12 +100,14 @@ export async function sendEmailNow(formData) {
 
   const stamp = new Date().toISOString().slice(0, 16).replace('T', ' ');
 
-  // For Startups rows, job.key is the company's real website (from Y Combinator's own data).
+  // For Startups rows, job.key is the company's real website (from Y Combinator's own data, or
+  // the domain of the address a Hacker News post or a hand added posting gave). Prefixed keys
+  // (yc:, hn:, manual:) mean no domain is known, so there is nothing to compare against.
   // If the address to send to is on a completely different domain, something went wrong
   // upstream (a real incident: an email-finder guess landed on an unrelated company's site and
   // handed back its contact address instead). Refuse to send rather than mail a stranger, the
   // same "wrong is worse than none" rule contactFinder.js already applies when finding one.
-  if (job.lane === 'Startups' && job.key && !job.key.startsWith('yc:')) {
+  if (job.lane === 'Startups' && job.key && !job.key.includes(':')) {
     const emailDomain = (job.contact_email.split('@')[1] || '').toLowerCase();
     const knownDomain = job.key.replace(/^www\./, '').toLowerCase();
     if (emailDomain && emailDomain !== knownDomain && !emailDomain.endsWith(`.${knownDomain}`)) {
@@ -131,16 +133,15 @@ export async function sendEmailNow(formData) {
     return;
   }
 
-  const subject = job.email_subject || (job.lane === 'Startups' ? `Quick idea for ${job.company}` : `Application: ${job.title}`);
-  // Job applications carry the tailored resume PDF (the email says "Resume attached.").
-  // Startups pitches are not applications and go without it.
+  const subject = job.email_subject || `Application: ${job.title.replace(/^.*? — hiring /, '')}`;
+  // Every email carries the tailored resume PDF (the email says "Resume attached."). Since
+  // 2026-10-11 that includes Startups rows: they are applications for a real role sent straight
+  // to the founder, no longer paid trial pitches.
   let attachment = null;
-  if (job.lane !== 'Startups') {
-    try {
-      const bytes = await buildResumePdf(job);
-      attachment = { filename: resumeFileName(job), content: Buffer.from(bytes), mimeType: 'application/pdf' };
-    } catch { /* a resume build failure should not block the email */ }
-  }
+  try {
+    const bytes = await buildResumePdf(job);
+    attachment = { filename: resumeFileName(job), content: Buffer.from(bytes), mimeType: 'application/pdf' };
+  } catch { /* a resume build failure should not block the email */ }
   const body = job.email_body || emailBodyFromCoverNote(job.cover_note, { resumeAttached: !!attachment });
   const result = await sendJobEmail({ to: job.contact_email, subject, body, attachment });
 
@@ -241,7 +242,7 @@ async function findContactFor(id) {
     // For Startups rows, job.key is the company's real website, read straight from Y
     // Combinator's own data when the row was created, not a guess. Skip the risky
     // search-by-company-name path entirely when we already have that ground truth.
-    const knownWebsite = job.lane === 'Startups' && job.key && !job.key.startsWith('yc:') ? job.key : undefined;
+    const knownWebsite = job.lane === 'Startups' && job.key && !job.key.includes(':') ? job.key : undefined;
     const { email, website, note, otherEmails } = await findContactEmail({ ...job, knownWebsite });
     patch.contact_email = email || null;
     const line = email
@@ -332,4 +333,51 @@ export async function addJobByUrl(formData) {
   }
   if (id) await draftForJobSafe(id);
   revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/all');
+}
+
+/**
+ * Any startup posting Anas finds himself (Wellfound, LinkedIn, X, a VC job board, a founder's
+ * post) goes into the Startups lane by pasting its link, with the founder's details if he has
+ * them. Added 2026-10-11 so "other startups, not just YC" has a way in that no scraper covers.
+ * The posting text is fetched and stored, then the row is drafted at once (tailored resume,
+ * cover letter, founder email, connection note), so it is the next card in the queue.
+ */
+export async function addStartupRole(formData) {
+  await requireUser();
+  const url = String(formData.get('url') || '').trim();
+  if (!/^https?:\/\//i.test(url)) return;
+  const company = String(formData.get('company') || '').trim().slice(0, 160);
+  const role = String(formData.get('role') || '').trim().slice(0, 140);
+  const founder = String(formData.get('founder') || '').trim().slice(0, 120) || null;
+  const email = String(formData.get('email') || '').trim().toLowerCase() || null;
+  const linkedin = String(formData.get('linkedin') || '').trim() || null;
+  const pasted = String(formData.get('text') || '').trim();
+  const admin = createAdminClient();
+
+  // Pasted text wins: LinkedIn and Wellfound often hide the posting from a logged out fetch.
+  let text = pasted;
+  let fetchNote = '';
+  if (text.length < 300) {
+    const r = await fetchPostingText(url);
+    if (r.text && r.text.length > text.length) text = r.text;
+    fetchNote = r.note || '';
+  }
+  let host = '';
+  try { host = new URL(url).hostname.replace(/^www\./, ''); } catch { /* checked above */ }
+  // Same rule as the HN rows: the key is the domain the send guard checks the address against,
+  // so take it from a company address, never from a job board's own domain.
+  const freeMail = /@(gmail|googlemail|yahoo|hotmail|outlook|proton|protonmail|icloud|hey)\./i;
+  const key = email && !freeMail.test(email) ? email.split('@')[1] : `manual:${url.slice(0, 180)}`;
+  const description = `Open role: ${role || 'see the posting below'} at ${company || host}. Posting found by Anas and added by hand.${fetchNote ? ` (Fetch note: ${fetchNote}.)` : ''}\n\nFULL ROLE REQUIREMENT (quote a real line from it):\n${text.slice(0, 5500) || '(no text could be read, work from the role and company name only and say so in fit_note)'}`;
+  const { data, error } = await admin.from('job_leads').upsert({
+    key, source: 'manual_startup', lane: 'Startups', status: 'new', score: 12,
+    title: `${company || host} — hiring ${role || 'see posting'}`.slice(0, 200),
+    company: (company || host).slice(0, 160), location: String(formData.get('location') || '').trim().slice(0, 160) || 'see posting',
+    url, posted_at: new Date().toISOString(), salary_label: 'unknown', shape: 'unknown',
+    description: description.slice(0, 6500),
+    contact_name: founder, contact_url: linkedin, contact_email: email, contact_role: 'Founder',
+    notes: `[${new Date().toISOString().slice(0, 10)}] Added by hand from ${host}`,
+  }, { onConflict: 'key' }).select('id').single();
+  if (!error && data) await draftForJobSafe(data.id);
+  revalidatePath('/admin/jobs/startups'); revalidatePath('/admin/jobs/all');
 }
