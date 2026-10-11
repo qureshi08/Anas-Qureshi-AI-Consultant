@@ -3,21 +3,20 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-// Menu relocked 2026-09-25: remote job first, then founder pitches (tech companies only).
-// Small-business outreach pages are hidden under Archive with all data kept.
+// Menu relocked 2026-10-11 (Anas: "simple, we have Gulf jobs, startup jobs, and freelance is the
+// third priority"). The three tracks of the 60-day lock in priority order, then Inboxes (the
+// Gmail connection the one click send depends on, reconnect weekly) and Archive. Founder videos,
+// Inbound, AI chats and Call requests moved under Archive; pages and data are kept.
 const TABS = [
-  { href: '/admin/jobs', label: 'Jobs' },
-  { href: '/admin/pitches', label: 'Founder videos' },
-  { href: '/admin/jobs/startups', label: 'Startup roles' },
-  { href: '/admin/inbound', label: 'Inbound' },
-  { href: '/admin/chats', label: 'AI chats' },
-  { href: '/admin/calls', label: 'Call requests' },
+  { href: '/admin/jobs', label: '1. Gulf jobs' },
+  { href: '/admin/jobs/startups', label: '2. Startup roles' },
+  { href: '/admin/freelance', label: '3. Freelance' },
   { href: '/admin/inboxes', label: 'Inboxes' },
   { href: '/admin/archive', label: 'Archive' },
 ];
 
 // Archived tools light up the Archive tab while one of them is open.
-const ARCHIVE_PATHS = ['/admin/archive', '/admin/overview', '/admin/outbound', '/admin/cold-email', '/admin/campaigns', '/admin/compose', '/admin/leads', '/admin/send', '/admin/validator', '/admin/whatsapp-cold', '/admin/playbook', '/admin/map'];
+const ARCHIVE_PATHS = ['/admin/archive', '/admin/pitches', '/admin/inbound', '/admin/chats', '/admin/calls', '/admin/overview', '/admin/outbound', '/admin/cold-email', '/admin/campaigns', '/admin/compose', '/admin/leads', '/admin/send', '/admin/validator', '/admin/whatsapp-cold', '/admin/playbook', '/admin/map'];
 
 export default function AdminNav() {
   const pathname = usePathname();
