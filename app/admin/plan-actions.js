@@ -1,0 +1,69 @@
+'use server';
+
+import { revalidatePath } from 'next/cache';
+import { createAdminClient } from '../../lib/supabase/admin';
+import { getAdminUser } from '../../lib/requireAdmin';
+
+// Track 1 referrals-first plan (2026-10-27). Writes for /admin/jobs/plan: companies get a
+// Want and Reach rating, contacts get one date per stage so the week can be counted.
+async function requireUser() {
+  if (!(await getAdminUser())) throw new Error('Unauthorized');
+}
+
+const today = () => new Date().toISOString().slice(0, 10);
+const STAGES = ['replied', 'call', 'referral', 'interview', 'offer'];
+const rating = v => (['1', '2', '3'].includes(v) ? Number(v) : null);
+const done = () => revalidatePath('/admin/jobs/plan');
+
+export async function rateCompany(formData) {
+  await requireUser();
+  const id = formData.get('id');
+  if (!id) return;
+  await createAdminClient().from('job_plan_companies')
+    .update({ want: rating(formData.get('want')), reach: rating(formData.get('reach')) }).eq('id', id);
+  done();
+}
+
+export async function addContact(formData) {
+  await requireUser();
+  const name = (formData.get('name') || '').trim();
+  if (!name) return;
+  await createAdminClient().from('job_plan_contacts').insert({
+    name,
+    company: formData.get('company') || null,
+    tie: formData.get('tie') || null,
+    link: (formData.get('link') || '').trim() || null,
+    contacted_on: today(),
+  });
+  done();
+}
+
+// Clicking a stage stamps today; clicking a stamped stage clears it (a misclick undo).
+export async function toggleStage(formData) {
+  await requireUser();
+  const id = formData.get('id');
+  const stage = formData.get('stage');
+  if (!id || !STAGES.includes(stage)) return;
+  const col = `${stage}_on`;
+  const admin = createAdminClient();
+  const { data } = await admin.from('job_plan_contacts').select(col).eq('id', id).single();
+  if (!data) return;
+  await admin.from('job_plan_contacts').update({ [col]: data[col] ? null : today() }).eq('id', id);
+  done();
+}
+
+export async function markFollowedUp(formData) {
+  await requireUser();
+  const id = formData.get('id');
+  if (!id) return;
+  await createAdminClient().from('job_plan_contacts').update({ followed_up_on: today() }).eq('id', id);
+  done();
+}
+
+export async function deleteContact(formData) {
+  await requireUser();
+  const id = formData.get('id');
+  if (!id) return;
+  await createAdminClient().from('job_plan_contacts').delete().eq('id', id);
+  done();
+}

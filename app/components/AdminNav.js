@@ -5,10 +5,12 @@ import { usePathname } from 'next/navigation';
 
 // Menu relocked 2026-10-11 (Anas: "simple, we have Gulf jobs, startup jobs, and freelance is the
 // third priority"). The three tracks of the 60-day lock in priority order, then Inboxes (the
-// Gmail connection the one click send depends on, reconnect weekly) and Archive. Founder videos,
+// Gmail connection the one click send depends on, reconnect weekly) and Archive. Since
+// 2026-10-27 the Gulf jobs tab opens the referrals-first plan page; the applications board
+// (/admin/jobs) is one link from it. Founder videos,
 // Inbound, AI chats and Call requests moved under Archive; pages and data are kept.
 const TABS = [
-  { href: '/admin/jobs', label: '1. Gulf jobs' },
+  { href: '/admin/jobs/plan', label: '1. Gulf jobs' },
   { href: '/admin/jobs/startups', label: '2. Startup roles' },
   { href: '/admin/freelance', label: '3. Freelance' },
   { href: '/admin/inboxes', label: 'Inboxes' },
@@ -25,7 +27,7 @@ export default function AdminNav() {
       {TABS.map(tab => {
         const active = tab.href === '/admin/archive'
           ? ARCHIVE_PATHS.some(p => pathname.startsWith(p))
-          : tab.href === '/admin/jobs'
+          : tab.href === '/admin/jobs/plan'
             ? pathname.startsWith('/admin/jobs') && !pathname.startsWith('/admin/jobs/startups')
             : pathname.startsWith(tab.href);
         return (
