@@ -10,6 +10,7 @@ import { usePathname } from 'next/navigation';
 // (/admin/jobs) is one link from it. Founder videos,
 // Inbound, AI chats and Call requests moved under Archive; pages and data are kept.
 const TABS = [
+  { href: '/admin/north-star', label: 'North Star' },
   { href: '/admin/jobs/plan', label: '1. Gulf jobs' },
   { href: '/admin/jobs/startups', label: '2. Startup roles' },
   { href: '/admin/freelance', label: '3. Freelance' },
