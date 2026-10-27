@@ -136,7 +136,7 @@ export default async function SendQueuePage({ searchParams }) {
       {list.length > 0 && (
         <>
           {currentList.length === 0 && (
-            <div className="card" style={{ marginBottom: 14, borderColor: 'var(--amber)', boxShadow: '4px 4px 0 var(--amber)' }}>
+            <div className="card" style={{ marginBottom: 14, borderColor: 'var(--amber)', boxShadow: 'var(--shadow)' }}>
               <div className="tag" style={{ color: 'var(--amber)' }}>No current-era campaign yet</div>
               <p style={{ fontSize: 14, color: 'var(--ink2)', marginTop: 6 }}>
                 Every campaign here predates the {PIVOT_2} ICP switch. The WhatsApp receptionist test needs its own campaign,{' '}
@@ -152,7 +152,7 @@ export default async function SendQueuePage({ searchParams }) {
                 className="mono"
                 style={{
                   fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', textDecoration: 'none',
-                  padding: '7px 14px', border: '2px solid var(--ink)', borderRadius: 6,
+                  padding: '7px 14px', border: '1px solid var(--line)', borderRadius: 6,
                   color: String(c.id) === String(campaignId) ? 'var(--paper)' : 'var(--ink)',
                   background: String(c.id) === String(campaignId) ? 'var(--ink)' : 'transparent',
                 }}
@@ -184,7 +184,7 @@ export default async function SendQueuePage({ searchParams }) {
             </div>
           )}
           {campaignArchived && (
-            <div className="card" style={{ marginBottom: 14, borderColor: 'var(--brick)', boxShadow: '4px 4px 0 var(--brick)' }}>
+            <div className="card" style={{ marginBottom: 14, borderColor: 'var(--brick)', boxShadow: 'var(--shadow)' }}>
               <div className="tag" style={{ color: 'var(--brick)' }}>Retired-era campaign</div>
               <p style={{ fontSize: 14, color: 'var(--ink2)', marginTop: 6 }}>
                 This campaign targets a retired ICP &mdash; recruiting/staffing (retired {PIVOT}) or marketing/digital
@@ -214,7 +214,7 @@ export default async function SendQueuePage({ searchParams }) {
           </div>
 
           {(noInbox || noTemplate) && (
-            <div className="card" style={{ marginBottom: 18, borderColor: 'var(--amber)', boxShadow: '4px 4px 0 var(--amber)' }}>
+            <div className="card" style={{ marginBottom: 18, borderColor: 'var(--amber)', boxShadow: 'var(--shadow)' }}>
               <div className="tag" style={{ color: 'var(--amber)' }}>Not ready to send</div>
               <ul style={{ fontSize: 14, color: 'var(--ink2)', marginTop: 8, paddingLeft: 18 }}>
                 {noInbox && <li>No sending inbox connected. <Link href="/admin/inboxes" style={{ color: 'var(--brick)' }}>Add one &rarr;</Link></li>}
@@ -300,7 +300,7 @@ export default async function SendQueuePage({ searchParams }) {
             <div className="card" style={{ padding: 0, overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
                 <thead>
-                  <tr className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--ink3)', textAlign: 'left', borderBottom: '2px solid var(--ink)' }}>
+                  <tr className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--ink3)', textAlign: 'left', borderBottom: '1px solid var(--line)' }}>
                     <th style={{ padding: '10px 12px' }}>Name</th>
                     <th style={{ padding: '10px 12px' }}>Email</th>
                     <th style={{ padding: '10px 12px' }}>Company</th>

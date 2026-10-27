@@ -148,7 +148,7 @@ export default function PlaybookFlow() {
       </div>
 
       <div style={{
-        overflowX: 'auto', border: '2.5px solid var(--ink)', borderRadius: 14, boxShadow: '5px 5px 0 var(--ink)',
+        overflowX: 'auto', border: '1px solid var(--line)', borderRadius: 14, boxShadow: 'var(--shadow)',
         background: 'var(--paper)',
         backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(26,18,5,0.05) 27px, rgba(26,18,5,0.05) 28px)',
       }}>

@@ -80,7 +80,7 @@ export default function MapView({ nodes, summary }) {
       {/* ---------- era switcher ---------- */}
       <div style={{
         display: 'flex', flexWrap: 'wrap', gap: 0, marginBottom: 20,
-        border: '2.5px solid var(--ink)', background: 'var(--paper)', boxShadow: '4px 4px 0 var(--ink)',
+        border: '1px solid var(--line)', background: 'var(--paper)', boxShadow: 'var(--shadow)',
       }}>
         {ERA_TABS.map((t, i) => {
           const active = summary.era === t.key;
@@ -116,7 +116,7 @@ export default function MapView({ nodes, summary }) {
       {/* ---------- headline ---------- */}
       <div style={{
         display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(146px, 1fr))',
-        border: '2.5px solid var(--ink)', background: 'var(--paper)', boxShadow: '4px 4px 0 var(--ink)', marginBottom: 20,
+        border: '1px solid var(--line)', background: 'var(--paper)', boxShadow: 'var(--shadow)', marginBottom: 20,
       }}>
         {[
           { k: 'Touches', v: summary.touches, n: `${summary.pTouched} DM · ${summary.eAttempted} email` },
@@ -135,7 +135,7 @@ export default function MapView({ nodes, summary }) {
       </div>
 
       {/* ---------- the lock rule ---------- */}
-      <div style={{ border: '2.5px solid var(--ink)', background: 'var(--paper2)', padding: '12px 16px', marginBottom: 20, boxShadow: '4px 4px 0 var(--ink)' }}>
+      <div style={{ border: '1px solid var(--line)', background: 'var(--paper2)', padding: '12px 16px', marginBottom: 20, boxShadow: 'var(--shadow)' }}>
         <div className="mono" style={{ fontSize: 9.5, letterSpacing: '.14em', color: 'var(--ink3)' }}>WHAT IS ALLOWED TO BE LOCKED</div>
         <p style={{ fontFamily: 'var(--font-body)', fontSize: 15, color: 'var(--ink2)', marginTop: 4 }}>
           A <b>system</b> locks when it runs correctly, because running is the whole job. A <b>strategy</b> never locks on
@@ -146,7 +146,7 @@ export default function MapView({ nodes, summary }) {
       </div>
 
       {/* ---------- map ---------- */}
-      <div style={{ border: '2.5px solid var(--ink)', background: 'var(--paper)', boxShadow: '5px 5px 0 var(--ink)', overflowX: 'auto' }}>
+      <div style={{ border: '1px solid var(--line)', background: 'var(--paper)', boxShadow: 'var(--shadow)', overflowX: 'auto' }}>
         <svg viewBox="0 0 1420 640" style={{ display: 'block', width: '100%', minWidth: 1040, height: 'auto' }}>
           <defs>
             <marker id="mk" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
@@ -197,8 +197,8 @@ export default function MapView({ nodes, summary }) {
       {/* ---------- drill-down ---------- */}
       {open && (
         <div style={{
-          border: '3px solid var(--ink)', background: 'var(--paper)', marginTop: 22,
-          boxShadow: '6px 6px 0 var(--ink)',
+          border: '1px solid var(--line)', background: 'var(--paper)', marginTop: 22,
+          boxShadow: 'var(--shadow)',
         }}>
           <div style={{
             background: VERDICT[open.verdict]?.line || 'var(--ink)', padding: '12px 18px',
@@ -239,7 +239,7 @@ export default function MapView({ nodes, summary }) {
 
             <div>
               <div className="mono" style={{ fontSize: 9, letterSpacing: '.14em', color: 'var(--ink3)', marginBottom: 6 }}>THE NUMBERS BEHIND IT</div>
-              <div style={{ border: '2px solid var(--ink)', maxHeight: 300, overflowY: 'auto' }}>
+              <div style={{ border: '1px solid var(--line)', maxHeight: 300, overflowY: 'auto' }}>
                 {open.detail.rows.length === 0 && (
                   <div style={{ padding: '10px 12px', fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--ink3)' }}>Nothing recorded yet.</div>
                 )}

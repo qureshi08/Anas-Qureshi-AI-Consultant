@@ -28,7 +28,7 @@ export default function EraTabs({ era, basePath, extraQuery = '' }) {
     <>
       <div style={{
         display: 'flex', flexWrap: 'wrap', marginBottom: 16,
-        border: '2px solid var(--ink)', borderRadius: 6, overflow: 'hidden', background: 'var(--paper)',
+        border: '1px solid var(--line)', borderRadius: 6, overflow: 'hidden', background: 'var(--paper)',
       }}>
         {TABS.map((t, i) => {
           const active = era === t.key;

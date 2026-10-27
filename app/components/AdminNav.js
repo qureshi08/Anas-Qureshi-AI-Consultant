@@ -38,15 +38,14 @@ export default function AdminNav() {
             className="mono"
             style={{
               fontSize: 12,
-              letterSpacing: '.08em',
-              textTransform: 'uppercase',
+              textTransform: 'lowercase',
               textDecoration: 'none',
-              padding: '9px 16px',
-              border: '2px solid var(--ink)',
-              borderRadius: 8,
-              color: active ? 'var(--paper)' : 'var(--ink)',
-              background: active ? 'var(--brick)' : 'var(--paper)',
-              boxShadow: active ? '3px 3px 0 var(--ink)' : 'none',
+              padding: '8px 15px',
+              border: 'none',
+              borderRadius: 999,
+              color: active ? '#FFFEFA' : 'var(--ink)',
+              background: active ? 'var(--ink)' : 'var(--paper)',
+              boxShadow: 'var(--shadow)',
             }}
           >
             {tab.label}

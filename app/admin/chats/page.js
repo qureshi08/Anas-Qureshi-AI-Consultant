@@ -21,7 +21,7 @@ export default async function AdminChatsPage() {
     const lastVisitor = [...msgs].reverse().find(m => m.role === 'user');
     return (
       <div style={{ position: 'relative' }}>
-        <details className="card" style={{ padding: 14, borderColor: hot ? 'var(--brick)' : 'var(--ink)', boxShadow: hot ? '4px 4px 0 var(--brick)' : '4px 4px 0 var(--ink)' }}>
+        <details className="card" style={{ padding: 14, borderColor: hot ? 'var(--brick)' : 'var(--ink)', boxShadow: hot ? 'var(--shadow)' : 'var(--shadow)' }}>
           <summary style={{ cursor: 'pointer', listStyle: 'none', paddingRight: 70 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', alignItems: 'baseline' }}>
               <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 19, color: hot ? 'var(--brick)' : 'var(--ink3)' }}>

@@ -43,7 +43,7 @@ export default async function ValidatorPage({ searchParams }) {
         Clean the list before you burn your domain on it
       </p>
 
-      <div className="card" style={{ marginBottom: 20, borderColor: 'var(--amber)', boxShadow: '4px 4px 0 var(--amber)' }}>
+      <div className="card" style={{ marginBottom: 20, borderColor: 'var(--amber)', boxShadow: 'var(--shadow)' }}>
         <div className="tag" style={{ color: 'var(--amber)' }}>What this can and cannot tell you</div>
         <p style={{ fontSize: 14, color: 'var(--ink2)', marginTop: 6 }}>
           It checks syntax, throwaway domains, role addresses, and does a real DNS lookup to confirm the
@@ -75,7 +75,7 @@ export default async function ValidatorPage({ searchParams }) {
                     className="mono"
                     style={{
                       fontSize: 10, textTransform: 'uppercase', letterSpacing: '.06em', textDecoration: 'none',
-                      padding: '5px 11px', border: '1.5px solid var(--ink)', borderRadius: 6,
+                      padding: '5px 11px', border: '1px solid var(--line)', borderRadius: 6,
                       color: String(c.id) === String(campaignId) ? 'var(--paper)' : 'var(--ink)',
                       background: String(c.id) === String(campaignId) ? 'var(--ink)' : 'transparent',
                     }}

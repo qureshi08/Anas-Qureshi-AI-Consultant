@@ -59,13 +59,13 @@ export default async function InboxesPage({ searchParams }) {
           arrived as a silent query string and the page looked like nothing
           had happened. */}
       {searchParams?.error && (
-        <div className="card" style={{ marginBottom: 16, borderColor: 'var(--brick)', boxShadow: '4px 4px 0 var(--brick)' }}>
+        <div className="card" style={{ marginBottom: 16, borderColor: 'var(--brick)', boxShadow: 'var(--shadow)' }}>
           <div className="tag" style={{ color: 'var(--brick)' }}>Connecting that inbox failed</div>
           <p style={{ fontSize: 14, color: 'var(--ink2)', marginTop: 6 }}>{searchParams.error}</p>
         </div>
       )}
       {searchParams?.connected && (
-        <div className="card" style={{ marginBottom: 16, borderColor: 'var(--forest)', boxShadow: '4px 4px 0 var(--forest)' }}>
+        <div className="card" style={{ marginBottom: 16, borderColor: 'var(--forest)', boxShadow: 'var(--shadow)' }}>
           <div className="tag" style={{ color: 'var(--forest)' }}>Inbox connected</div>
           <p style={{ fontSize: 14, color: 'var(--ink2)', marginTop: 6 }}>
             Hit Test connection below to confirm it authenticates, then set its daily limit.
@@ -80,7 +80,7 @@ export default async function InboxesPage({ searchParams }) {
         const usedTotal = active.reduce((n, a) => n + (sentToday[a.id] || 0), 0);
         const pctTotal = capacity ? Math.min(100, Math.round((usedTotal / capacity) * 100)) : 0;
         return (
-          <div className="card" style={{ marginBottom: 20, borderColor: 'var(--forest)', boxShadow: '4px 4px 0 var(--forest)' }}>
+          <div className="card" style={{ marginBottom: 20, borderColor: 'var(--forest)', boxShadow: 'var(--shadow)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 8 }}>
               <div className="tag" style={{ color: 'var(--forest)' }}>Today&apos;s capacity</div>
               <span className="mono" style={{ fontSize: 11, color: 'var(--ink3)' }}>

@@ -10,9 +10,9 @@ import { sendPitchNow, setPitchStatus, savePitchEmail } from '../pitch-actions';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-const card = { border: '2px solid var(--ink)', borderRadius: 10, padding: '12px 14px', marginBottom: 12, background: 'var(--paper)' };
-const btn = { fontSize: 12, fontWeight: 700, padding: '7px 12px', border: '2px solid var(--ink)', borderRadius: 7, background: 'var(--paper)', color: 'var(--ink)', textDecoration: 'none', cursor: 'pointer', display: 'inline-block' };
-const go = { ...btn, background: 'var(--forest)', color: 'var(--paper)', boxShadow: '2px 2px 0 var(--ink)' };
+const card = { border: '1px solid var(--line)', borderRadius: 10, padding: '12px 14px', marginBottom: 12, background: 'var(--paper)' };
+const btn = { fontSize: 12, fontWeight: 700, padding: '7px 12px', border: '1px solid var(--line)', borderRadius: 7, background: 'var(--paper)', color: 'var(--ink)', textDecoration: 'none', cursor: 'pointer', display: 'inline-block' };
+const go = { ...btn, background: 'var(--forest)', color: 'var(--paper)', boxShadow: 'var(--shadow)' };
 const SITE = 'https://anas-qureshi-ai-consultant.vercel.app';
 const GOAL = 5;
 

@@ -39,7 +39,7 @@ export default function OutboundActionButton({ endpoint, payload, label, busyLab
   };
   const style = variant === 'primary'
     ? { ...base, background: 'var(--brick)', color: 'var(--paper)', border: '2px solid var(--brick)' }
-    : { ...base, background: 'transparent', color: 'var(--ink)', border: '2px solid var(--ink)' };
+    : { ...base, background: 'transparent', color: 'var(--ink)', border: '1px solid var(--line)' };
 
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>

@@ -10,12 +10,12 @@ export const dynamic = 'force-dynamic';
  * not logged twice: the count comes from job_leads, where the Gulf jobs board already stamps
  * applied_at.
  */
-const card = { border: '2px solid var(--ink)', borderRadius: 10, padding: '12px 14px', marginBottom: 12, background: 'var(--paper)' };
-const btn = { fontSize: 12, fontWeight: 700, padding: '6px 10px', border: '2px solid var(--ink)', borderRadius: 7, background: 'var(--paper)', color: 'var(--ink)', textDecoration: 'none', cursor: 'pointer', display: 'inline-block' };
+const card = { border: '1px solid var(--line)', borderRadius: 10, padding: '12px 14px', marginBottom: 12, background: 'var(--paper)' };
+const btn = { fontSize: 12, fontWeight: 700, padding: '6px 10px', border: '1px solid var(--line)', borderRadius: 7, background: 'var(--paper)', color: 'var(--ink)', textDecoration: 'none', cursor: 'pointer', display: 'inline-block' };
 const go = { ...btn, background: 'var(--forest)', color: 'var(--paper)' };
 const stepNum = { fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--brick)', marginRight: 8 };
-const input = { fontSize: 13, padding: '6px 8px', border: '2px solid var(--ink)', borderRadius: 7, background: 'var(--paper)', color: 'var(--ink)', minWidth: 0 };
-const th = { textAlign: 'left', padding: '6px 8px', fontSize: 10, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink3)', borderBottom: '2px solid var(--ink)' };
+const input = { fontSize: 13, padding: '6px 8px', border: '1px solid var(--line)', borderRadius: 7, background: 'var(--paper)', color: 'var(--ink)', minWidth: 0 };
+const th = { textAlign: 'left', padding: '6px 8px', fontSize: 10, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink3)', borderBottom: '1px solid var(--line)' };
 const td = { padding: '8px', borderBottom: '1px solid rgba(26,18,5,0.12)', verticalAlign: 'top', fontSize: 13 };
 
 const STAGES = [['replied', 'Replied'], ['call', 'Call'], ['referral', 'Referral'], ['interview', 'Interview'], ['offer', 'Offer']];
@@ -80,7 +80,7 @@ export default async function JobPlan() {
             <div key={label} style={{ ...card, marginBottom: 0 }}>
               <div className="mono" style={{ fontSize: 10, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink3)' }}>{label}</div>
               <div style={{ fontFamily: 'var(--font-display)', fontSize: 28 }}>{v}{target ? <span style={{ fontSize: 14, color: 'var(--ink3)' }}> / {target}</span> : null}</div>
-              <div style={{ height: 8, border: '2px solid var(--ink)', borderRadius: 5, overflow: 'hidden' }}>
+              <div style={{ height: 8, border: '1px solid var(--line)', borderRadius: 5, overflow: 'hidden' }}>
                 <div style={{ width: `${pct}%`, height: '100%', background: 'var(--forest)' }} />
               </div>
             </div>

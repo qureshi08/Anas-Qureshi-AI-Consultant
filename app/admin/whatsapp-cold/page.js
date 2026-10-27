@@ -44,7 +44,7 @@ export default async function WhatsappColdPage({ searchParams }) {
           className="mono"
           style={{
             fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', textDecoration: 'none',
-            padding: '7px 14px', border: '2px solid var(--ink)', borderRadius: 8,
+            padding: '7px 14px', border: '1px solid var(--line)', borderRadius: 8,
             color: !activeStatus ? 'var(--paper)' : 'var(--ink)',
             background: !activeStatus ? 'var(--ink)' : 'transparent',
           }}
@@ -71,7 +71,7 @@ export default async function WhatsappColdPage({ searchParams }) {
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
           <thead>
-            <tr className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--ink3)', textAlign: 'left', borderBottom: '2px solid var(--ink)' }}>
+            <tr className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--ink3)', textAlign: 'left', borderBottom: '1px solid var(--line)' }}>
               <th style={{ padding: '10px 12px', minWidth: 180 }}>Business</th>
               <th style={{ padding: '10px 12px', minWidth: 130 }}>Phone</th>
               <th style={{ padding: '10px 12px', minWidth: 260 }}>Message</th>

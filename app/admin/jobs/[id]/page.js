@@ -10,7 +10,7 @@ const STATUSES = ['new', 'shortlisted', 'applied', 'replied', 'interview', 'offe
 const STATUS_LABEL = { new: 'New', shortlisted: 'Drafted', applied: 'Applied', replied: 'Replied', interview: 'Interview', offer: 'Offer', rejected: 'Rejected', skipped: 'Skipped', expired: 'Expired' };
 const small = { fontSize: 13, padding: '7px 10px' };
 
-const card = { border: '2px solid var(--ink)', borderRadius: 10, padding: '14px 16px', marginBottom: 14, background: 'var(--paper)', boxShadow: '3px 3px 0 var(--ink)' };
+const card = { border: '1px solid var(--line)', borderRadius: 10, padding: '14px 16px', marginBottom: 14, background: 'var(--paper)', boxShadow: 'var(--shadow)' };
 const label = { fontSize: 10, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--ink3)', marginBottom: 6 };
 const linkBtn = { fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--forest)', border: '1.5px solid var(--forest)', borderRadius: 6, padding: '6px 10px', textDecoration: 'none', display: 'inline-block' };
 

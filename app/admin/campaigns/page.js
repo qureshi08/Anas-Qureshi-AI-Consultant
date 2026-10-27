@@ -51,7 +51,7 @@ export default async function AdminCampaignsPage() {
       </p>
 
       {noInbox && (
-        <div className="card" style={{ marginBottom: 20, borderColor: 'var(--amber)', boxShadow: '4px 4px 0 var(--amber)' }}>
+        <div className="card" style={{ marginBottom: 20, borderColor: 'var(--amber)', boxShadow: 'var(--shadow)' }}>
           <div className="tag" style={{ color: 'var(--amber)' }}>Set this up first</div>
           <p style={{ fontSize: 14, color: 'var(--ink2)', marginTop: 6 }}>
             No sending inbox connected yet, so nothing can go out.{' '}
@@ -88,7 +88,7 @@ export default async function AdminCampaignsPage() {
         return (
           <>
             {current.length === 0 && (campaigns || []).length > 0 && (
-              <div className="card" style={{ marginBottom: 16, borderColor: 'var(--amber)', boxShadow: '4px 4px 0 var(--amber)' }}>
+              <div className="card" style={{ marginBottom: 16, borderColor: 'var(--amber)', boxShadow: 'var(--shadow)' }}>
                 <div className="tag" style={{ color: 'var(--amber)' }}>No current-era campaign yet</div>
                 <p style={{ fontSize: 14, color: 'var(--ink2)', marginTop: 6 }}>
                   Every campaign below predates the {PIVOT_2} ICP switch (marketing agencies, retired). The WhatsApp

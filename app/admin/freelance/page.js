@@ -9,8 +9,8 @@ export const maxDuration = 30;
  * searches and Reddit (one click links, Reddit refuses server requests), plus the contract roles
  * the job fetcher already found. Never Upwork, never cold blasts (memory feedback_never_upwork).
  */
-const card = { border: '2px solid var(--ink)', borderRadius: 10, padding: '12px 14px', marginBottom: 12, background: 'var(--paper)' };
-const btn = { fontSize: 12, fontWeight: 700, padding: '7px 12px', border: '2px solid var(--ink)', borderRadius: 7, background: 'var(--paper)', color: 'var(--ink)', textDecoration: 'none', display: 'inline-block' };
+const card = { border: '1px solid var(--line)', borderRadius: 10, padding: '12px 14px', marginBottom: 12, background: 'var(--paper)' };
+const btn = { fontSize: 12, fontWeight: 700, padding: '7px 12px', border: '1px solid var(--line)', borderRadius: 7, background: 'var(--paper)', color: 'var(--ink)', textDecoration: 'none', display: 'inline-block' };
 const stepNum = { fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--brick)', marginRight: 8 };
 
 // Freelancers advertising themselves post in the same category; only client requests matter.

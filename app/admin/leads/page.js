@@ -79,7 +79,7 @@ export default async function LeadsPage({ searchParams }) {
                 className="mono"
                 style={{
                   fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', textDecoration: 'none',
-                  padding: '7px 14px', border: '2px solid var(--ink)', borderRadius: 6,
+                  padding: '7px 14px', border: '1px solid var(--line)', borderRadius: 6,
                   color: String(c.id) === String(campaignId) ? 'var(--paper)' : 'var(--ink)',
                   background: String(c.id) === String(campaignId) ? 'var(--ink)' : 'transparent',
                 }}
@@ -111,7 +111,7 @@ export default async function LeadsPage({ searchParams }) {
             </div>
           )}
           {campaignArchived && (
-            <div className="card" style={{ marginBottom: 16, borderColor: 'var(--brick)', boxShadow: '4px 4px 0 var(--brick)' }}>
+            <div className="card" style={{ marginBottom: 16, borderColor: 'var(--brick)', boxShadow: 'var(--shadow)' }}>
               <div className="tag" style={{ color: 'var(--brick)' }}>Retired-era campaign</div>
               <p style={{ fontSize: 14, color: 'var(--ink2)', marginTop: 6 }}>
                 These leads target a retired ICP &mdash; recruiting/staffing (retired {PIVOT}) or marketing/digital
@@ -130,7 +130,7 @@ export default async function LeadsPage({ searchParams }) {
                 ['Unverified', risky, 'var(--amber)', pct(risky)],
                 ['Do not send', invalid, 'var(--brick)', pct(invalid)],
               ].map(([label, value, color, percent]) => (
-                <div key={label} className="card" style={{ flex: '1 1 130px', padding: '14px 16px', textAlign: 'center', borderColor: color, boxShadow: `4px 4px 0 ${color}` }}>
+                <div key={label} className="card" style={{ flex: '1 1 130px', padding: '14px 16px', textAlign: 'center', borderColor: color, boxShadow: 'var(--shadow)' }}>
                   <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 30, color, lineHeight: 1 }}>{value}</div>
                   <div className="mono" style={{ fontSize: 9, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink3)', marginTop: 4 }}>
                     {label}{percent !== null ? ` · ${percent}%` : ''}
@@ -229,7 +229,7 @@ export default async function LeadsPage({ searchParams }) {
               <div className="card" style={{ padding: 0, overflowX: 'auto', marginBottom: 14 }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
                   <thead>
-                    <tr className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--ink3)', textAlign: 'left', borderBottom: '2px solid var(--ink)' }}>
+                    <tr className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--ink3)', textAlign: 'left', borderBottom: '1px solid var(--line)' }}>
                       <th style={{ padding: '10px 12px' }}>Name</th>
                       <th style={{ padding: '10px 12px' }}>Email</th>
                       <th style={{ padding: '10px 12px' }}>Company</th>
@@ -249,7 +249,7 @@ export default async function LeadsPage({ searchParams }) {
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                               <div style={{
                                 width: 30, height: 30, borderRadius: '50%', flex: 'none',
-                                background: 'var(--paper2)', border: '1.5px solid var(--ink)',
+                                background: 'var(--paper2)', border: '1px solid var(--line)',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: 'var(--ink)',
                               }}>

@@ -24,7 +24,7 @@ export default function Archive() {
         Out of the menu: small-business outreach (stopped 2026-09-25) and everything outside the three 60-day tracks (2026-10-11). Nothing was deleted. These tools still open and all their data is kept.
       </p>
       {TOOLS.map(([href, label, what]) => (
-        <a key={href} href={href} style={{ display: 'block', border: '2px solid var(--ink)', borderRadius: 10, padding: '10px 14px', marginBottom: 8, color: 'var(--ink)', textDecoration: 'none', background: 'var(--paper)' }}>
+        <a key={href} href={href} style={{ display: 'block', border: '1px solid var(--line)', borderRadius: 10, padding: '10px 14px', marginBottom: 8, color: 'var(--ink)', textDecoration: 'none', background: 'var(--paper)' }}>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: 20 }}>{label} &rarr;</div>
           <div style={{ fontSize: 13, color: 'var(--ink3)' }}>{what}</div>
         </a>

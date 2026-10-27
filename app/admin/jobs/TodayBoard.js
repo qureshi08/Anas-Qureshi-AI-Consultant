@@ -11,9 +11,9 @@ import { markApplied, setStatus, sendEmailNow, findContact, prepareMoreAction, f
  * portal applications are open, upload, paste, press Applied.
  * The one-at-a-time flow still runs the Training lane (JobsQueue.js); Startups has its own list board (StartupBoard.js).
  */
-const card = { border: '2px solid var(--ink)', borderRadius: 10, padding: '10px 12px', marginBottom: 10, background: 'var(--paper)' };
-const btn = { fontSize: 12, fontWeight: 700, padding: '7px 12px', border: '2px solid var(--ink)', borderRadius: 7, background: 'var(--paper)', color: 'var(--ink)', textDecoration: 'none', cursor: 'pointer', display: 'inline-block' };
-const go = { ...btn, background: 'var(--forest)', color: 'var(--paper)', boxShadow: '2px 2px 0 var(--ink)' };
+const card = { border: '1px solid var(--line)', borderRadius: 10, padding: '10px 12px', marginBottom: 10, background: 'var(--paper)' };
+const btn = { fontSize: 12, fontWeight: 700, padding: '7px 12px', border: '1px solid var(--line)', borderRadius: 7, background: 'var(--paper)', color: 'var(--ink)', textDecoration: 'none', cursor: 'pointer', display: 'inline-block' };
+const go = { ...btn, background: 'var(--forest)', color: 'var(--paper)', boxShadow: 'var(--shadow)' };
 const dark = { ...btn, background: 'var(--ink)', color: 'var(--paper)' };
 
 const ageDays = j => (j.posted_at ? (Date.now() - new Date(j.posted_at).getTime()) / 86400000 : 7);
@@ -49,7 +49,7 @@ export default async function TodayBoard() {
           <a href="/admin/jobs/all" className="mono" style={{ fontSize: 11, color: 'var(--ink3)' }}>All jobs and settings &rarr;</a>
         </div>
       </div>
-      <div style={{ height: 10, border: '2px solid var(--ink)', borderRadius: 6, marginBottom: 12, overflow: 'hidden' }}>
+      <div style={{ height: 10, border: '1px solid var(--line)', borderRadius: 6, marginBottom: 12, overflow: 'hidden' }}>
         <div style={{ width: `${pct}%`, height: '100%', background: 'var(--forest)' }} />
       </div>
       <p style={{ fontSize: 14, color: 'var(--ink3)', margin: '0 0 12px' }}>

@@ -15,7 +15,7 @@ export default function LogoutButton() {
       }}
       className="mono"
       style={{
-        background: 'transparent', border: '2px solid var(--ink)', borderRadius: 8,
+        background: 'transparent', border: '1px solid var(--line)', borderRadius: 8,
         padding: '7px 14px', fontSize: 11, letterSpacing: '.1em', textTransform: 'uppercase',
         cursor: 'pointer', color: 'var(--ink)',
       }}

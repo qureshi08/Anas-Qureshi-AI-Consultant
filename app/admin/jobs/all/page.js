@@ -79,7 +79,7 @@ export default async function JobsPage({ searchParams }) {
           ['Replies', counts.replied + counts.interview + counts.offer, 'var(--forest)'],
           ['Follow ups due', due.length, due.length ? 'var(--brick)' : 'var(--ink)'],
         ].map(([label, value, color]) => (
-          <div key={label} style={{ border: '2px solid var(--ink)', borderRadius: 10, padding: '10px 12px', boxShadow: '3px 3px 0 var(--ink)', background: 'var(--paper)' }}>
+          <div key={label} style={{ border: '1px solid var(--line)', borderRadius: 10, padding: '10px 12px', boxShadow: 'var(--shadow)', background: 'var(--paper)' }}>
             <div className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--ink3)' }}>{label}</div>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: 26, color, lineHeight: 1.1 }}>{value}</div>
           </div>
@@ -119,7 +119,7 @@ export default async function JobsPage({ searchParams }) {
         </p>
       </details>
 
-      <details style={{ border: '2px solid var(--ink)', borderRadius: 10, padding: '10px 14px', marginBottom: 12, background: 'var(--paper)' }}>
+      <details style={{ border: '1px solid var(--line)', borderRadius: 10, padding: '10px 14px', marginBottom: 12, background: 'var(--paper)' }}>
         <summary className="mono" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.08em', cursor: 'pointer' }}>How to apply, click by click (about 3 minutes per job)</summary>
         <ol style={{ fontSize: 13, lineHeight: 1.5, margin: '10px 0 4px 18px', padding: 0 }}>
           {HOW_TO_APPLY.map(([t, d]) => <li key={t} style={{ marginBottom: 6 }}><strong>{t}.</strong> {d}</li>)}
@@ -131,7 +131,7 @@ export default async function JobsPage({ searchParams }) {
         </div>
       </details>
 
-      <details style={{ border: '2px solid var(--ink)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, background: 'var(--paper)' }}>
+      <details style={{ border: '1px solid var(--line)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, background: 'var(--paper)' }}>
         <summary className="mono" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.08em', cursor: 'pointer' }}>Standard form answers (copy, never retype)</summary>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 8, marginTop: 10 }}>
           {answers.map(([label, value]) => (
@@ -177,7 +177,7 @@ export default async function JobsPage({ searchParams }) {
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
           <thead>
-            <tr className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--ink3)', textAlign: 'left', borderBottom: '2px solid var(--ink)' }}>
+            <tr className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--ink3)', textAlign: 'left', borderBottom: '1px solid var(--line)' }}>
               <th style={{ padding: '10px 12px', minWidth: 230 }}>Role</th>
               <th style={{ padding: '10px 12px', minWidth: 360 }}>Cover note and message</th>
               <th style={{ padding: '10px 12px', minWidth: 240 }}>Contact, notes, status</th>
@@ -191,7 +191,7 @@ export default async function JobsPage({ searchParams }) {
                     <a href={`/admin/jobs/${j.id}`} style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 17, color: 'var(--ink)', textDecoration: 'none' }}>{j.title}</a>
                     <div style={{ fontSize: 13, marginTop: 2 }}>{j.company}</div>
                     <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-                      <a href={`/admin/jobs/${j.id}`} className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--paper)', background: 'var(--brick)', border: '1.5px solid var(--ink)', borderRadius: 5, padding: '4px 9px', textDecoration: 'none' }}>Open kit</a>
+                      <a href={`/admin/jobs/${j.id}`} className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--paper)', background: 'var(--brick)', border: '1px solid var(--line)', borderRadius: 5, padding: '4px 9px', textDecoration: 'none' }}>Open kit</a>
                       <a href={j.url} target="_blank" rel="noreferrer" className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--ink3)', border: '1.5px solid var(--ink3)', borderRadius: 5, padding: '4px 9px', textDecoration: 'none' }}>Posting &#8599;</a>
                     </div>
                     <div className="mono" style={{ fontSize: 10, color: 'var(--ink3)', marginTop: 4 }}>{j.location || 'location not stated'}</div>

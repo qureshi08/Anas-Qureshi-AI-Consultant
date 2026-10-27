@@ -17,7 +17,7 @@ export default async function AdminCallsPage() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {list.map(b => (
-          <div key={b.id} className="card" style={{ borderColor: b.status === 'requested' ? 'var(--brick)' : 'var(--ink)', boxShadow: b.status === 'requested' ? '4px 4px 0 var(--brick)' : '4px 4px 0 var(--ink)' }}>
+          <div key={b.id} className="card" style={{ borderColor: b.status === 'requested' ? 'var(--brick)' : 'var(--ink)', boxShadow: b.status === 'requested' ? 'var(--shadow)' : 'var(--shadow)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', alignItems: 'baseline' }}>
               <div>
                 <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 21, color: 'var(--ink)' }}>{b.name || 'No name'}</span>

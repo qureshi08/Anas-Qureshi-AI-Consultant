@@ -7,10 +7,10 @@ import { advanceJob, prepareCurrentAction, prepareBatchAction, refreshJobs, find
  * two buttons. The full table, settings and filters live at /admin/jobs/all.
  * Rebuilt 2026-09-03 after Anas said the control panel version was confusing.
  */
-const step = { border: '2px solid var(--ink)', borderRadius: 10, padding: '12px 14px', marginBottom: 10, background: 'var(--paper)' };
+const step = { border: '1px solid var(--line)', borderRadius: 10, padding: '12px 14px', marginBottom: 10, background: 'var(--paper)' };
 const stepNum = { fontFamily: 'var(--font-display)', fontSize: 20, color: 'var(--brick)', marginRight: 8 };
-const bigLink = { display: 'inline-block', fontSize: 14, fontWeight: 700, padding: '10px 18px', border: '2px solid var(--ink)', borderRadius: 8, background: 'var(--ink)', color: 'var(--paper)', textDecoration: 'none', boxShadow: '3px 3px 0 var(--brick)' };
-const plainLink = { display: 'inline-block', fontSize: 13, padding: '8px 14px', border: '2px solid var(--ink)', borderRadius: 8, background: 'var(--paper)', color: 'var(--ink)', textDecoration: 'none' };
+const bigLink = { display: 'inline-block', fontSize: 14, fontWeight: 700, padding: '10px 18px', border: '1px solid var(--line)', borderRadius: 8, background: 'var(--ink)', color: 'var(--paper)', textDecoration: 'none', boxShadow: 'var(--shadow)' };
+const plainLink = { display: 'inline-block', fontSize: 13, padding: '8px 14px', border: '1px solid var(--line)', borderRadius: 8, background: 'var(--paper)', color: 'var(--ink)', textDecoration: 'none' };
 
 function peopleSearch(company, role) {
   return `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(`${company || ''} ${role || ''}`.trim())}`;
@@ -126,7 +126,7 @@ export default async function JobsQueue({ lane = '' }) {
 
       {job && job.cover_note && (
         <>
-          <div style={{ border: '2px solid var(--ink)', borderRadius: 10, padding: '14px 16px', marginBottom: 12, background: 'var(--paper)', boxShadow: '4px 4px 0 var(--ink)' }}>
+          <div style={{ border: '1px solid var(--line)', borderRadius: 10, padding: '14px 16px', marginBottom: 12, background: 'var(--paper)', boxShadow: 'var(--shadow)' }}>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: 26, color: 'var(--ink)', lineHeight: 1.15 }}>{job.title}</div>
             <div style={{ fontSize: 15, marginTop: 2 }}>{job.company}</div>
             <div className="mono" style={{ fontSize: 11, color: 'var(--ink3)', marginTop: 4 }}>{job.location || 'location not stated'}</div>
@@ -192,7 +192,7 @@ export default async function JobsQueue({ lane = '' }) {
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 8 }}>
                 <form action={sendEmailNow}>
                   <input type="hidden" name="id" value={job.id} />
-                  <button type="submit" style={{ fontSize: 16, fontWeight: 700, padding: '14px 26px', border: '2px solid var(--ink)', borderRadius: 10, background: 'var(--forest)', color: 'var(--paper)', boxShadow: '4px 4px 0 var(--ink)', cursor: 'pointer' }}>
+                  <button type="submit" style={{ fontSize: 16, fontWeight: 700, padding: '14px 26px', border: '1px solid var(--line)', borderRadius: 10, background: 'var(--forest)', color: 'var(--paper)', boxShadow: 'var(--shadow)', cursor: 'pointer' }}>
                     Send email now &rarr;
                   </button>
                 </form>
@@ -207,7 +207,7 @@ export default async function JobsQueue({ lane = '' }) {
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                   <form action={findContact}>
                     <input type="hidden" name="id" value={job.id} />
-                    <button type="submit" style={{ ...bigLink, cursor: 'pointer', border: '2px solid var(--ink)' }}>Find their email address</button>
+                    <button type="submit" style={{ ...bigLink, cursor: 'pointer', border: '1px solid var(--line)' }}>Find their email address</button>
                   </form>
                   <form action={saveContactEmail} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                     <input type="hidden" name="id" value={job.id} />
@@ -247,7 +247,7 @@ export default async function JobsQueue({ lane = '' }) {
               {laneField}
               <input type="hidden" name="id" value={job.id} />
               <input type="hidden" name="action" value="applied" />
-              <button type="submit" style={{ fontSize: 16, fontWeight: 700, padding: '14px 26px', border: '2px solid var(--ink)', borderRadius: 10, background: 'var(--forest)', color: 'var(--paper)', boxShadow: '4px 4px 0 var(--ink)', cursor: 'pointer' }}>
+              <button type="submit" style={{ fontSize: 16, fontWeight: 700, padding: '14px 26px', border: '1px solid var(--line)', borderRadius: 10, background: 'var(--forest)', color: 'var(--paper)', boxShadow: 'var(--shadow)', cursor: 'pointer' }}>
                 Done, next job &rarr;
               </button>
             </form>

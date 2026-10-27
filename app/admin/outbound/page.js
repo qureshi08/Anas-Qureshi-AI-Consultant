@@ -55,7 +55,7 @@ export default async function AdminOutboundPage({ searchParams }) {
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
         <Link href={`/admin/outbound${eraQ ? `?${eraQ}` : ''}`} className="mono" style={{
           fontSize: 11, letterSpacing: '.08em', textTransform: 'uppercase', textDecoration: 'none',
-          padding: '6px 12px', border: '2px solid var(--ink)', borderRadius: 6,
+          padding: '6px 12px', border: '1px solid var(--line)', borderRadius: 6,
           color: !activeStatus ? 'var(--paper)' : 'var(--ink)', background: !activeStatus ? 'var(--ink)' : 'transparent',
         }}>
           All &middot; {all.length}
@@ -63,7 +63,7 @@ export default async function AdminOutboundPage({ searchParams }) {
         {STAGES.map(s => (
           <Link key={s} href={`/admin/outbound?status=${s}${eraQ ? `&${eraQ}` : ''}`} className="mono" style={{
             fontSize: 11, letterSpacing: '.08em', textTransform: 'uppercase', textDecoration: 'none',
-            padding: '6px 12px', border: '2px solid var(--ink)', borderRadius: 6,
+            padding: '6px 12px', border: '1px solid var(--line)', borderRadius: 6,
             color: activeStatus === s ? 'var(--paper)' : 'var(--ink)', background: activeStatus === s ? 'var(--ink)' : 'transparent',
           }}>
             {STAGE_LABEL[s]} &middot; {all.filter(p => p.status === s).length}
@@ -76,7 +76,7 @@ export default async function AdminOutboundPage({ searchParams }) {
       <div className="card" style={{ padding: 0, overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
           <thead>
-            <tr className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--ink3)', textAlign: 'left', borderBottom: '2px solid var(--ink)' }}>
+            <tr className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--ink3)', textAlign: 'left', borderBottom: '1px solid var(--line)' }}>
               <th style={{ padding: '10px 12px' }}>Company</th>
               <th style={{ padding: '10px 12px' }}>Contact</th>
               <th style={{ padding: '10px 12px' }}>Niche</th>

@@ -10,10 +10,10 @@ export default async function AdminLayout({ children }) {
 
   return (
     <main style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 24px 80px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid var(--ink)', paddingBottom: 16, marginBottom: 24 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--line)', paddingBottom: 16, marginBottom: 24 }}>
         <div>
           <div className="tag">AI Consultant · HQ</div>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 38, color: 'var(--ink)', lineHeight: 1 }}>Your pipeline.</h1>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 38, color: 'var(--ink)', lineHeight: 1, letterSpacing: '-.02em', marginTop: 6 }}>Your <span className="em">pipeline.</span></h1>
         </div>
         <div style={{ textAlign: 'right' }}>
           <div className="mono" style={{ fontSize: 11, color: 'var(--ink3)', marginBottom: 8 }}>{user?.email}</div>

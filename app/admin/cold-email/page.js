@@ -63,7 +63,7 @@ export default async function ColdEmailDashboard({ searchParams }) {
             style={{
               flex: '1 1 120px', padding: '14px 16px', textAlign: 'center',
               borderColor: kind === 'highlight' ? 'var(--brick)' : kind === 'success' ? 'var(--forest)' : 'var(--ink)',
-              boxShadow: `4px 4px 0 ${kind === 'highlight' ? 'var(--brick)' : kind === 'success' ? 'var(--forest)' : 'var(--ink)'}`,
+              boxShadow: 'var(--shadow)',
             }}
           >
             <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 32, color: 'var(--ink)', lineHeight: 1 }}>{value}</div>

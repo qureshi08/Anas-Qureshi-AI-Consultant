@@ -66,31 +66,43 @@ const SKILLS = [
   ['amber', 'Tableau / Power BI'],
 ];
 
+// Tech reel style (2026-10-27, Guidelines/tech_reel_style.md): paper ground with fine dots, mono
+// "// 01 · section" HUD lines, Inter Tight headings with one orange Newsreader italic word, white
+// cards with soft shadows, big orange numbers, black pill chips, a dark window card for the assistant.
 const COLORS = {
-  brick: { text: 'var(--brick)', shadow: 'var(--brick)', tagBg: 'var(--brick-light)' },
-  forest: { text: 'var(--forest)', shadow: 'var(--forest)', tagBg: 'var(--forest-light)' },
-  amber: { text: 'var(--amber)', shadow: 'var(--amber)', tagBg: 'var(--amber-light)' },
-  ink: { text: 'var(--ink)', shadow: 'var(--ink)', tagBg: 'var(--paper3)' },
+  brick: 'var(--brick)', forest: 'var(--forest)', amber: 'var(--amber)', ink: 'var(--ink)',
 };
+
+const hud = { display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px 12px', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--grey)', marginBottom: 18 };
+const h2 = { fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 'clamp(28px, 4vw, 40px)', color: 'var(--ink)', lineHeight: 1.08, letterSpacing: '-.02em' };
+const ghost = {
+  fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 16, color: 'var(--ink)', background: 'var(--paper)',
+  borderRadius: 999, padding: '12px 22px', textDecoration: 'none', boxShadow: 'var(--shadow)',
+};
+const navLink = { fontSize: 12, color: 'var(--ink2)', textDecoration: 'none', whiteSpace: 'nowrap' };
+
+function Hud({ n, name, right, rightColor = 'var(--brick)' }) {
+  return (
+    <div style={hud}>
+      <span>// {n} · {name}</span>
+      {right && <span style={{ color: rightColor, textTransform: 'uppercase', letterSpacing: '.04em' }}>{right}</span>}
+    </div>
+  );
+}
 
 function CaseCard({ c }) {
   const col = COLORS[c.color];
   return (
-    <div className="card" style={{ flex: '1 1 320px', boxShadow: `4px 4px 0 ${col.shadow}`, display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <div className="mono" style={{ fontSize: 10, letterSpacing: '.1em', textTransform: 'uppercase', color: col.text }}>{c.industry}</div>
-      <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 24, color: 'var(--ink)', lineHeight: 1.15 }}>{c.title}</h3>
+    <div className="card" style={{ flex: '1 1 320px', display: 'flex', flexDirection: 'column', gap: 12, padding: 24 }}>
+      <div className="mono" style={{ fontSize: 11, color: 'var(--grey)' }}>// {c.industry.toLowerCase()}</div>
+      <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 22, color: 'var(--ink)', lineHeight: 1.18 }}>{c.title}</h3>
       <div>
-        <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 30, color: col.text, lineHeight: 1 }}>{c.metric}</div>
-        <div className="mono" style={{ fontSize: 10, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: '.05em', marginTop: 3 }}>{c.metricLabel}</div>
+        <div style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 34, color: col, lineHeight: 1, letterSpacing: '-.02em' }}>{c.metric}</div>
+        <div className="mono" style={{ fontSize: 11, color: 'var(--ink3)', marginTop: 5 }}>{c.metricLabel}</div>
       </div>
-      <p style={{ fontSize: 15, color: 'var(--ink2)', lineHeight: 1.5 }}>{c.desc}</p>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 'auto', paddingTop: 6 }}>
-        {c.stack.map((s) => (
-          <span key={s} className="mono" style={{
-            fontSize: 10.5, letterSpacing: '.04em', color: col.text, background: col.tagBg,
-            border: `1.5px solid ${col.text}`, borderRadius: 20, padding: '3px 10px',
-          }}>{s}</span>
-        ))}
+      <p style={{ fontSize: 15, color: 'var(--ink2)', lineHeight: 1.55 }}>{c.desc}</p>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 'auto', paddingTop: 6 }}>
+        {c.stack.map((s) => <span key={s} className="chip">{s}</span>)}
       </div>
     </div>
   );
@@ -101,124 +113,111 @@ export default function Home() {
     <main>
       {/* NAV */}
       <nav style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, height: 52,
-        background: 'rgba(255,253,245,0.92)', backdropFilter: 'blur(8px)',
-        borderBottom: '2px solid var(--ink)', display: 'flex', alignItems: 'center',
-        justifyContent: 'space-between', padding: '0 28px',
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, height: 56,
+        background: 'rgba(238,233,214,0.86)', backdropFilter: 'blur(10px)',
+        borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center',
+        justifyContent: 'space-between', padding: '0 max(16px, 4vw)',
       }}>
-        <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 26, color: 'var(--ink)' }}>
-          Anas<span style={{ color: 'var(--brick)', fontFamily: 'var(--font-mono)', fontSize: 20 }}>.</span>Qureshi
+        <span style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 20, color: 'var(--ink)', letterSpacing: '-.02em' }}>
+          Anas<span style={{ color: 'var(--brick)' }}>.</span>Qureshi
         </span>
-        <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
-          <a href="#work" className="mono" style={{ fontSize: 12, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink2)', textDecoration: 'none' }}>Work</a>
-          <a href="#about" className="mono" style={{ fontSize: 12, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink2)', textDecoration: 'none' }}>About</a>
-          <a href="#assistant" className="mono" style={{ fontSize: 12, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink2)', textDecoration: 'none' }}>Ask AI</a>
-          <a href="#contact" className="mono" style={{ fontSize: 12, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink2)', textDecoration: 'none' }}>Contact</a>
+        <div className="mono nav-links" style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+          <a href="#work" style={navLink}>work</a>
+          <a href="#about" style={navLink}>about</a>
+          <a href="#assistant" style={navLink}>ask ai</a>
+          <a href="#contact" style={navLink}>contact</a>
         </div>
       </nav>
 
       {/* HERO */}
-      <section style={{
-        minHeight: '86vh', background: 'var(--ink)',
-        backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 23px, rgba(255,253,245,0.04) 23px, rgba(255,253,245,0.04) 24px)',
-        display: 'flex', alignItems: 'center', padding: '96px 40px 56px',
-      }}>
-        <div style={{ maxWidth: 900, margin: '0 auto', width: '100%' }}>
-          <div className="mono" style={{ fontSize: 12, letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--brick-mid)', marginBottom: 20 }}>
-            // Portfolio · AI Consultant
-          </div>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 48, color: 'var(--paper)', lineHeight: 1.12, marginBottom: 20 }}>
-            Every unanswered WhatsApp message is a customer walking to your competitor.
+      <section style={{ minHeight: '86vh', display: 'flex', alignItems: 'center', padding: '110px max(16px, 5vw) 64px' }}>
+        <div style={{ maxWidth: 920, margin: '0 auto', width: '100%' }}>
+          <Hud n="00" name="portfolio · ai consultant" right="first reply < 5 sec" rightColor="var(--forest)" />
+          <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 'clamp(34px, 6vw, 62px)', color: 'var(--ink)', lineHeight: 1.04, letterSpacing: '-.025em', marginBottom: 22 }}>
+            Every unanswered WhatsApp message is a customer walking to your <span className="em" style={{ fontWeight: 700 }}>competitor.</span>
           </h1>
-          <p style={{ fontSize: 20, color: 'rgba(255,253,245,0.82)', maxWidth: 680, lineHeight: 1.5, marginBottom: 26 }}>
+          <p style={{ fontSize: 18, color: 'var(--ink2)', maxWidth: 680, lineHeight: 1.6, marginBottom: 26 }}>
             Every customer who messages you gets an answer in seconds, day or night, and the booking
             stays with you. I measure your reply time and WhatsApp bookings before and after 14 days,
             so you see the difference in your own numbers. Built with the same discipline as the retail,
             finance, and banking systems below. If it doesn&apos;t handle 8 of 10 real inquiries
             correctly in that time, you pay nothing.
           </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 30 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 30 }}>
             {['Retail', 'Regulated Finance', 'Banking & Compliance', 'HR Tech', 'Home & Local Services', 'Sales Ops'].map((t) => (
-              <span key={t} className="mono" style={{
-                fontSize: 11, letterSpacing: '.04em', color: 'var(--paper)', border: '1.5px solid rgba(255,253,245,0.4)',
-                borderRadius: 20, padding: '4px 12px',
-              }}>{t}</span>
+              <span key={t} className="chip">{t}</span>
             ))}
           </div>
-          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <a href="#work" className="btn">See the work</a>
-            <a href="#assistant" style={{
-              fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 20, color: 'var(--paper)',
-              border: '2.5px solid rgba(255,253,245,0.5)', borderRadius: 8, padding: '11px 24px', textDecoration: 'none',
-            }}>Ask my AI assistant</a>
+            <a href="#assistant" style={ghost}>Ask my AI assistant</a>
           </div>
         </div>
       </section>
 
       {/* WORK */}
-      <section id="work" style={{ background: 'var(--paper)', padding: '64px 40px' }}>
+      <section id="work" style={{ padding: '64px max(16px, 5vw)' }}>
         <div style={{ maxWidth: 1180, margin: '0 auto' }}>
-          <div className="tag">Real systems, real outcomes</div>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 36, color: 'var(--ink)', margin: '6px 0 8px' }}>
-            Problems I&apos;ve actually solved.
+          <Hud n="01" name="real systems, real outcomes" right={`${CASES.length} systems`} />
+          <h2 style={{ ...h2, margin: '0 0 10px' }}>
+            Problems I&apos;ve <span className="em">actually</span> solved.
           </h2>
-          <p style={{ fontSize: 16, color: 'var(--ink2)', maxWidth: 620, marginBottom: 28 }}>
+          <p style={{ fontSize: 16, color: 'var(--ink3)', maxWidth: 620, marginBottom: 28 }}>
             Client names and specifics stay confidential. The problems, the systems, and the outcomes are real.
           </p>
-          <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
             {CASES.map((c) => <CaseCard key={c.title} c={c} />)}
           </div>
         </div>
       </section>
 
       {/* ABOUT */}
-      <section id="about" style={{ background: 'var(--paper2)', padding: '64px 40px' }}>
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <div className="tag">About</div>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 36, color: 'var(--ink)', margin: '6px 0 20px' }}>
-            I&apos;m Anas.
+      <section id="about" style={{ padding: '64px max(16px, 5vw)' }}>
+        <div className="card" style={{ maxWidth: 900, margin: '0 auto', padding: 'clamp(22px, 4vw, 40px)' }}>
+          <Hud n="02" name="about" />
+          <h2 style={{ ...h2, margin: '0 0 20px' }}>
+            I&apos;m <span className="em">Anas.</span>
           </h2>
-          <p style={{ fontSize: 17, color: 'var(--ink2)', lineHeight: 1.6, marginBottom: 14 }}>
+          <p style={{ fontSize: 17, color: 'var(--ink2)', lineHeight: 1.65, marginBottom: 14 }}>
             I turn manual operations into systems that run on their own. Not theory, real automations and
             custom apps, with a background building enterprise systems across data, finance, and compliance.
           </p>
-          <p style={{ fontSize: 17, color: 'var(--ink2)', lineHeight: 1.6, marginBottom: 14 }}>
+          <p style={{ fontSize: 17, color: 'var(--ink2)', lineHeight: 1.65, marginBottom: 14 }}>
             A lot of that work has been enterprise grade: data pipelines, risk systems, compliance
             integrations, internal platforms. Now I build that same caliber of system for growing
             businesses, without the enterprise price tag or the six month timeline.
           </p>
-          <p style={{ fontSize: 17, color: 'var(--ink2)', lineHeight: 1.6, marginBottom: 26 }}>
+          <p style={{ fontSize: 17, color: 'var(--ink2)', lineHeight: 1.65, marginBottom: 26 }}>
             If your business loses hours every week to work a machine should be doing, that is exactly
             what I fix. I build it myself, hand it over properly, and I do not disappear after the invoice.
           </p>
-          <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {SKILLS.map(([color, name]) => (
-              <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                <span style={{ width: 9, height: 9, borderRadius: '50%', background: `var(--${color})`, display: 'inline-block' }} />
-                <span style={{ fontSize: 15, color: 'var(--ink)' }}>{name}</span>
-              </div>
+              <span key={name} className="chip" style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: COLORS[color] === 'var(--ink)' ? 'var(--paper)' : COLORS[color] }} />{name}
+              </span>
             ))}
           </div>
         </div>
       </section>
 
       {/* ASSISTANT */}
-      <section id="assistant" style={{ background: 'var(--paper)', padding: '64px 40px' }}>
+      <section id="assistant" style={{ padding: '64px max(16px, 5vw)' }}>
         <div style={{ maxWidth: 1140, margin: '0 auto', display: 'flex', gap: 48, alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 420px' }}>
-            <div className="tag">The assistant on this page</div>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 32, color: 'var(--ink)', margin: '6px 0 16px' }}>
-              Have a question about my work, or one of your own?
+            <Hud n="03" name="the assistant on this page" right="live" rightColor="var(--forest)" />
+            <h2 style={{ ...h2, fontSize: 'clamp(26px, 3.4vw, 34px)', margin: '0 0 16px' }}>
+              Have a question about my work, or one of <span className="em">your own?</span>
             </h2>
-            <p style={{ fontSize: 16, color: 'var(--ink2)', lineHeight: 1.55, marginBottom: 14 }}>
+            <p style={{ fontSize: 16, color: 'var(--ink2)', lineHeight: 1.6, marginBottom: 16 }}>
               I built the assistant to the right, and it is living proof of the kind of system I build.
               Ask it about any project above, what something like it would cost, or hand it a task you
               are sick of doing by hand.
             </p>
-            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 9 }}>
+            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
               {['Trained on my own work, nothing invented.', 'Books a free 15 minute call if you want one.', 'Or leave your email, I follow up personally.'].map((t, i) => (
                 <li key={i} style={{ fontSize: 15, color: 'var(--ink2)', display: 'flex', gap: 10 }}>
-                  <span style={{ color: 'var(--forest)', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>✓</span>{t}
+                  <span style={{ color: 'var(--forest)', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>✓</span>{t}
                 </li>
               ))}
             </ul>
@@ -230,23 +229,21 @@ export default function Home() {
       </section>
 
       {/* CONTACT / FOOTER */}
-      <footer id="contact" style={{ background: 'var(--ink)', padding: '40px 40px 28px' }}>
+      <footer id="contact" style={{ background: 'var(--dark)', padding: '48px max(16px, 5vw) 28px', marginTop: 32 }}>
         <div style={{ maxWidth: 1140, margin: '0 auto' }}>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 28, color: 'var(--paper)', marginBottom: 14 }}>
-            Have a problem worth handing over?
+          <div style={{ ...hud, color: 'rgba(255,254,250,.5)' }}><span>// 04 · contact</span></div>
+          <h2 style={{ ...h2, color: '#FFFEFA', fontSize: 'clamp(26px, 3.6vw, 36px)', marginBottom: 18 }}>
+            Have a problem worth <span className="em" style={{ color: 'var(--brick-mid)' }}>handing over?</span>
           </h2>
-          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 30 }}>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 32 }}>
             <a href="mailto:muhammadanasq@gmail.com" className="btn">muhammadanasq@gmail.com</a>
-            <a href="https://calendly.com/muhammadanasq/free-15-min-audit" target="_blank" rel="noreferrer" style={{
-              fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 20, color: 'var(--paper)',
-              border: '2.5px solid rgba(255,253,245,0.5)', borderRadius: 8, padding: '11px 24px', textDecoration: 'none',
-            }}>Book a free 15 min call</a>
+            <a href="https://calendly.com/muhammadanasq/free-15-min-audit" target="_blank" rel="noreferrer" style={{ ...ghost, background: 'rgba(255,254,250,.08)', color: '#FFFEFA', boxShadow: 'none' }}>Book a free 15 min call</a>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, paddingTop: 20, borderTop: '1px solid rgba(255,253,245,0.15)' }}>
-            <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 22, color: 'var(--paper)' }}>
-              Anas<span style={{ color: 'var(--brick-mid)', fontFamily: 'var(--font-mono)' }}>.</span>Qureshi
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, paddingTop: 20, borderTop: '1px solid rgba(255,254,250,0.12)' }}>
+            <span style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 18, color: '#FFFEFA' }}>
+              Anas<span style={{ color: 'var(--brick-mid)' }}>.</span>Qureshi
             </span>
-            <span className="mono" style={{ fontSize: 9, letterSpacing: '.08em', color: 'rgba(255,253,245,0.35)', textTransform: 'uppercase' }}>
+            <span className="mono" style={{ fontSize: 11, color: 'rgba(255,254,250,0.4)' }}>
               © 2026 Anas Qureshi · AI Consultant
             </span>
           </div>

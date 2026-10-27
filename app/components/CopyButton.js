@@ -13,7 +13,7 @@ export default function CopyButton({ text, label = 'Copy' }) {
       }}
       style={{
         fontSize: 10, textTransform: 'uppercase', letterSpacing: '.06em', cursor: 'pointer',
-        padding: '5px 10px', border: '1.5px solid var(--ink)', borderRadius: 5,
+        padding: '5px 10px', border: '1px solid var(--line)', borderRadius: 5,
         background: done ? 'var(--forest)' : 'var(--paper)', color: done ? 'var(--paper)' : 'var(--ink)',
       }}
     >

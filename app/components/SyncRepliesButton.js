@@ -29,7 +29,7 @@ export default function SyncRepliesButton({ label = 'Sync replies' }) {
         disabled={busy}
         className="mono"
         style={{
-          background: 'transparent', border: '2px solid var(--ink)', borderRadius: 8,
+          background: 'transparent', border: '1px solid var(--line)', borderRadius: 8,
           padding: '9px 16px', fontSize: 11, letterSpacing: '.08em', textTransform: 'uppercase',
           cursor: busy ? 'wait' : 'pointer', color: 'var(--ink)',
         }}

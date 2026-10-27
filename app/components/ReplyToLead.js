@@ -50,7 +50,7 @@ export default function ReplyToLead({ leadId, email }) {
   }
 
   return (
-    <div style={{ marginTop: 8, padding: 10, border: '2px solid var(--ink)', borderRadius: 8, background: 'var(--paper2)', minWidth: 260 }}>
+    <div style={{ marginTop: 8, padding: 10, border: '1px solid var(--line)', borderRadius: 8, background: 'var(--paper2)', minWidth: 260 }}>
       <div className="mono" style={{ fontSize: 10, color: 'var(--ink3)', marginBottom: 6 }}>Replying to {email}</div>
       <textarea
         value={body}

@@ -199,7 +199,7 @@ export default function ComposeBuilder({ campaigns, initialCampaignId, steps, sa
                   style={{
                     fontSize: 10, textTransform: 'uppercase', letterSpacing: '.06em',
                     padding: '6px 12px', borderRadius: 6, cursor: 'pointer',
-                    border: '2px solid var(--ink)',
+                    border: '1px solid var(--line)',
                     background: i === stepIndex ? 'var(--ink)' : 'transparent',
                     color: i === stepIndex ? 'var(--paper)' : 'var(--ink)',
                   }}
@@ -302,7 +302,7 @@ export default function ComposeBuilder({ campaigns, initialCampaignId, steps, sa
               </div>
             </div>
 
-            <div className="card" style={{ borderColor: score.passed >= 5 ? 'var(--forest)' : 'var(--amber)', boxShadow: `4px 4px 0 ${score.passed >= 5 ? 'var(--forest)' : 'var(--amber)'}` }}>
+            <div className="card" style={{ borderColor: score.passed >= 5 ? 'var(--forest)' : 'var(--amber)', boxShadow: 'var(--shadow)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                 <span className="mono" style={{ ...labelStyle, color: 'var(--ink)' }}>PWOC score</span>
                 <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 26, color: score.passed >= 5 ? 'var(--forest)' : 'var(--amber)' }}>

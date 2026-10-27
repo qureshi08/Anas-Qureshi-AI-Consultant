@@ -124,7 +124,7 @@ export default function SendRunner({ campaignId, pendingCount, defaultDelay = 30
             onClick={stop}
             className="mono"
             style={{
-              background: 'var(--ink)', color: 'var(--paper)', border: '2.5px solid var(--ink)',
+              background: 'var(--ink)', color: 'var(--paper)', border: '1px solid var(--line)',
               borderRadius: 8, padding: '11px 24px', cursor: 'pointer', fontSize: 13,
               textTransform: 'uppercase', letterSpacing: '.08em',
             }}

@@ -134,7 +134,7 @@ export default async function AdminOverviewPage({ searchParams }) {
       <EraTabs era={era} basePath="/admin/overview" />
 
       {/* Goal strip -- everything below exists to move these two numbers. */}
-      <div className="card" style={{ marginBottom: 24, borderColor: 'var(--ink)', boxShadow: '4px 4px 0 var(--ink)' }}>
+      <div className="card" style={{ marginBottom: 24, borderColor: 'var(--ink)', boxShadow: 'var(--shadow)' }}>
         <div className="tag">The goal · goal.md</div>
         <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginTop: 8 }}>
           <div>
@@ -221,7 +221,7 @@ export default async function AdminOverviewPage({ searchParams }) {
       </details>
 
       <Link href="/admin/calls" style={{ textDecoration: 'none' }}>
-        <div className="card" style={{ marginBottom: 28, borderColor: requestedCalls > 0 ? 'var(--brick)' : 'var(--ink)', boxShadow: requestedCalls > 0 ? '4px 4px 0 var(--brick)' : '4px 4px 0 var(--ink)' }}>
+        <div className="card" style={{ marginBottom: 28, borderColor: requestedCalls > 0 ? 'var(--brick)' : 'var(--ink)', boxShadow: requestedCalls > 0 ? 'var(--shadow)' : 'var(--shadow)' }}>
           <div className="tag">Call requests</div>
           <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 30, color: 'var(--ink)', marginTop: 6 }}>{requestedCalls} waiting</div>
           <p style={{ fontSize: 14, color: 'var(--ink3)', marginTop: 6 }}>The hottest thing in the funnel. Confirm times by email.</p>

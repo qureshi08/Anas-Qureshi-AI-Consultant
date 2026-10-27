@@ -83,14 +83,12 @@ export default function ChatWidget() {
   }
 
   return (
-    <div style={{
-      background: 'var(--paper)', border: '2.5px solid var(--ink)', borderRadius: 14,
-      boxShadow: '6px 6px 0 var(--brick)', display: 'flex', flexDirection: 'column',
-      overflow: 'hidden', height: 520, maxHeight: '72vh',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '12px 16px', background: 'var(--ink)' }}>
-        <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 0 3px rgba(74,222,128,0.25)' }} />
-        <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 20, color: 'var(--paper)' }}>Anas&apos;s AI assistant</span>
+    // Tech reel style: a dark window card with the three dot title bar, like the terminals in the reels.
+    <div className="window" style={{ display: 'flex', flexDirection: 'column', height: 520, maxHeight: '72vh' }}>
+      <div className="window-bar" style={{ gap: 6, padding: '11px 14px' }}>
+        <i /><i /><i />
+        <span className="mono" style={{ fontSize: 12, color: 'rgba(255,254,250,.7)', marginLeft: 10 }}>anas · ai assistant</span>
+        <span className="mono" style={{ fontSize: 11, color: 'var(--forest2)', marginLeft: 8 }}>● live</span>
         {messages.length > 1 && (
           <button
             onClick={() => {
@@ -102,9 +100,9 @@ export default function ChatWidget() {
             className="mono"
             title="Start a new conversation"
             style={{
-              marginLeft: 'auto', background: 'transparent', border: '1.5px solid rgba(255,253,245,0.35)',
-              borderRadius: 6, color: 'rgba(255,253,245,0.75)', fontSize: 9, letterSpacing: '.1em',
-              textTransform: 'uppercase', padding: '4px 9px', cursor: 'pointer',
+              marginLeft: 'auto', background: 'rgba(255,254,250,.08)', border: 'none',
+              borderRadius: 999, color: 'rgba(255,254,250,0.75)', fontSize: 11,
+              padding: '4px 10px', cursor: 'pointer',
             }}
           >
             ↺ New chat
@@ -116,9 +114,9 @@ export default function ChatWidget() {
         {messages.map((m, i) => (
           <div key={i} style={{
             alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '86%',
-            background: m.role === 'user' ? 'var(--brick-light)' : 'var(--paper2)',
-            border: '2px solid var(--ink)', borderRadius: 10, padding: '8px 11px',
-            fontSize: 14, color: 'var(--ink2)', lineHeight: 1.4, whiteSpace: 'pre-wrap',
+            background: m.role === 'user' ? 'var(--brick)' : 'rgba(255,254,250,.07)',
+            borderRadius: 12, padding: '9px 12px',
+            fontSize: 14, color: '#FFFEFA', lineHeight: 1.45, whiteSpace: 'pre-wrap',
           }}>
             <Linkified text={m.content} />
           </div>
@@ -128,18 +126,18 @@ export default function ChatWidget() {
             {STARTERS.map((s) => (
               <button key={s} onClick={() => sendText(s)} style={{
                 fontFamily: 'var(--font-body)', fontSize: 13, cursor: 'pointer',
-                background: 'var(--paper)', color: 'var(--brick)', border: '2px solid var(--brick)',
-                borderRadius: 20, padding: '6px 13px',
+                background: 'transparent', color: 'var(--brick-mid)', border: '1px solid var(--brick-mid)',
+                borderRadius: 999, padding: '6px 13px',
               }}>
                 {s}
               </button>
             ))}
           </div>
         )}
-        {loading && <div style={{ alignSelf: 'flex-start', fontSize: 13, color: 'var(--ink3)' }}>typing…</div>}
+        {loading && <div className="mono" style={{ alignSelf: 'flex-start', fontSize: 12, color: 'rgba(255,254,250,.55)' }}>typing…</div>}
       </div>
 
-      <form onSubmit={(e) => { e.preventDefault(); sendText(input); }} style={{ padding: '12px 12px 8px', borderTop: '2px solid var(--ink)' }}>
+      <form onSubmit={(e) => { e.preventDefault(); sendText(input); }} style={{ padding: '12px 12px 8px', borderTop: '1px solid rgba(255,254,250,.1)' }}>
         <div style={{ display: 'flex', gap: 8 }}>
           <textarea
             ref={inputRef}
@@ -168,11 +166,11 @@ export default function ChatWidget() {
                 sendText(el.value);
               }
             }}
-            style={{ flex: 1, fontSize: 14, padding: '9px 11px', resize: 'none', lineHeight: 1.4, maxHeight: 110, overflowY: 'auto' }}
+            style={{ flex: 1, fontSize: 14, padding: '9px 12px', resize: 'none', lineHeight: 1.4, maxHeight: 110, overflowY: 'auto', background: 'rgba(255,254,250,.06)', color: '#FFFEFA', border: '1px solid rgba(255,254,250,.14)' }}
           />
-          <button type="submit" disabled={loading} style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16, background: 'var(--brick)', color: 'var(--paper)', border: '2.5px solid var(--brick)', borderRadius: 8, padding: '8px 14px', cursor: 'pointer' }}>Send</button>
+          <button type="submit" disabled={loading} style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14, background: 'var(--brick)', color: '#FFFEFA', border: 'none', borderRadius: 999, padding: '8px 18px', cursor: 'pointer' }}>Send</button>
         </div>
-        <div className="mono" style={{ fontSize: 8.5, letterSpacing: '.06em', color: 'var(--ink3)', marginTop: 6, textTransform: 'uppercase' }}>
+        <div className="mono" style={{ fontSize: 10, color: 'rgba(255,254,250,.45)', marginTop: 7 }}>
           Enter sends · Ctrl+Enter new line · chats are saved so Anas can follow up · no card numbers or passwords
         </div>
       </form>

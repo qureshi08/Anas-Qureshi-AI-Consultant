@@ -29,12 +29,10 @@ function LoginForm() {
   return (
     <div style={{
       minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: 'var(--ink)',
-      backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(255,253,245,0.04) 27px, rgba(255,253,245,0.04) 28px)',
     }}>
-      <div className="card" style={{ width: 380, maxWidth: '90vw', boxShadow: '6px 6px 0 var(--brick)' }}>
-        <div className="tag">// AI Consultant · HQ</div>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2.4rem', color: 'var(--ink)', lineHeight: 1, margin: '4px 0 6px' }}>
+      <div className="card" style={{ width: 380, maxWidth: '90vw', boxShadow: 'var(--shadow)' }}>
+        <div className="tag">AI Consultant · HQ</div>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 900, letterSpacing: '-.02em', fontSize: '2.4rem', color: 'var(--ink)', lineHeight: 1, margin: '4px 0 6px' }}>
           Admin login.
         </h1>
         <p style={{ fontSize: 14, color: 'var(--ink3)', marginBottom: 20 }}>
@@ -47,8 +45,8 @@ function LoginForm() {
           style={{
             width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
             background: 'var(--paper)', color: 'var(--ink)',
-            border: '2.5px solid var(--ink)', borderRadius: 8,
-            boxShadow: '4px 4px 0 var(--ink)', padding: '13px 20px',
+            border: '1px solid var(--line)', borderRadius: 8,
+            boxShadow: 'var(--shadow)', padding: '13px 20px',
             fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 19,
             cursor: loading ? 'wait' : 'pointer',
           }}

@@ -21,7 +21,7 @@ export default function LeadForm() {
 
   if (done) {
     return (
-      <div className="card" style={{ borderColor: 'var(--brick)', boxShadow: '4px 4px 0 var(--brick)' }}>
+      <div className="card" style={{ borderColor: 'var(--brick)', boxShadow: 'var(--shadow)' }}>
         <div style={{ fontSize: 36 }}>✅</div>
         <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: 'var(--forest)' }}>Got it.</h3>
         <p>I&apos;ll take a real look and get back to you within a couple of days.</p>
@@ -30,7 +30,7 @@ export default function LeadForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="card" style={{ borderColor: 'var(--brick)', boxShadow: '4px 4px 0 var(--brick)' }}>
+    <form onSubmit={onSubmit} className="card" style={{ borderColor: 'var(--brick)', boxShadow: 'var(--shadow)' }}>
       <div className="tag">Show me the task</div>
       <div style={{ height: 12 }} />
       <input type="email" placeholder="Your best email" value={email} onChange={e => setEmail(e.target.value)} required />
