@@ -3,8 +3,9 @@
 import { useState, useRef, useEffect } from 'react';
 
 const STORAGE_KEY = 'anas_chat_v1';
-const GREETING = { role: 'assistant', content: "Hey, I'm Anas's AI assistant. He built me, and I'm the kind of system he builds for businesses. Ask me about any project on this page, or tell me a task you're sick of doing by hand." };
-const STARTERS = ['Tell me about one of your projects', 'What does it cost?', 'I have a task to automate'];
+// Job search framing since 2026-10-29: visitors are mostly recruiters and hiring managers.
+const GREETING = { role: 'assistant', content: "Hi, I'm Anas's AI assistant, and he built me. Ask me about his projects, his stack, or when he can start in Saudi Arabia." };
+const STARTERS = ['What has Anas built with LLMs?', 'Can he relocate to Riyadh?', 'Send me his resume'];
 
 function Linkified({ text }) {
   const parts = String(text).split(/(https?:\/\/[^\s]+)/g);

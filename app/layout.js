@@ -1,8 +1,8 @@
 import './globals.css';
 
 export const metadata = {
-  title: 'Anas Qureshi · AI Consultant',
-  description: 'Portfolio: AI systems I have built across retail, regulated finance, banking compliance, hiring, and AI receptionists for local service businesses. Real problems, real outcomes.',
+  title: 'Anas Qureshi · AI Implementation Engineer',
+  description: 'AI Implementation Engineer building LLM integrations, agents and data pipelines for banking, retail and tax compliance work. Open to roles in Saudi Arabia.',
 };
 
 export default function RootLayout({ children }) {
