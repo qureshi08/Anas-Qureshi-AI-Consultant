@@ -52,7 +52,7 @@ export default async function Freelance() {
     <>
       <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 32, margin: '0 0 4px' }}>Freelance: 3 replies + 2 contract applications</h2>
       <p style={{ fontSize: 14, color: 'var(--ink3)', margin: '0 0 16px' }}>
-        Priority 3, after Gulf jobs and startup roles. Only answer people who already asked in public. A good reply names their exact task, says in two sentences how you would build it, points to one real thing you shipped (ZATCA for a KSA bank, the UAE and KSA reporting pipeline, the AI recruitment portal, or the live assistant on your site), and asks one question about their setup. Log the counts in the scoreboard at the end.
+        Priority 3, after Gulf jobs and startup roles. Only answer people who already asked in public. A good reply names their exact task, says in two sentences how you would build it, points to one real thing you shipped (the ZATCA gateway connecting accounting software to Saudi e invoicing, the UAE and KSA reporting pipeline, the AI recruitment portal, or the live assistant on your site), and asks one question about their setup. Log the counts in the scoreboard at the end.
       </p>
 
       <div style={card}>

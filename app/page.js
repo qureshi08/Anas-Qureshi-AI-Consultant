@@ -29,13 +29,13 @@ const CASES = [
     stack: ['Next.js', 'Supabase', 'AI Scoring', 'Automation'],
   },
   {
-    industry: 'Banking · Compliance',
-    title: 'Core banking, wired into government e-invoicing',
+    industry: 'Tax Compliance · Saudi Arabia',
+    title: 'Accounting software, wired into Saudi e-invoicing',
     metric: 'Phase 2 compliant',
     metricLabel: 'regulator mandated e-invoicing',
     color: 'amber',
-    desc: 'Integrated a core banking system with a national e-invoicing mandate for automated, regulation compliant invoice clearance, plus compliance tooling across two other business platforms. Generation, validation, and submission, end to end, with zero manual clearance steps.',
-    stack: ['Core Banking', 'E-invoicing', 'Integrations'],
+    desc: 'Connected accounting software (Odoo and Zoho) to Saudi Arabia\'s ZATCA e-invoicing mandate through one multi tenant gateway: all six ZATCA APIs, signed invoices and automated clearance. Generation, validation, and submission, end to end, with zero manual clearance steps.',
+    stack: ['ZATCA', 'Odoo', 'Zoho', 'E-invoicing'],
   },
   {
     industry: 'Local Service Businesses · Gulf & Pakistan',
