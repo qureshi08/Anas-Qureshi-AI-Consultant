@@ -47,14 +47,22 @@ function Fit({ fit }) {
   return <span className="mono" style={{ fontSize: 11, color, border: `1px solid ${color}`, borderRadius: 999, padding: '1px 8px', whiteSpace: 'nowrap' }}>{label}</span>;
 }
 
+// A small status pill for the companies table: green when something is done, orange when it is waiting on Anas.
+function Chip({ on, warn, children }) {
+  const color = on ? 'var(--forest)' : warn ? 'var(--brick)' : 'var(--grey)';
+  return <span className="mono" style={{ fontSize: 11, color, border: `1px solid ${color}`, borderRadius: 999, padding: '1px 8px', whiteSpace: 'nowrap' }}>{children}</span>;
+}
+
 export default async function JobPlan() {
   const admin = createAdminClient();
   const [from, to] = weekRange();
-  const [{ data: companies }, { data: contacts }, { data: apps }, { data: sugg }] = await Promise.all([
+  const [{ data: companies }, { data: contacts }, { data: apps }, { data: sugg }, { data: allSugg }, { data: applied }] = await Promise.all([
     admin.from('job_plan_companies').select('*'),
     admin.from('job_plan_contacts').select('*').order('created_at', { ascending: false }),
     admin.from('job_leads').select('id').not('lane', 'in', '(Training,Startups)').gte('applied_at', from).lt('applied_at', to),
     admin.from('job_plan_suggestions').select('*').in('status', ['new', 'requested']).order('created_at'),
+    admin.from('job_plan_suggestions').select('company_id,status'),
+    admin.from('job_leads').select('company,url,applied_at').not('applied_at', 'is', null),
   ]);
   const cos = (companies || []).sort((a, b) => (b.fit || 0) - (a.fit || 0) || a.name.localeCompare(b.name));
   const fitOf = Object.fromEntries(cos.map(c => [c.id, c.fit || 0]));
@@ -92,6 +100,26 @@ export default async function JobPlan() {
   const due = people.filter(p => p.contacted_on && !p.replied_on && !p.followed_up_on && workdaysSince(p.contacted_on) >= 3);
   const found = {};
   for (const s of suggestions) found[s.company_id] = (found[s.company_id] || 0) + 1;
+
+  // Where each company stands, so the table shows at a glance what is done. Contacts and
+  // applications store the company as free text ("Master-Works (Masterworks, Riyadh)"), so they
+  // are matched on the name with brackets, spaces and punctuation stripped.
+  const norm = s => String(s || '').toLowerCase().replace(/\(.*?\)/g, '').replace(/[^a-z0-9]/g, '');
+  const statusOf = c => {
+    const key = norm(c.name);
+    const hit = s => { const k = norm(s); return k && key && (k.includes(key) || key.includes(k)); };
+    const sent = (allSugg || []).filter(s => s.company_id === c.id);
+    const mine = people.filter(p => hit(p.company));
+    const app = (applied || []).filter(a => hit(a.company) || (c.url && a.url === c.url))
+      .sort((a, b) => a.applied_at.localeCompare(b.applied_at))[0];
+    return {
+      applied: app ? app.applied_at.slice(0, 10) : null,
+      requested: sent.filter(s => s.status === 'requested').length,
+      messaged: mine.filter(p => p.contacted_on).length,
+      replied: mine.filter(p => p.replied_on).length,
+      referral: mine.some(p => p.referral_on),
+    };
+  };
   const lastDate = p => [p.offer_on, p.interview_on, p.referral_on, p.call_on, p.replied_on, p.contacted_on].find(Boolean) || '';
 
   return (
@@ -231,15 +259,24 @@ export default async function JobPlan() {
       </p>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 820 }}>
-          <thead><tr><th style={th}>fit</th><th style={th}>company</th><th style={th}>open role (proof they hire)</th><th style={th}>people found</th></tr></thead>
+          <thead><tr><th style={th}>fit</th><th style={th}>company</th><th style={th}>open role (proof they hire)</th><th style={th}>status</th><th style={th}>people found</th></tr></thead>
           <tbody>
-            {cos.map(c => (
+            {cos.map(c => { const st = statusOf(c); return (
               <tr key={c.id}>
                 <td style={td}><Fit fit={c.fit} /></td>
                 <td style={td}><strong>{c.name}</strong><div className="mono" style={{ fontSize: 11, color: 'var(--grey)' }}>{c.segment} · {c.city}</div></td>
                 <td style={td}>
                   {c.url ? <a href={c.url} target="_blank" rel="noreferrer" style={{ color: 'var(--ink)', fontWeight: 600 }}>{c.role} &#8599;</a> : c.role}
                   <div style={{ fontSize: 12, color: 'var(--ink3)', maxWidth: 480 }}>{c.fit_note ? `${c.fit_note}. ` : ''}{c.why}</div>
+                </td>
+                <td style={{ ...td, minWidth: 130 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
+                    {st.applied ? <Chip on>applied {st.applied.slice(5)}</Chip> : <Chip>not applied</Chip>}
+                    {st.referral && <Chip on>referral</Chip>}
+                    {st.replied > 0 && <Chip on>{st.replied} replied</Chip>}
+                    {st.messaged > 0 && <Chip>{st.messaged} messaged</Chip>}
+                    {st.requested > 0 && <Chip>{st.requested} request{st.requested > 1 ? 's' : ''} sent</Chip>}
+                  </div>
                 </td>
                 <td style={td}>
                   <div style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 18 }}>{found[c.id] || 0}</div>
@@ -248,7 +285,7 @@ export default async function JobPlan() {
                   <a href={`https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(`${c.name.replace(/\(.*?\)/g, '').trim()} AI engineer Saudi`)}`} target="_blank" rel="noreferrer" className="mono" style={{ fontSize: 11, color: 'var(--grey)', display: 'block', marginTop: 4 }}>search linkedin &#8599;</a>
                 </td>
               </tr>
-            ))}
+            ); })}
           </tbody>
         </table>
       </div>
