@@ -195,7 +195,7 @@ export default async function JobPlan() {
             <div key={p.id} style={row}>
               <strong>{p.name}</strong><span style={{ fontSize: 13 }}>{p.company}</span>
               {p.link && <a href={p.link} target="_blank" rel="noreferrer" style={dark}>Open profile &#8599;</a>}
-              <CopyButton text={`Hi ${String(p.name).split(' ')[0]}, just bringing this back up in case it got buried. A quick 15 minute chat about your team would help me a lot, whenever suits you.`} label="Copy follow up" />
+              <CopyButton text={`Hi ${String(p.name).split(' ')[0]}, would you be open to a short chat about how your team at ${p.company} works?`} label="Copy follow up" />
               <form action={markFollowedUp}><input type="hidden" name="id" value={p.id} /><button type="submit" style={go}>Followed up</button></form>
             </div>
           ))}
