@@ -60,7 +60,7 @@ const ghost = {
   fontFamily: 'var(--font-body)', fontWeight: 400, fontSize: 18, color: 'var(--ink)', background: 'var(--paper)',
   border: '2.5px solid var(--ink)', borderRadius: 8, padding: '10px 20px', textDecoration: 'none', boxShadow: 'var(--shadow)',
 };
-const navLink = { fontSize: 12, color: 'var(--ink2)', textDecoration: 'none', whiteSpace: 'nowrap' };
+const navLink = { fontSize: 12, color: 'rgba(255,253,245,.8)', textDecoration: 'none', whiteSpace: 'nowrap' };
 
 function Hud({ n, name, right, rightColor = 'var(--brick)' }) {
   return (
@@ -91,12 +91,12 @@ export default function Home() {
       {/* NAV */}
       <nav style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, height: 56,
-        background: 'rgba(255,253,245,0.94)', backdropFilter: 'blur(6px)',
-        borderBottom: '2.5px solid var(--ink)', display: 'flex', alignItems: 'center',
+        background: 'var(--ink)',
+        borderBottom: '2px solid rgba(255,253,245,.12)', display: 'flex', alignItems: 'center',
         justifyContent: 'space-between', padding: '0 max(16px, 4vw)',
       }}>
-        <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 28, color: 'var(--ink)' }}>
-          Anas<span style={{ color: 'var(--brick)' }}>.</span>Qureshi
+        <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 28, color: '#FFFDF5' }}>
+          Anas<span style={{ color: 'var(--brick-mid)' }}>.</span>Qureshi
         </span>
         <div className="mono nav-links" style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
           <a href="#work" style={navLink}>work</a>
@@ -107,27 +107,27 @@ export default function Home() {
       </nav>
 
       {/* HERO */}
-      <section style={{ minHeight: '78vh', display: 'flex', alignItems: 'center', padding: '110px max(16px, 5vw) 56px' }}>
+      <section style={{ minHeight: '82vh', display: 'flex', alignItems: 'center', padding: '110px max(16px, 5vw) 64px', background: 'var(--ink)', backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 31px, rgba(255,253,245,.05) 31px, rgba(255,253,245,.05) 32px)', borderBottom: '4px solid var(--ink)', position: 'relative', zIndex: 1 }}>
         <div style={{ maxWidth: 920, margin: '0 auto', width: '100%' }}>
           <div style={{ width: 128, height: 128, borderRadius: '50%', border: '3px dashed var(--brick)', padding: 6, marginBottom: 22 }}>
             <img src="/anas-photo.jpg" alt="Anas Qureshi" width="110" height="110" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', display: 'block', border: '2.5px solid var(--ink)' }} />
           </div>
-          <Hud n="00" name="ai implementation engineer" right="open to roles in saudi arabia" rightColor="var(--forest)" />
-          <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 'clamp(40px, 7vw, 74px)', color: 'var(--ink)', lineHeight: 1.02, marginBottom: 22 }}>
-            I add AI to finance, tax and retail software, and make it work on <span className="em">real company data.</span>
+          <div style={{ ...hud, color: 'rgba(255,253,245,.6)' }}><span style={{ border: '2px solid rgba(255,253,245,.75)', color: '#FFFDF5', borderRadius: 20, padding: '3px 12px' }}>AI Implementation Engineer</span><span style={{ color: 'var(--brick-mid)' }}>open to roles in saudi arabia</span></div>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 'clamp(40px, 7vw, 74px)', color: '#FFFDF5', lineHeight: 1.02, marginBottom: 22 }}>
+            I add AI to finance, tax and retail software, and make it work on <span className="em" style={{ color: 'var(--brick-mid)' }}>real company data.</span>
           </h1>
-          <p style={{ fontSize: 18, color: 'var(--ink2)', maxWidth: 640, lineHeight: 1.6, marginBottom: 24 }}>
+          <p style={{ fontSize: 19, color: 'rgba(255,253,245,.82)', maxWidth: 640, lineHeight: 1.6, marginBottom: 24 }}>
             AI Implementation Engineer at Convergent Business Technologies since 2024, building LLM integrations, agents
             and data pipelines for banking, retail and tax compliance work in Saudi Arabia, the UAE and Pakistan.
             Based in Islamabad and ready to relocate to Riyadh.
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 28 }}>
-            {SKILLS.map((t) => <span key={t} className="chip">{t}</span>)}
+            {SKILLS.map((t) => <span key={t} className="chip" style={{ color: '#FFFDF5', borderColor: 'rgba(255,253,245,.6)' }}>{t}</span>)}
           </div>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <a href={LINKS.resume} className="btn">Download resume</a>
-            <a href={LINKS.email} style={ghost}>Email me</a>
-            <a href={LINKS.linkedin} target="_blank" rel="noreferrer" style={ghost}>LinkedIn</a>
+            <a href={LINKS.resume} className="btn" style={{ borderColor: '#FFFDF5', boxShadow: '4px 4px 0 #FFFDF5' }}>Download resume</a>
+            <a href={LINKS.email} style={{ ...ghost, boxShadow: '4px 4px 0 var(--brick)' }}>Email me</a>
+            <a href={LINKS.linkedin} target="_blank" rel="noreferrer" style={{ ...ghost, boxShadow: '4px 4px 0 var(--brick)' }}>LinkedIn</a>
           </div>
         </div>
       </section>
