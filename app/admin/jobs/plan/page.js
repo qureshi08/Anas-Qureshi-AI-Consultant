@@ -126,7 +126,7 @@ export default async function JobPlan() {
     <>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap', marginBottom: 6 }}>
         <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 32, color: 'var(--ink)', margin: 0, letterSpacing: '-.02em' }}>Tonight, <span className="em">click by click</span></h2>
-        <span className="mono" style={{ fontSize: 11, color: 'var(--grey)' }}>// week of {from} · weekdays 7 to 8 pm</span>
+        <span className="mono" style={{ fontSize: 11, color: 'var(--grey)' }}>week of {from} · weekdays 7 to 8 pm</span>
         <a href="/admin/jobs" className="mono" style={{ fontSize: 11, color: 'var(--brick)', marginLeft: 'auto' }}>applications board &rarr;</a>
       </div>
       <p style={{ fontSize: 14, color: 'var(--ink3)', margin: '0 0 16px' }}>
@@ -239,7 +239,7 @@ export default async function JobPlan() {
         </div>
       )}
       <details style={{ margin: '4px 0 16px' }}>
-        <summary className="mono" style={{ fontSize: 12, color: 'var(--grey)', cursor: 'pointer' }}>// someone you already know? add them by hand</summary>
+        <summary className="mono" style={{ fontSize: 12, color: 'var(--grey)', cursor: 'pointer' }}>someone you already know? add them by hand</summary>
         <form action={addContact} style={{ ...card, marginTop: 8, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 8, alignItems: 'end' }}>
           <input name="name" placeholder="Name" required style={input} />
           <select name="company" style={input} defaultValue="">

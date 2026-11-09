@@ -13,7 +13,7 @@ export default function DataDeletionPage() {
       justifyContent: 'center',
     }}>
       <div style={{ maxWidth: 720, width: '100%' }}>
-        <div className="tag">// Legal</div>
+        <div className="tag">Legal</div>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2.8rem', color: 'var(--ink)', margin: '4px 0 6px' }}>
           Data Deletion Instructions
         </h1>
