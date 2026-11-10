@@ -13,7 +13,7 @@ export default async function AdminLayout({ children }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--line)', paddingBottom: 16, marginBottom: 24 }}>
         <div>
           <div className="tag">AI Consultant · HQ</div>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 38, color: 'var(--ink)', lineHeight: 1, letterSpacing: '-.02em', marginTop: 6 }}>Your <span className="em">pipeline.</span></h1>
+          <h1 style={{ fontFamily: 'var(--font-hand)', fontWeight: 700, fontSize: 44, color: 'var(--ink)', lineHeight: 1, letterSpacing: '-.02em', marginTop: 6 }}>Your <span className="em">pipeline.</span></h1>
         </div>
         <div style={{ textAlign: 'right' }}>
           <div className="mono" style={{ fontSize: 11, color: 'var(--ink3)', marginBottom: 8 }}>{user?.email}</div>

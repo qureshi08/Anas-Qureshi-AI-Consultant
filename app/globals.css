@@ -2,13 +2,13 @@
    (Carousels/ScheduleFollowUpTeardownCarousel). Cream notebook paper, ink borders with hard offset shadows,
    Brick emphasis, Forest for the fix, Caveat headlines, Patrick Hand body, Space Mono uppercase labels. */
 :root {
-  --ground: #F5F0E0;
-  --paper: #FFFDF5;
+  --ground: #FFFDF5;
+  --paper: #FFFFFF;
   --paper2: #F5F0E0;
   --paper3: #EAE3CC;
   --ink: #1A1205;
-  --ink2: #3D3220;
-  --ink3: #6B5B3E;
+  --ink2: #1A1205;
+  --ink3: #5C4E36;
   --grey: #6B5B3E;
   --line: #1A1205;
   --dark: #1A1205;
@@ -25,33 +25,33 @@
   --amber-light: #FEF9E7;
   --shadow: 4px 4px 0 #1A1205;
   --shadow-lg: 8px 8px 0 #1A1205;
-  --font-display: 'Caveat', 'Patrick Hand', cursive;
-  --font-body: 'Patrick Hand', 'Segoe Print', cursive;
-  --font-serif: 'Caveat', cursive;
+  --font-hand: 'Caveat', cursive;              /* big titles only, 28 px and up */
+  --font-display: 'Atkinson Hyperlegible', system-ui, sans-serif; /* readable UI headings */
+  --font-body: 'Atkinson Hyperlegible', system-ui, sans-serif;
+  --font-serif: 'Caveat', cursive;             /* the orange emphasis word */
   --font-mono: 'Space Mono', ui-monospace, Consolas, monospace;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 body {
   background-color: var(--ground);
-  background-image: repeating-linear-gradient(0deg, transparent, transparent 31px, rgba(26,18,5,.07) 31px, rgba(26,18,5,.07) 32px);
+  background-image: repeating-linear-gradient(0deg, transparent, transparent 31px, rgba(26,18,5,.035) 31px, rgba(26,18,5,.035) 32px);
   background-attachment: fixed;
   color: var(--ink2);
   font-family: var(--font-body);
-  font-size: 17px;
-  line-height: 1.45;
+  font-size: 16px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
-body::after { content: ''; position: fixed; top: 0; bottom: 0; left: 14px; width: 2px; background: rgba(217,79,0,.15); pointer-events: none; z-index: 0; }
-@media (max-width: 700px) { body::after { display: none; } }
 a { color: inherit; }
 h1, h2, h3 { letter-spacing: 0; }
 
 /* shared bits */
 .mono { font-family: var(--font-mono); }
-.em { font-family: var(--font-serif); font-style: normal; font-weight: 700; color: var(--brick); }
+.em { font-family: var(--font-serif); font-style: normal; font-weight: 700; color: var(--brick); font-size: 1.12em; }
+h1, .hand { font-family: var(--font-hand); font-weight: 700; }
 .btn {
-  font-family: var(--font-body); font-weight: 400; font-size: 18px;
+  font-family: var(--font-body); font-weight: 700; font-size: 16px;
   background: var(--brick); color: #FFFDF5; cursor: pointer;
   padding: 10px 20px; border: 2.5px solid var(--ink); border-radius: 8px;
   box-shadow: 4px 4px 0 var(--ink); transition: transform .12s, box-shadow .12s;
