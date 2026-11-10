@@ -16,7 +16,7 @@ export const maxDuration = 300;
 async function draftTop(n, deadline, lane = null) {
   const admin = createAdminClient();
   let q = admin.from('job_leads').select('id')
-    .in('status', ['new', 'shortlisted']).is('cover_note', null)
+    .in('status', ['new', 'shortlisted']).is('cover_note', null).is('email_body', null)
     .order('score', { ascending: false }).limit(n);
   q = lane ? q.eq('lane', lane) : q.not('lane', 'in', '(Training,Startups)');
   const { data } = await q;

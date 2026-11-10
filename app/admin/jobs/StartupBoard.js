@@ -178,7 +178,7 @@ export default async function StartupBoard() {
                   )}
                   <a href={`/api/jobs/resume?id=${j.id}`} style={btn}>Resume PDF</a>
                   <a href={`/admin/jobs/${j.id}/resume`} target="_blank" rel="noreferrer" style={btn}>Read resume</a>
-                  <CopyButton text={j.cover_note} label="Copy cover letter" />
+                  <CopyButton text={j.cover_note} label={/ycombinator.com|workatastartup/.test(j.url || '') ? 'Copy YC message' : 'Copy cover letter'} />
                 </>
               ) : (
                 <form action={draftJob}>

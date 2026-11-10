@@ -45,7 +45,7 @@ export async function draftBatch(formData) {
   const n = Math.min(Number(formData.get('n')) || 8, 12);
   const laneFilter = formData.get('lane') || null;
   const admin = createAdminClient();
-  let q = admin.from('job_leads').select('id').in('status', ['new', 'shortlisted']).is('cover_note', null).order('score', { ascending: false }).limit(n);
+  let q = admin.from('job_leads').select('id').in('status', ['new', 'shortlisted']).is('cover_note', null).is('email_body', null).order('score', { ascending: false }).limit(n);
   if (laneFilter) q = q.eq('lane', laneFilter);
   const { data } = await q;
   for (const row of data || []) {
@@ -203,7 +203,7 @@ export async function advanceJob(formData) {
 export async function prepareCurrent(lookahead = 3, lane = '') {
   const admin = createAdminClient();
   let q = admin.from('job_leads').select('id, cover_note')
-    .in('status', ['new', 'shortlisted']).is('cover_note', null)
+    .in('status', ['new', 'shortlisted']).is('cover_note', null).is('email_body', null)
     .order('score', { ascending: false }).limit(lookahead);
   q = lane ? q.eq('lane', lane) : q.not('lane', 'in', '(Training,Startups)');
   const { data } = await q;
@@ -275,7 +275,7 @@ export async function prepareMoreAction(formData) {
   const lane = formData && formData.get ? formData.get('lane') : null;
   const admin = createAdminClient();
   let q = admin.from('job_leads').select('id')
-    .in('status', ['new', 'shortlisted']).is('cover_note', null)
+    .in('status', ['new', 'shortlisted']).is('cover_note', null).is('email_body', null)
     .order('score', { ascending: false }).limit(10);
   q = lane === 'Startups' ? q.eq('lane', 'Startups') : q.not('lane', 'in', '(Training,Startups)');
   const { data } = await q;
