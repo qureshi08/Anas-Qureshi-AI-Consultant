@@ -15,7 +15,7 @@ export async function GET(request) {
   if (!id) return new Response('id required', { status: 400 });
 
   const admin = createAdminClient();
-  const { data: job } = await admin.from('job_leads').select('company, resume_variant, resume_plan').eq('id', id).single();
+  const { data: job } = await admin.from('job_leads').select('company, lane, resume_variant, resume_plan').eq('id', id).single();
   if (!job) return new Response('Job not found', { status: 404 });
 
   const bytes = await buildResumePdf(job);
