@@ -59,7 +59,7 @@ export default async function JobPlan() {
   const [{ data: companies }, { data: contacts }, { data: apps }, { data: sugg }, { data: allSugg }, { data: applied }] = await Promise.all([
     admin.from('job_plan_companies').select('*'),
     admin.from('job_plan_contacts').select('*').order('created_at', { ascending: false }),
-    admin.from('job_leads').select('id').not('lane', 'in', '(Training,Startups)').gte('applied_at', from).lt('applied_at', to),
+    admin.from('job_leads').select('id').not('lane', 'in', '(Training,Startups,Remote)').gte('applied_at', from).lt('applied_at', to),
     admin.from('job_plan_suggestions').select('*').in('status', ['new', 'requested']).order('created_at'),
     admin.from('job_plan_suggestions').select('company_id,status'),
     admin.from('job_leads').select('company,url,applied_at').not('applied_at', 'is', null),

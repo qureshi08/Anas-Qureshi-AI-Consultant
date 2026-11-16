@@ -22,7 +22,7 @@ const fitLine = j => (j.notes || '').split('\n').map(l => l.replace(/^\[[^\]]*\]
 export default async function TodayBoard() {
   const admin = createAdminClient();
   const [{ data }, settings] = await Promise.all([
-    admin.from('job_leads').select('*').not('lane', 'in', '(Training,Startups)').order('score', { ascending: false }).limit(600),
+    admin.from('job_leads').select('*').not('lane', 'in', '(Training,Startups,Remote)').order('score', { ascending: false }).limit(600),
     getSettings(),
   ]);
   const all = data || [];

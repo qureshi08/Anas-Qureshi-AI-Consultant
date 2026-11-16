@@ -18,7 +18,7 @@ async function draftTop(n, deadline, lane = null) {
   let q = admin.from('job_leads').select('id')
     .in('status', ['new', 'shortlisted']).is('cover_note', null).is('email_body', null)
     .order('score', { ascending: false }).limit(n);
-  q = lane ? q.eq('lane', lane) : q.not('lane', 'in', '(Training,Startups)');
+  q = lane ? q.eq('lane', lane) : q.not('lane', 'in', '(Training,Startups,Remote)');
   const { data } = await q;
   let done = 0, failed = 0, i = 0;
   const rows = data || [];
@@ -50,10 +50,12 @@ export async function GET(request) {
     let startups = {};
     try { startups = { startups: await fetchAndStoreStartups({ budgetMs: 30000 }) }; } catch (e) { startups = { startups: { ok: false, message: e.message } }; }
     try { startups.hnStartups = await fetchAndStoreHnStartups({ budgetMs: 15000 }); } catch (e) { startups.hnStartups = { ok: false, message: e.message }; }
-    const drafts = toDraft > 0 ? await draftTop(toDraft, Date.now() + 120000) : {};
+    const drafts = toDraft > 0 ? await draftTop(toDraft, Date.now() + 95000) : {};
     const trainDrafts = {};
     const startupDrafts = toDraft > 0 ? await draftTop(8, Date.now() + 25000, 'Startups') : {};
-    return NextResponse.json({ ...result, ...aged, ...purged, ...purgedGulf, ...drafts, ...training, ...startups, trainingDrafted: trainDrafts.drafted, startupsDrafted: startupDrafts.drafted });
+    // Remote worldwide lane (2026-11-16): 10 written applications ready every morning.
+    const remoteDrafts = toDraft > 0 ? await draftTop(10, Date.now() + 30000, 'Remote') : {};
+    return NextResponse.json({ ...result, ...aged, ...purged, ...purgedGulf, ...drafts, ...training, ...startups, trainingDrafted: trainDrafts.drafted, startupsDrafted: startupDrafts.drafted, remoteDrafted: remoteDrafts.drafted });
   } catch (err) {
     return NextResponse.json({ ok: false, message: err.message }, { status: 500 });
   }

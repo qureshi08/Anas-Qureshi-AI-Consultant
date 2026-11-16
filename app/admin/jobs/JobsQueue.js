@@ -27,15 +27,16 @@ function gmailCompose(to, subject, body) {
 }
 
 const LANE_NAV = {
-  '': { label: 'Applied today', jobsWord: 'jobs', other: [['Training', '/admin/jobs/training', 'AI training work'], ['Startups', '/admin/jobs/startups', 'Startup roles via founders']] },
+  '': { label: 'Applied today', jobsWord: 'jobs', other: [['Remote', '/admin/jobs/remote', 'Remote worldwide jobs'], ['Training', '/admin/jobs/training', 'AI training work'], ['Startups', '/admin/jobs/startups', 'Startup roles via founders']] },
   Training: { label: 'AI training applied today', jobsWord: 'training listings', other: [['', '/admin/jobs', 'Back to job applications'], ['Startups', '/admin/jobs/startups', 'Startup roles via founders']] },
   Startups: { label: 'Founder applications sent today', jobsWord: 'startup roles', other: [['', '/admin/jobs', 'Back to job applications'], ['Training', '/admin/jobs/training', 'AI training work']] },
+  Remote: { label: 'Remote jobs applied today', jobsWord: 'remote jobs', other: [['', '/admin/jobs', 'Saudi job applications'], ['Startups', '/admin/jobs/startups', 'Startup roles via founders']] },
 };
 
 export default async function JobsQueue({ lane = '' }) {
   const admin = createAdminClient();
   const { data } = await admin.from('job_leads').select('*').order('score', { ascending: false }).order('posted_at', { ascending: false }).limit(400);
-  const all = (data || []).filter(j => (lane ? j.lane === lane : !['Training', 'Startups'].includes(j.lane)));
+  const all = (data || []).filter(j => (lane ? j.lane === lane : !['Training', 'Startups', 'Remote'].includes(j.lane)));
   const today = new Date().toISOString().slice(0, 10);
   const appliedToday = all.filter(j => j.applied_at && j.applied_at.slice(0, 10) === today).length;
   // Fresh beats old at the same fit: a posting loses a point of rank for every 3 days of age,

@@ -22,8 +22,8 @@ export const maxDuration = 60;
 const STATUSES = ['new', 'shortlisted', 'applied', 'replied', 'interview', 'offer', 'rejected', 'skipped', 'expired'];
 const STATUS_LABEL = { new: 'New', shortlisted: 'Drafted', applied: 'Applied', replied: 'Replied', interview: 'Interview', offer: 'Offer', rejected: 'Rejected', skipped: 'Skipped', expired: 'Expired' };
 const STATUS_COLOR = { new: 'var(--ink3)', shortlisted: 'var(--amber)', applied: 'var(--forest)', replied: 'var(--forest)', interview: 'var(--forest)', offer: 'var(--forest)', rejected: 'var(--ink3)', skipped: 'var(--ink3)', expired: 'var(--ink3)' };
-const LANES = ['US', 'World', 'Gulf', 'PK', 'PK-ISB', 'Startups'];
-const LANE_LABEL = { 'PK-ISB': 'Islamabad', PK: 'Pakistan', Gulf: 'Gulf', World: 'World', Startups: 'Startups (reverse pitch)' };
+const LANES = ['US', 'World', 'Gulf', 'PK', 'PK-ISB', 'Startups', 'Remote'];
+const LANE_LABEL = { 'PK-ISB': 'Islamabad', PK: 'Pakistan', Gulf: 'Gulf', World: 'World', Startups: 'Startups (reverse pitch)', Remote: 'Remote worldwide' };
 const chip = (active, color = 'var(--ink)') => ({
   fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', textDecoration: 'none',
   padding: '7px 14px', border: `2px solid ${color}`, borderRadius: 8,

@@ -13,7 +13,9 @@ const TABS = [
   { href: '/admin/north-star', label: 'North Star' },
   { href: '/admin/jobs/plan', label: '1. Gulf jobs' },
   { href: '/admin/jobs/startups', label: '2. Startup roles' },
-  { href: '/admin/freelance', label: '3. Freelance' },
+  // Added 2026-11-16 (Anas: "along with the saudi jobs, startup roles, and this one too").
+  { href: '/admin/jobs/remote', label: '3. Remote jobs' },
+  { href: '/admin/freelance', label: '4. Freelance' },
   { href: '/admin/inboxes', label: 'Inboxes' },
   { href: '/admin/archive', label: 'Archive' },
 ];
@@ -29,7 +31,7 @@ export default function AdminNav() {
         const active = tab.href === '/admin/archive'
           ? ARCHIVE_PATHS.some(p => pathname.startsWith(p))
           : tab.href === '/admin/jobs/plan'
-            ? pathname.startsWith('/admin/jobs') && !pathname.startsWith('/admin/jobs/startups')
+            ? pathname.startsWith('/admin/jobs') && !pathname.startsWith('/admin/jobs/startups') && !pathname.startsWith('/admin/jobs/remote')
             : pathname.startsWith(tab.href);
         return (
           <Link

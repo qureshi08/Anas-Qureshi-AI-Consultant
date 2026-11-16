@@ -205,7 +205,7 @@ export async function prepareCurrent(lookahead = 3, lane = '') {
   let q = admin.from('job_leads').select('id, cover_note')
     .in('status', ['new', 'shortlisted']).is('cover_note', null).is('email_body', null)
     .order('score', { ascending: false }).limit(lookahead);
-  q = lane ? q.eq('lane', lane) : q.not('lane', 'in', '(Training,Startups)');
+  q = lane ? q.eq('lane', lane) : q.not('lane', 'in', '(Training,Startups,Remote)');
   const { data } = await q;
   for (const row of data || []) await draftForJobSafe(row.id);
 }
@@ -277,7 +277,7 @@ export async function prepareMoreAction(formData) {
   let q = admin.from('job_leads').select('id')
     .in('status', ['new', 'shortlisted']).is('cover_note', null).is('email_body', null)
     .order('score', { ascending: false }).limit(10);
-  q = lane === 'Startups' ? q.eq('lane', 'Startups') : q.not('lane', 'in', '(Training,Startups)');
+  q = lane === 'Startups' || lane === 'Remote' ? q.eq('lane', lane) : q.not('lane', 'in', '(Training,Startups,Remote)');
   const { data } = await q;
   await pool(data || [], 3, row => draftForJobSafe(row.id));
   revalidatePath('/admin/jobs'); revalidatePath('/admin/jobs/all'); revalidatePath('/admin/jobs/startups');
@@ -294,7 +294,9 @@ export async function findEmailsBatchAction(formData) {
     .order('score', { ascending: false }).limit(40);
   q = lane === 'Startups'
     ? q.eq('lane', 'Startups').in('status', ['new', 'shortlisted'])
-    : q.eq('status', 'shortlisted').not('cover_note', 'is', null).not('lane', 'in', '(Training,Startups)');
+    : lane === 'Remote'
+      ? q.eq('status', 'shortlisted').not('cover_note', 'is', null).eq('lane', 'Remote')
+      : q.eq('status', 'shortlisted').not('cover_note', 'is', null).not('lane', 'in', '(Training,Startups,Remote)');
   const { data } = await q;
   const todo = (data || []).filter(j => !/email found|no email found|email search failed/.test(j.notes || '')).slice(0, 10);
   await pool(todo, 5, j => findContactFor(j.id).catch(() => {}));
