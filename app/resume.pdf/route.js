@@ -15,6 +15,7 @@ export async function GET() {
       'Content-Type': 'application/pdf',
       'Content-Disposition': 'inline; filename="Anas_Qureshi_AI_Implementation_Engineer.pdf"',
       'Cache-Control': 'no-store',
+      'Access-Control-Allow-Origin': '*',
     },
   });
 }
